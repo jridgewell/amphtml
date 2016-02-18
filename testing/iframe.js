@@ -92,7 +92,7 @@ export function createFixtureIframe(fixture, initialIframeHeight, opt_beforeLoad
           } else {
             win.addEventListener(eventName, () => {
               if (events[eventName] == count) {
-                resolve();
+                resolve(events[eventName]);
               }
             });
           }
@@ -260,7 +260,13 @@ export function poll(description, condition, opt_onError, opt_timeout) {
   return new Promise((resolve, reject) => {
     let start = new Date().getTime();
     function poll() {
-      const ret = condition();
+      let ret;
+      try {
+        ret = condition();
+      } catch (e) {
+        clearInterval(interval);
+        reject(e);
+      }
       if (ret) {
         clearInterval(interval);
         resolve(ret);

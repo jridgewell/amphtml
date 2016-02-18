@@ -22,7 +22,6 @@ module.exports = function(config) {
   var configuration = {
     frameworks: [
       'fixture',
-      'browserify',
       'mocha',
       'chai-as-promised',
       'sinon-chai',
@@ -31,17 +30,33 @@ module.exports = function(config) {
 
     preprocessors: {
       'test/fixtures/*.html': ['html2js'],
-      'src/**/*.js': ['browserify'],
-      'test/**/*.js': ['browserify'],
-      'extensions/**/test/**/*.js': ['browserify'],
-      'testing/**/*.js': ['browserify']
+      'src/**/*.js': ['webpack', 'sourcemap'],
+      'test/**/*.js': ['webpack', 'sourcemap'],
+      'extensions/**/test/**/*.js': ['webpack', 'sourcemap'],
+      'testing/**/*.js': ['webpack', 'sourcemap']
     },
 
-    browserify: {
-      watch: true,
-      debug: true,
-      transform: ['babelify'],
-      bundleDelay: 900
+    webpack: {
+      devtool: 'inline-source-map',
+      module: {
+        loaders: [
+          { test: /\.js$/, loader: 'babel-loader' }
+        ]
+      },
+
+      node: {
+        console: false,
+        global: false,
+        process: false,
+        Buffer: false,
+        __filename: "mock",
+        __dirname: "mock",
+        setImmediate: false
+      }
+    },
+
+    webpackServer: {
+      noInfo: true //please don't spam the console when running in karma!
     },
 
     reporters: ['progress'],
@@ -58,54 +73,54 @@ module.exports = function(config) {
 
     customLaunchers: {
       /*eslint "google-camelcase/google-camelcase": 0*/
-      Chrome_travis_ci: {
-        base: 'Chrome',
-        flags: ['--no-sandbox'],
-      },
+      // Chrome_travis_ci: {
+        // base: 'Chrome',
+        // flags: ['--no-sandbox'],
+      // },
       // SauceLabs configurations.
       // New configurations can be created here:
       // https://wiki.saucelabs.com/display/DOCS/Platform+Configurator#/
-      SL_Chrome_android: {
-        base: 'SauceLabs',
-        browserName: 'android',
-      },
-      SL_Chrome_latest: {
-        base: 'SauceLabs',
-        browserName: 'chrome',
-      },
-      SL_Chrome_37: {
-        base: 'SauceLabs',
-        browserName: 'chrome',
-        version: 37,
-      },
+      // SL_Chrome_android: {
+        // base: 'SauceLabs',
+        // browserName: 'android',
+      // },
+      // SL_Chrome_latest: {
+        // base: 'SauceLabs',
+        // browserName: 'chrome',
+      // },
+      // SL_Chrome_37: {
+        // base: 'SauceLabs',
+        // browserName: 'chrome',
+        // version: 37,
+      // },
       SL_iOS_9_1: {
         base: 'SauceLabs',
         browserName: 'iphone',
         version: '9.1'
       },
-      SL_Firefox_latest: {
-        base: 'SauceLabs',
-        browserName: 'firefox',
-      },
-      SL_IE_11: {
-        base: 'SauceLabs',
-        browserName: 'internet explorer',
-        version: 11,
-      },
-      SL_Edge_latest: {
-        base: 'SauceLabs',
-        browserName: 'microsoftedge',
-      },
-      SL_Safari_9: {
-        base: 'SauceLabs',
-        browserName: 'safari',
-        version: 9,
-      },
-      SL_Safari_8: {
-        base: 'SauceLabs',
-        browserName: 'safari',
-        version: 8,
-      },
+      // SL_Firefox_latest: {
+        // base: 'SauceLabs',
+        // browserName: 'firefox',
+      // },
+      // SL_IE_11: {
+        // base: 'SauceLabs',
+        // browserName: 'internet explorer',
+        // version: 11,
+      // },
+      // SL_Edge_latest: {
+        // base: 'SauceLabs',
+        // browserName: 'microsoftedge',
+      // },
+      // SL_Safari_9: {
+        // base: 'SauceLabs',
+        // browserName: 'safari',
+        // version: 9,
+      // },
+      // SL_Safari_8: {
+        // base: 'SauceLabs',
+        // browserName: 'safari',
+        // version: 8,
+      // },
     },
 
     sauceLabs: {

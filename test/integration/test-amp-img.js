@@ -34,8 +34,10 @@ describe('Rendering of amp-img', function() {
   it('should be present', () => {
     expect(fixture.doc.querySelectorAll('amp-img')).to.have.length(15);
     // 5 image visible in 500 pixel height.
-    return fixture.awaitEvent('amp:load:start', 3).then(function() {
-      expect(fixture.doc.querySelectorAll('amp-img img[src]')).to
+    return fixture.awaitEvent('amp:load:start', 3).then(function(count) {
+      var imgs = fixture.doc.querySelectorAll('amp-img img[src]');
+      console.log(imgs.length);
+      expect(imgs).to
           .have.length(3);
     });
   });

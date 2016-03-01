@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-import {createIframePromise} from '../../../../testing/iframe';
+import {createElementTestIframe} from '../../../../testing/iframe';
 require('../amp-vimeo');
-import {adopt} from '../../../../src/runtime';
-
-adopt(window);
 
 describe('amp-vimeo', () => {
 
   function getVimeo(videoId, opt_responsive) {
-    return createIframePromise().then(iframe => {
+    return createElementTestIframe('amp-vimeo').then(iframe => {
       const vimeo = iframe.doc.createElement('amp-vimeo');
       vimeo.setAttribute('data-videoid', videoId);
       vimeo.setAttribute('width', '111');

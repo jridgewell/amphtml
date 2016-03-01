@@ -15,21 +15,18 @@
  */
 
 import {Timer} from '../../../../src/timer';
-import {createIframePromise} from '../../../../testing/iframe';
+import {createElementTestIframe} from '../../../../testing/iframe';
 require('../../../../build/all/v0/amp-fit-text-0.1.max');
 import {
   calculateFontSize_,
   updateOverflow_,
 } from '../../../../build/all/v0/amp-fit-text-0.1.max';
-import {adopt} from '../../../../src/runtime';
-
-adopt(window);
 
 
 describe('amp-fit-text component', () => {
 
   function getFitText(text, opt_responsive) {
-    return createIframePromise().then(iframe => {
+    return createElementTestIframe('amp-fit-text').then(iframe => {
       const ft = iframe.doc.createElement('amp-fit-text');
       ft.setAttribute('width', '111');
       ft.setAttribute('height', '222');

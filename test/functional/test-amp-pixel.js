@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-import {createIframePromise} from '../../testing/iframe';
-import {installPixel} from '../../builtins/amp-pixel';
+import {createElementTestIframe} from '../../testing/iframe';
 
 
 describe('amp-pixel', () => {
 
   function getPixel(src) {
-    return createIframePromise().then(iframe => {
-      installPixel(iframe.win);
+    return createElementTestIframe().then(iframe => {
       const p = iframe.doc.createElement('amp-pixel');
       p.setAttribute('src', src);
       iframe.doc.title = 'Pixel Test';

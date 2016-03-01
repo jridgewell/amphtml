@@ -15,7 +15,7 @@
  */
 
 import {Observable} from '../../src/observable';
-import {createIframePromise} from '../../testing/iframe';
+import {createElementTestIframe} from '../../testing/iframe';
 import {urlReplacementsFor} from '../../src/url-replacements';
 import {markElementScheduledForTesting} from '../../src/custom-element';
 import {installCidService} from '../../src/service/cid-impl';
@@ -46,7 +46,8 @@ describe('UrlReplacements', () => {
   });
 
   function getReplacements(withCid, withActivity) {
-    return createIframePromise().then(iframe => {
+    debugger;
+    return createElementTestIframe('amp-analytics').then(iframe => {
       iframe.doc.title = 'Pixel Test';
       const link = iframe.doc.createElement('link');
       link.setAttribute('href', 'https://pinterest.com/pin1');
@@ -541,7 +542,7 @@ describe('UrlReplacements', () => {
     });
 
     function expand(url, opt_disabled) {
-      return createIframePromise().then(iframe => {
+      return createElementTestIframe().then(iframe => {
         iframe.doc.title = 'Pixel Test';
         const link = iframe.doc.createElement('link');
         link.setAttribute('href', 'https://pinterest.com/pin1');

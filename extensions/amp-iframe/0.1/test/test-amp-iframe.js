@@ -16,17 +16,14 @@
 
 import {Timer} from '../../../../src/timer';
 import {AmpIframe, setTrackingIframeTimeoutForTesting} from '../amp-iframe';
-import {adopt} from '../../../../src/runtime';
 import {
-  createIframePromise,
+  createElementTestIframe,
   pollForLayout,
   poll,
 } from '../../../../testing/iframe';
 import {loadPromise} from '../../../../src/event-helper';
 import {viewportFor} from '../../../../src/viewport';
 import * as sinon from 'sinon';
-
-adopt(window);
 
 describe('amp-iframe', () => {
 
@@ -62,7 +59,7 @@ describe('amp-iframe', () => {
   }
   function getAmpIframe(attributes, opt_top, opt_height, opt_translateY,
       opt_onAppend) {
-    return createIframePromise().then(function(iframe) {
+    return createElementTestIframe('amp-iframe').then(function(iframe) {
       const i = iframe.doc.createElement('amp-iframe');
       for (const key in attributes) {
         i.setAttribute(key, attributes[key]);

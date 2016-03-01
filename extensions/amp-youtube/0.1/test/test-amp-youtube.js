@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-import {createIframePromise} from '../../../../testing/iframe';
+import {createElementTestIframe} from '../../../../testing/iframe';
 require('../amp-youtube');
-import {adopt} from '../../../../src/runtime';
 import {timer} from '../../../../src/timer';
 import * as sinon from 'sinon';
-
-adopt(window);
 
 describe('amp-youtube', () => {
   let sandbox;
@@ -35,8 +32,8 @@ describe('amp-youtube', () => {
   });
 
   function getYt(videoId, opt_responsive, opt_beforeLayoutCallback) {
-    return createIframePromise(
-        true, opt_beforeLayoutCallback).then(iframe => {
+    return createElementTestIframe(
+        'amp-youtube', true, opt_beforeLayoutCallback).then(iframe => {
           const yt = iframe.doc.createElement('amp-youtube');
 
           // TODO(mkhatib): During tests, messages are not being correctly

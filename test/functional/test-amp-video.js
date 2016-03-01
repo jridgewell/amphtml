@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import {createIframePromise} from '../../testing/iframe';
-import {installVideo} from '../../builtins/amp-video';
+import {createElementTestIframe} from '../../testing/iframe';
 
 describe('amp-video', () => {
 
@@ -35,9 +34,8 @@ describe('amp-video', () => {
   }
 
   function getVideo(attributes, children, opt_beforeLayoutCallback) {
-    return createIframePromise(
-        true, opt_beforeLayoutCallback).then(iframe => {
-          installVideo(iframe.win);
+    return createElementTestIframe(
+        undefined, true, opt_beforeLayoutCallback).then(iframe => {
           const v = iframe.doc.createElement('amp-video');
           for (const key in attributes) {
             v.setAttribute(key, attributes[key]);

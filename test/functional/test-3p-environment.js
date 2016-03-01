@@ -19,7 +19,7 @@ import {
   manageWin,
   setInViewportForTesting,
 } from '../../3p/environment';
-import {createIframePromise} from '../../testing/iframe';
+import {createElementTestIframe} from '../../testing/iframe';
 import {timer} from '../../src/timer';
 import {loadPromise} from '../../src/event-helper';
 import * as lolex from 'lolex';
@@ -30,7 +30,7 @@ describe('3p environment', () => {
 
   beforeEach(() => {
     iframeCount = 0;
-    return createIframePromise(true).then(iframe => {
+    return createElementTestIframe(undefined, true).then(iframe => {
       testWin = iframe.win;
     });
   });

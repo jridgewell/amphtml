@@ -15,11 +15,8 @@
  */
 
 import {FontLoader} from '../fontloader';
-import {adopt} from '../../../../src/runtime';
-import {createIframePromise} from '../../../../testing/iframe';
+import {createElementTestIframe} from '../../../../testing/iframe';
 import * as sinon from 'sinon';
-
-adopt(window);
 
 /** @private @const {string} */
 const FONT_FACE_ = `
@@ -80,7 +77,7 @@ describe('FontLoader', () => {
   });
 
   function getIframe() {
-    return createIframePromise().then(iframe => {
+    return createElementTestIframe().then(iframe => {
       const style = iframe.doc.createElement('style');
       style.textContent = FONT_FACE_ + CSS_RULES_;
       iframe.doc.head.appendChild(style);

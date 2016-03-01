@@ -15,12 +15,9 @@
  */
 
 import {AmpAudio} from '../amp-audio';
-import {adopt} from '../../../../src/runtime';
 import {naturalDimensions_} from '../../../../src/layout';
-import {createIframePromise} from '../../../../testing/iframe';
+import {createElementTestIframe} from '../../../../testing/iframe';
 require('../amp-audio');
-
-adopt(window);
 
 describe('amp-audio', () => {
   let iframe;
@@ -29,7 +26,7 @@ describe('amp-audio', () => {
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
-    return createIframePromise(/* runtimeOff */ true).then(i => {
+    return createElementTestIframe('amp-audio', /* runtimeOff */ true).then(i => {
       iframe = i;
     });
   });
@@ -75,7 +72,7 @@ describe('amp-audio', () => {
       src: 'https://origin.com/audio.mp3',
     }).then(a => {
       const audio = a.querySelector('audio');
-      expect(audio).to.be.an.instanceof(Element);
+      expect(audio).to.be.an.instanceof(iframe.win.Element);
       expect(audio.tagName).to.equal('AUDIO');
       expect(audio.getAttribute('src'))
           .to.equal('https://origin.com/audio.mp3');

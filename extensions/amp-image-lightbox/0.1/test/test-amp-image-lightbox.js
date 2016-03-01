@@ -15,22 +15,19 @@
  */
 
 import {Timer} from '../../../../src/timer';
-import {createIframePromise} from '../../../../testing/iframe';
+import {createElementTestIframe} from '../../../../testing/iframe';
 require('../../../../build/all/v0/amp-image-lightbox-0.1.max');
 import {
   ImageViewer,
 } from '../../../../build/all/v0/amp-image-lightbox-0.1.max';
-import {adopt} from '../../../../src/runtime';
 import {parseSrcset} from '../../../../src/srcset';
 import * as sinon from 'sinon';
-
-adopt(window);
 
 
 describe('amp-image-lightbox component', () => {
 
   function getImageLightbox() {
-    return createIframePromise().then(iframe => {
+    return createElementTestIframe('amp-image-lightbox').then(iframe => {
       const el = iframe.doc.createElement('amp-image-lightbox');
       el.setAttribute('layout', 'nodisplay');
       iframe.doc.body.appendChild(el);

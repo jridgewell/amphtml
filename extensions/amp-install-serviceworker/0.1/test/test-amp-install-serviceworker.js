@@ -15,9 +15,6 @@
  */
 
 require('../../../../build/all/v0/amp-install-serviceworker-0.1.max');
-import {adopt} from '../../../../src/runtime';
-
-adopt(window);
 
 describe('amp-install-serviceworker', () => {
   it('should install for same origin', () => {

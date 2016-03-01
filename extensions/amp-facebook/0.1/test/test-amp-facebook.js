@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-import {createIframePromise} from '../../../../testing/iframe';
+import {createElementTestIframe} from '../../../../testing/iframe';
 require('../amp-facebook');
-import {adopt} from '../../../../src/runtime';
-
-adopt(window);
 
 describe('amp-facebook', () => {
   const fbPostHref = 'https://www.facebook.com/zuck/posts/10102593740125791';
   const fbVideoHref = 'https://www.facebook.com/zuck/videos/10102509264909801/';
 
   function getFBPost(href, opt_embedAs) {
-    return createIframePromise().then(iframe => {
+    return createElementTestIframe('amp-facebook').then(iframe => {
       const link = document.createElement('link');
       link.setAttribute('rel', 'canonical');
       link.setAttribute('href', 'https://foo.bar/baz');

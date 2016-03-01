@@ -19,8 +19,7 @@ import {AmpAnalytics} from '../../../../build/all/v0/amp-analytics-0.1.max';
 import {
   installUserNotificationManager,
 } from '../../../../build/all/v0/amp-user-notification-0.1.max';
-import {adopt} from '../../../../src/runtime';
-import {createIframePromise} from '../../../../testing/iframe';
+import {createElementTestIframe} from '../../../../testing/iframe';
 import {getService} from '../../../../src/service';
 import {markElementScheduledForTesting} from '../../../../src/custom-element';
 import {installCidService} from '../../../../src/service/cid-impl';
@@ -30,8 +29,6 @@ import {urlReplacementsFor} from '../../../../src/url-replacements';
 import * as sinon from 'sinon';
 
 const VENDOR_REQUESTS = require('./vendor-requests.json');
-
-adopt(window);
 
 describe('amp-analytics', function() {
 
@@ -49,7 +46,7 @@ describe('amp-analytics', function() {
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
     configWithCredentials = false;
-    return createIframePromise().then(iframe => {
+    return createElementTestIframe('amp-analytics').then(iframe => {
       iframe.doc.title = 'Test Title';
       markElementScheduledForTesting(iframe.win, 'amp-analytics');
       markElementScheduledForTesting(iframe.win, 'amp-user-notification');

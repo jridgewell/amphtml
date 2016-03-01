@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-import {createIframePromise} from '../../testing/iframe';
+import {createElementTestIframe} from '../../testing/iframe';
 import {BaseElement} from '../../src/base-element';
-import {installImg} from '../../builtins/amp-img';
 import * as sinon from 'sinon';
 
 describe('amp-img', () => {
@@ -34,7 +33,7 @@ describe('amp-img', () => {
   function getImg(attributes, children) {
     sandbox.stub(BaseElement.prototype, 'isInViewport')
         .returns(true);
-    return createIframePromise().then(iframe => {
+    return createElementTestIframe().then(iframe => {
       installImg(iframe.win);
       const img = iframe.doc.createElement('amp-img');
       for (const key in attributes) {

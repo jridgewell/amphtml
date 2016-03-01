@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {createIframePromise} from '../../testing/iframe';
+import {createElementTestIframe} from '../../testing/iframe';
 import {listenParent} from '../../3p/messaging';
 import {postMessage} from '../../src/iframe-helper';
 import {timer} from '../../src/timer';
@@ -25,7 +25,7 @@ describe('3p messaging', () => {
   let iframe;
 
   beforeEach(() => {
-    return createIframePromise(true).then(i => {
+    return createElementTestIframe(undefined, true).then(i => {
       testWin = i.win;
       testWin.context = {
         location: window.location,

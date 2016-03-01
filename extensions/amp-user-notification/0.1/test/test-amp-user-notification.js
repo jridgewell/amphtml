@@ -19,7 +19,7 @@ import {
   AmpUserNotification,
   UserNotificationManager,
 } from '../../../../build/all/v0/amp-user-notification-0.1.max';
-import {createIframePromise} from '../../../../testing/iframe';
+import {createElementTestIframe} from '../../../../testing/iframe';
 
 
 describe('amp-user-notification', () => {
@@ -50,30 +50,26 @@ describe('amp-user-notification', () => {
   });
 
   function getUserNotification(attrs = {}) {
-    return createIframePromise().then(iframe_ => {
+    return createElementTestIframe('amp-user-notification').then(iframe_ => {
       iframe = iframe_;
-      iframe.win.ampExtendedElements = {};
-      return buildElement(iframe.doc, attrs);
+      const doc = iframe.doc;
+      const elem = doc.createElement('amp-user-notification');
+
+      for (attr in attrs) {
+        elem.setAttribute(attr, attrs[attr]);
+      }
+      const button = doc.createElement('button');
+      button.setAttribute('on', 'tap:' + elem.getAttribute('id') + 'dismiss');
+      elem.appendChild(button);
+
+      const impl = elem.implementation_;
+      impl.storagePromise_ = Promise.resolve(storage);
+      impl.userNotificationManager_ = {
+        registerUserNotification: () => {},
+      };
+
+      return elem;
     });
-  }
-
-  function buildElement(doc, attrs = {}) {
-    const elem = doc.createElement('amp-user-notification');
-
-    for (attr in attrs) {
-      elem.setAttribute(attr, attrs[attr]);
-    }
-    const button = doc.createElement('button');
-    button.setAttribute('on', 'tap:' + elem.getAttribute('id') + 'dismiss');
-    elem.appendChild(button);
-
-    const impl = elem.implementation_;
-    impl.storagePromise_ = Promise.resolve(storage);
-    impl.userNotificationManager_ = {
-      registerUserNotification: () => {},
-    };
-
-    return elem;
   }
 
   it('should have storage key', () => {

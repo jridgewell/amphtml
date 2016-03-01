@@ -15,11 +15,12 @@
  */
 
 import {sendRequest, sendRequestUsingIframe, Transport} from '../transport';
-import {adopt} from '../../../../src/runtime';
+//import {adopt} from '../../../../src/runtime';
 import {loadPromise} from '../../../../src/event-helper';
 import * as sinon from 'sinon';
 
-adopt(window);
+// TODO Maybe?
+//adopt(window);
 
 describe('transport', () => {
 

@@ -15,10 +15,7 @@
  */
 
 import {InstrumentationService} from '../instrumentation.js';
-import {adopt} from '../../../../src/runtime';
 import * as sinon from 'sinon';
-
-adopt(window);
 
 describe('instrumentation', function() {
 

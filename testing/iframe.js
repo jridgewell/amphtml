@@ -167,6 +167,7 @@ export function createFixtureIframe(fixture, initialIframeHeight, opt_beforeLoad
  * - addElement: Adds an AMP element to the iframe and returns a promise for
  *   that element. When the promise is resolved we will have called the entire
  *   lifecycle including layoutCallback.
+ * @param {string=} element The element currently being tested.
  * @param {boolean=} opt_runtimeOff Whether runtime should be turned off.
  * @param {function()=} opt_beforeLayoutCallback
  * @return {!Promise<{
@@ -176,12 +177,12 @@ export function createFixtureIframe(fixture, initialIframeHeight, opt_beforeLoad
  *   addElement: function(!Element):!Promise
  * }>}
  */
-export function createIframePromise(opt_runtimeOff, opt_beforeLayoutCallback) {
+export function createElementTestIframe(opt_element, opt_runtimeOff, opt_beforeLayoutCallback) {
   return new Promise(function(resolve, reject) {
     let iframe = document.createElement('iframe');
     iframe.name = 'test_' + iframeCount++;
     iframe.srcdoc = '<!doctype><html><head>' +
-        '<script src="/base/build/polyfills.js"></script>' +
+        maybeSwitchToCompiledJs('<script src="/base/dist/amp.js"></script>') +
         '<body style="margin:0"><div id=parent></div>';
     iframe.onload = function() {
       // Flag as being a test window.
@@ -190,32 +191,37 @@ export function createIframePromise(opt_runtimeOff, opt_beforeLayoutCallback) {
         iframe.contentWindow.name = '__AMP__off=1';
       }
       installCoreServices(iframe.contentWindow);
-      // Act like no other elements were loaded by default.
-      iframe.contentWindow.ampExtendedElements = {};
-      resolve({
-        win: iframe.contentWindow,
-        doc: iframe.contentWindow.document,
-        iframe: iframe,
-        addElement: function(element) {
-          iframe.contentWindow.document.getElementById('parent')
-              .appendChild(element);
-          // Wait for mutation observer to fire.
-          return new Timer(window).promise(16).then(() => {
-            // Make sure it has dimensions since no styles are available.
-            element.style.display = 'block';
-            element.build(true);
-            if (element.layoutCount_ == 0) {
-              if (opt_beforeLayoutCallback) {
-                opt_beforeLayoutCallback(element);
+      const resolver = () => {
+        resolve({
+          win: iframe.contentWindow,
+          doc: iframe.contentWindow.document,
+          iframe: iframe,
+          addElement: function(element) {
+            iframe.contentWindow.document.getElementById('parent')
+            .appendChild(element);
+            // Wait for mutation observer to fire.
+            return new Timer(window).promise(16).then(() => {
+              // Make sure it has dimensions since no styles are available.
+              element.style.display = 'block';
+              element.build(true);
+              if (element.layoutCount_ == 0) {
+                if (opt_beforeLayoutCallback) {
+                  opt_beforeLayoutCallback(element);
+                }
+                return element.layoutCallback().then(() => {
+                  return element;
+                });
               }
-              return element.layoutCallback().then(() => {
-                return element;
-              });
-            }
-            return element;
-          });
-        }
-      });
+              return element;
+            });
+          }
+        });
+      };
+      if (opt_element) {
+        injectElementScript(iframe.contentWindow, opt_element).then(resolver);
+      } else {
+        resolver();
+      }
     };
     iframe.onerror = reject;
     document.body.appendChild(iframe);
@@ -333,4 +339,21 @@ function maybeSwitchToCompiledJs(html) {
         .replace(/dist\.3p\/current\//g, 'dist.3p/current-min/');
   }
   return html;
+}
+
+/**
+ * Injects the Element's extension script into the window
+ * @param {!Window} win
+ * @param {string} element
+ * @return {!Promise}
+ */
+function injectElementScript(win, element) {
+  return new Promise((resolve, reject) => {
+    var script = win.document.createElement('script');
+    script.src = maybeSwitchToCompiledJs(`/base/dist/v0/${element}-0.1.max.js`);
+    script.setAttribute('custom-element', element);
+    script.onload = resolve;
+    script.onerror = reject;
+    win.document.getElementsByTagName('head')[0].appendChild(script);
+  });
 }

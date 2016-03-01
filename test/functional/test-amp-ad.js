@@ -15,9 +15,7 @@
  */
 
 import {clientIdScope} from '../../ads/_config';
-import {createIframePromise} from '../../testing/iframe';
-import {installAd} from '../../builtins/amp-ad';
-import {installEmbed} from '../../builtins/amp-embed';
+import {createElementTestIframe} from '../../testing/iframe';
 import {installCidService} from '../../src/service/cid-impl';
 import {
   installUserNotificationManager,
@@ -27,13 +25,10 @@ import {setCookie} from '../../src/cookies';
 import * as sinon from 'sinon';
 
 
-describe('amp-ad', tests('amp-ad', installAd));
-describe('amp-embed', tests('amp-embed', win => {
-  installAd(win);
-  installEmbed(win);
-}));
+describe('amp-ad', tests('amp-ad'));
+describe('amp-embed', tests('amp-embed'));
 
-function tests(name, installer) {
+function tests(name) {
   return () => {
     let sandbox;
 
@@ -47,11 +42,11 @@ function tests(name, installer) {
 
     function getAd(attributes, canonical, opt_handleElement,
         opt_beforeLayoutCallback) {
-      return createIframePromise(undefined, opt_beforeLayoutCallback)
+      // TODO(jridgewell) When we split amp-ad from base, declare it as the element under test.
+      return createElementTestIframe(undefined, undefined, opt_beforeLayoutCallback)
           .then(iframe => {
             iframe.iframe.style.height = '400px';
             iframe.iframe.style.width = '400px';
-            installer(iframe.win);
             markElementScheduledForTesting(iframe.win, 'amp-user-notification');
             if (canonical) {
               const link = iframe.doc.createElement('link');

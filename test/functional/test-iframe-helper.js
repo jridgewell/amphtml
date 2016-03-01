@@ -15,7 +15,7 @@
  */
 import * as IframeHelper from '../../src/iframe-helper';
 import * as sinon from 'sinon';
-import {createIframePromise} from '../../testing/iframe';
+import {createElementTestIframe} from '../../testing/iframe';
 import {timer} from '../../src/timer';
 
 describe('iframe-helper', function() {
@@ -28,7 +28,7 @@ describe('iframe-helper', function() {
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
-    return createIframePromise().then(c => {
+    return createElementTestIframe().then(c => {
       container = c;
       const i = document.createElement('iframe');
       i.src = iframeSrc;

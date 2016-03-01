@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import {createIframePromise} from '../../testing/iframe';
+import {createElementTestIframe} from '../../testing/iframe';
 import {documentInfoFor} from '../../src/document-info';
 
 describe('document-info', () => {
   function getWin(canonical) {
-    return createIframePromise().then(iframe => {
+    return createElementTestIframe().then(iframe => {
       if (canonical) {
         const link = iframe.doc.createElement('link');
         link.setAttribute('href', canonical);

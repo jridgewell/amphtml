@@ -16,11 +16,8 @@
 
 import '../amp-font';
 import {FontLoader} from '../fontloader';
-import {adopt} from '../../../../src/runtime';
-import {createIframePromise} from '../../../../testing/iframe';
+import {createElementTestIframe} from '../../../../testing/iframe';
 import * as sinon from 'sinon';
-
-adopt(window);
 
 describe('amp-font', function() {
 
@@ -36,7 +33,7 @@ describe('amp-font', function() {
   });
 
   function getAmpFontIframe() {
-    return createIframePromise().then(iframe => {
+    return createElementTestIframe('amp-font').then(iframe => {
       iframe.doc.body.classList.add('comic-amp-font-loading');
       const font = iframe.doc.createElement('amp-font');
       font.setAttribute('layout', 'nodisplay');

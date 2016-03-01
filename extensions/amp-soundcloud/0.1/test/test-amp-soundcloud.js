@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-import {createIframePromise} from '../../../../testing/iframe';
+import {createElementTestIframe} from '../../../../testing/iframe';
 require('../amp-soundcloud');
-import {adopt} from '../../../../src/runtime';
-
-adopt(window);
 
 describe('amp-soundcloud', () => {
 
   const embedUrl = 'https://w.soundcloud.com/player/?url=https%3A%2F%2Fapi.soundcloud.com%2Ftracks%2F243169232';
 
   function getIns(trackid, optVisualMode, optColor, optFixedHeight) {
-    return createIframePromise().then(iframe => {
+    return createElementTestIframe('amp-soundcloud').then(iframe => {
       const ins = iframe.doc.createElement('amp-soundcloud');
       ins.setAttribute('data-trackid', trackid);
       ins.setAttribute('height', '237');

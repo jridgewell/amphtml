@@ -257,14 +257,15 @@ describe('amp-user-notification', () => {
   });
 
   it('should have class `amp-active`', () => {
-    stub = sandbox.stub(AmpUserNotification.prototype, 'getAsyncCid_')
-        .returns(Promise.resolve('12345'));
-    stub1 = sandbox.stub(AmpUserNotification.prototype, 'getShowEndpoint_')
-        .returns(Promise.resolve({showNotification: true}));
-
     return getUserNotification(dftAttrs).then(el => {
       const impl = el.implementation_;
       impl.buildCallback();
+
+      stub = sandbox.stub(impl, 'getAsyncCid_')
+          .returns(Promise.resolve('12345'));
+      stub1 = sandbox.stub(impl, 'getShowEndpoint_')
+          .returns(Promise.resolve({showNotification: true}));
+
       impl.dialogPromise_ = Promise.resolve();
       const addToFixedLayerStub = sandbox.stub(
           impl.getViewport(), 'addToFixedLayer');
@@ -283,14 +284,15 @@ describe('amp-user-notification', () => {
   });
 
   it('should not have `amp-active`', () => {
-    stub = sandbox.stub(AmpUserNotification.prototype, 'getAsyncCid_')
-        .returns(Promise.resolve('12345'));
-    stub1 = sandbox.stub(AmpUserNotification.prototype, 'getShowEndpoint_')
-        .returns(Promise.resolve({showNotification: false}));
-
     return getUserNotification(dftAttrs).then(el => {
       const impl = el.implementation_;
       impl.buildCallback();
+
+      stub = sandbox.stub(impl, 'getAsyncCid_')
+          .returns(Promise.resolve('12345'));
+      stub1 = sandbox.stub(impl, 'getShowEndpoint_')
+          .returns(Promise.resolve({showNotification: false}));
+
       impl.dialogPromise_ = Promise.resolve();
       impl.dialogResolve_ = function() {};
 
@@ -307,16 +309,17 @@ describe('amp-user-notification', () => {
   });
 
   it('should have `amp-hidden` and no `amp-active`', () => {
-    stub = sandbox.stub(AmpUserNotification.prototype, 'getAsyncCid_')
-        .returns(Promise.resolve('12345'));
-    stub1 = sandbox.stub(AmpUserNotification.prototype, 'getShowEndpoint_')
-        .returns(Promise.resolve({showNotification: true}));
-    stub2 = sandbox.stub(AmpUserNotification.prototype, 'postDismissEnpoint_')
-        .returns(Promise.resolve());
-
     return getUserNotification(dftAttrs).then(el => {
       const impl = el.implementation_;
       impl.buildCallback();
+
+      stub = sandbox.stub(impl, 'getAsyncCid_')
+          .returns(Promise.resolve('12345'));
+      stub1 = sandbox.stub(impl, 'getShowEndpoint_')
+          .returns(Promise.resolve({showNotification: true}));
+      stub2 = sandbox.stub(impl, 'postDismissEnpoint_')
+          .returns(Promise.resolve());
+
       impl.dialogPromise_ = Promise.resolve();
       impl.dialogResolve_ = function() {};
       const removeFromFixedLayerStub = sandbox.stub(

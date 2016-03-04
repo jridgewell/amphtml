@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import {clientIdScope} from '../../ads/_config';
 import {createElementTestIframe} from '../../testing/iframe';
 import {installCidService} from '../../src/service/cid-impl';
 import {
@@ -41,9 +40,9 @@ function tests(name) {
     });
 
     function getAd(attributes, canonical, opt_handleElement,
-        opt_beforeLayoutCallback) {
+        opt_runtimeOff, opt_beforeLayoutCallback) {
       // TODO(jridgewell) When we split amp-ad from base, declare it as the element under test.
-      return createElementTestIframe(undefined, undefined, opt_beforeLayoutCallback)
+      return createElementTestIframe(undefined, opt_runtimeOff, opt_beforeLayoutCallback)
           .then(iframe => {
             iframe.iframe.style.height = '400px';
             iframe.iframe.style.width = '400px';
@@ -66,7 +65,7 @@ function tests(name) {
             // Make document long.
             a.style.marginBottom = '1000px';
             if (opt_handleElement) {
-              a = opt_handleElement(a);
+              a = opt_handleElement(a, iframe);
             }
             return iframe.addElement(a);
           });
@@ -84,6 +83,7 @@ function tests(name) {
         // Test precedence
         'data-width': '6666',
       }, 'https://schema.org').then(ad => {
+        debugger;
         const iframe = ad.firstChild;
         expect(iframe).to.not.be.null;
         expect(iframe.tagName).to.equal('IFRAME');
@@ -111,7 +111,7 @@ function tests(name) {
               'http://ads.localhost:' + location.port +
               '/dist.3p/current/frame.max.html');
           expect(fetches[1].href).to.equal(
-              'https://3p.ampproject.net/$internalRuntimeVersion$/f.js');
+              'https://3p.ampproject.net/development/f.js');
           expect(fetches[2].href).to.equal(
               'https://c.amazon-adsystem.com/aax2/assoc.js');
           const preconnects = doc.querySelectorAll(
@@ -209,11 +209,12 @@ function tests(name) {
         height: 250,
         type: 'a9',
         src: 'testsrc',
-      }, 'https://schema.org', function(ad) {
+      }, 'https://schema.org', function(ad, iframe) {
         const s = document.createElement('style');
+        const doc = iframe.doc;
         s.textContent = '.fixed {position:fixed;}';
-        ad.ownerDocument.body.appendChild(s);
-        const p = ad.ownerDocument.getElementById('parent');
+        doc.body.appendChild(s);
+        const p = doc.getElementById('parent');
         p.className = 'fixed';
         return ad;
       })).to.be.rejectedWith(/fixed/);
@@ -225,10 +226,10 @@ function tests(name) {
         height: 250,
         type: 'a9',
         src: 'testsrc',
-      }, 'https://schema.org', function(ad) {
+      }, 'https://schema.org', function(ad, iframe) {
         const lightbox = document.createElement('amp-lightbox');
         lightbox.style.position = 'fixed';
-        const p = ad.ownerDocument.getElementById('parent');
+        const p = iframe.doc.getElementById('parent');
         p.parentElement.appendChild(lightbox);
         p.parentElement.removeChild(p);
         lightbox.appendChild(p);
@@ -265,9 +266,7 @@ function tests(name) {
           height: 750,
           type: 'a9',
           src: 'testsrc',
-        }, 'https://schema.org', ad => {
-          return ad;
-        }).then(ad => {
+        }, 'https://schema.org').then(ad => {
           sandbox.stub(
               ad.implementation_, 'deferMutate', function(callback) {
                 callback();
@@ -302,33 +301,33 @@ function tests(name) {
       });
 
       it('provides cid to ad', () => {
-        clientIdScope['with_cid'] = cidScope;
         return getAd({
           width: 300,
           height: 250,
           type: 'with_cid',
           src: 'testsrc',
-        }, 'https://schema.org', function(ad) {
-          const win = ad.ownerDocument.defaultView;
+        }, 'https://schema.org', function(ad, iframe) {
+          const win = iframe.win;
           setCookie(window, cidScope, 'sentinel123',
               new Date().getTime() + 5000);
           installCidService(win);
           return ad;
+        }, /* opt_runtimeOff */ true, (ad) => {
+          sandbox.stub(ad.implementation_, 'getCidScope_', () => cidScope);
         }).then(ad => {
           expect(ad.getAttribute('ampcid')).to.equal('sentinel123');
         });
       });
 
       it('waits for consent', () => {
-        clientIdScope['with_cid'] = cidScope;
         return getAd({
           width: 300,
           height: 250,
           type: 'with_cid',
           src: 'testsrc',
           'data-consent-notification-id': 'uid',
-        }, 'https://schema.org', function(ad) {
-          const win = ad.ownerDocument.defaultView;
+        }, 'https://schema.org', function(ad, iframe) {
+          const win = iframe.win;
           const cidService = installCidService(win);
           const uidService = installUserNotificationManager(win);
           sandbox.stub(uidService, 'get', id => {
@@ -342,13 +341,14 @@ function tests(name) {
             });
           });
           return ad;
+        }, /* opt_runtimeOff */ true, (ad) => {
+          sandbox.stub(ad.implementation_, 'getCidScope_', () => cidScope);
         }).then(ad => {
           expect(ad.getAttribute('ampcid')).to.equal('consent-cid');
         });
       });
 
       it('provides null if cid service not available', () => {
-        clientIdScope['with_cid'] = cidScope;
         return getAd({
           width: 300,
           height: 250,
@@ -358,6 +358,8 @@ function tests(name) {
           setCookie(window, cidScope, 'XXX',
               new Date().getTime() + 5000);
           return ad;
+        }, /*opt_runtimeOff */ true, (ad) => {
+          sandbox.stub(ad.implementation_, 'getCidScope_', () => cidScope);
         }).then(ad => {
           expect(ad.getAttribute('ampcid')).to.be.null;
         });
@@ -365,7 +367,7 @@ function tests(name) {
     });
 
     describe('renderOutsideViewport', () => {
-      function getGoodAd(cb, layoutCb) {
+      function getGoodAd(opt_handleElement) {
         return getAd({
           width: 300,
           height: 250,
@@ -376,18 +378,15 @@ function tests(name) {
           'data-aax_src': '302',
           // Test precedence
           'data-width': '6666',
-        }, 'https://schema.org', element => {
-          cb(element.implementation_);
-          return element;
-        }, layoutCb);
+        }, 'https://schema.org', opt_handleElement, /* opt_runtimeOff */ true);
       }
 
       it('should return true after scrolling and then false for 1s', () => {
         let clock;
-        return getGoodAd(ad => {
-          expect(ad.renderOutsideViewport()).to.be.true;
-        }, () => {
-          clock = sandbox.useFakeTimers();
+        return getGoodAd((ad, iframe) => {
+          expect(ad.implementation_.renderOutsideViewport()).to.be.true;
+          clock = iframe.installTimer();
+          return ad;
         }).then(ad => {
           // False because we just rendered one.
           expect(ad.renderOutsideViewport()).to.be.false;

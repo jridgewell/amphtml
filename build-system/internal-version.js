@@ -16,9 +16,23 @@
 
 var crypto = require('crypto');
 
+var task = process.argv[2];
+var isDev = false;
+
+if (!task || task == 'build' || task == 'test') {
+  isDev = true;
+}
+
 // Used to e.g. references the ads binary from the runtime to get
 // version lock.
-exports.VERSION = String(new Date().getTime());
+exports.VERSION = getVersion();
+
+function getVersion() {
+  if (isDev) {
+    return 'development';
+  }
+  return String(new Date().getTime());
+}
 
 // A token that changes its value each time we release AMP. This is intended
 // to verify that two iframes of AMP have the same version of AMP. It is
@@ -27,10 +41,9 @@ exports.VERSION = String(new Date().getTime());
 exports.TOKEN = getToken();
 
 function getToken() {
-  var task = process.argv[2];
   // For tests build parent and child frame can get out of sync because
   // we do not version lock them. To fix this we use a fixed token.
-  if (!task || task == 'build' || task == 'test') {
+  if (isDev) {
     return 'development--token';
   }
   // For every other build, most importantly `dist` we assume production.

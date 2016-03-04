@@ -271,7 +271,7 @@ export function installAd(win) {
      * @private
      */
     getAdCid_() {
-      const scope = clientIdScope[this.element.getAttribute('type')];
+      const scope = this.getCidScope_(this.element.getAttribute('type'));
       if (!scope) {
         return Promise.resolve();
       }
@@ -290,6 +290,16 @@ export function installAd(win) {
         return cidService.get(scope, consent);
       });
     }
+
+    /**
+     * Returns the CID scope for a particular ad type.
+     * @param {string} type
+     * @visiblefortesting
+     */
+    getCidScope_(type) {
+      return clientIdScope[type];
+    }
+
 
     /** @override  */
     viewportCallback(inViewport) {

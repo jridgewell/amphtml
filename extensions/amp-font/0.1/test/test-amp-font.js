@@ -15,7 +15,6 @@
  */
 
 import '../amp-font';
-import {FontLoader} from '../fontloader';
 import {createElementTestIframe} from '../../../../testing/iframe';
 import * as sinon from 'sinon';
 
@@ -32,8 +31,8 @@ describe('amp-font', function() {
     sandbox = null;
   });
 
-  function getAmpFontIframe() {
-    return createElementTestIframe('amp-font').then(iframe => {
+  function getAmpFontIframe(opt_beforeBuildCallback) {
+    return createElementTestIframe('amp-font', /* opt_runtimeOff */ true, undefined, opt_beforeBuildCallback).then(iframe => {
       iframe.doc.body.classList.add('comic-amp-font-loading');
       const font = iframe.doc.createElement('amp-font');
       font.setAttribute('layout', 'nodisplay');
@@ -45,15 +44,17 @@ describe('amp-font', function() {
       font.setAttribute('on-error-remove-class', 'comic-amp-font-loading');
       font.setAttribute('on-load-remove-class', 'comic-amp-font-loading');
       return iframe.addElement(font).then(unusedF => {
-        return Promise.resolve(iframe);
+        return iframe;
       });
     });
   }
 
   it('should timeout while loading custom font', function(done) {
-    sandbox.stub(FontLoader.prototype, 'load')
-        .returns(Promise.reject('mock rejection'));
-    return getAmpFontIframe().then(iframe => {
+    return getAmpFontIframe((font) => {
+      sandbox.stub(font.implementation_, 'buildFontLoader_').returns({
+        load: () => Promise.reject('mock rejection')
+      });
+    }).then(iframe => {
       expect(iframe.doc.documentElement)
           .to.have.class('comic-amp-font-missing');
       expect(iframe.doc.body)
@@ -63,8 +64,11 @@ describe('amp-font', function() {
   });
 
   it('should load custom font', function(done) {
-    sandbox.stub(FontLoader.prototype, 'load').returns(Promise.resolve());
-    return getAmpFontIframe().then(iframe => {
+    return getAmpFontIframe((font) => {
+      sandbox.stub(font.implementation_, 'buildFontLoader_').returns({
+        load: () => Promise.resolve()
+      });
+    }).then(iframe => {
       expect(iframe.doc.documentElement)
           .to.have.class('comic-amp-font-loaded');
       expect(iframe.doc.body)

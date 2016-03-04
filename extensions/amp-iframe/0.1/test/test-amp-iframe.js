@@ -15,7 +15,7 @@
  */
 
 import {Timer} from '../../../../src/timer';
-import {AmpIframe, setTrackingIframeTimeoutForTesting} from '../amp-iframe';
+import {AmpIframe} from '../amp-iframe';
 import {
   createElementTestIframe,
   pollForLayout,
@@ -35,6 +35,7 @@ describe('amp-iframe', () => {
   const timer = new Timer(window);
   let ranJs = 0;
   let sandbox;
+  let iframe;
 
   beforeEach(() => {
     ranJs = 0;
@@ -44,7 +45,6 @@ describe('amp-iframe', () => {
         ranJs++;
       }
     };
-    setTrackingIframeTimeoutForTesting(20);
   });
 
   afterEach(() => {
@@ -58,8 +58,9 @@ describe('amp-iframe', () => {
     }, undefined, 300);
   }
   function getAmpIframe(attributes, opt_top, opt_height, opt_translateY,
-      opt_onAppend) {
-    return createElementTestIframe('amp-iframe').then(function(iframe) {
+      opt_onAppend, opt_runtimeOff, opt_beforeBuildCallback) {
+    return createElementTestIframe('amp-iframe', opt_runtimeOff, undefined, opt_beforeBuildCallback).then(function(iframe_) {
+      iframe = iframe_;
       const i = iframe.doc.createElement('amp-iframe');
       for (const key in attributes) {
         i.setAttribute(key, attributes[key]);
@@ -86,12 +87,12 @@ describe('amp-iframe', () => {
         img.setAttribute('placeholder', '');
         i.appendChild(img);
       }
-      iframe.doc.body.appendChild(i);
-      if (opt_onAppend) {
-        opt_onAppend(iframe.doc);
-      }
-      // Wait an event loop for the iframe to be created.
-      return pollForLayout(iframe.win, 1).then(() => {
+      return iframe.addElement(i).then((i) => {
+        if (opt_onAppend) {
+          return opt_onAppend(iframe).then(() => i);
+        }
+        return i;
+      }).then((i) => {
         const created = i.querySelector('iframe');
         if (created) {
           // Wait for the iframe to load
@@ -112,7 +113,7 @@ describe('amp-iframe', () => {
           iframe: null,
           error: i.textContent,
         };
-      });
+      })
     });
   }
 
@@ -134,7 +135,7 @@ describe('amp-iframe', () => {
       height: 100,
     }).then(amp => {
       const impl = amp.container.implementation_;
-      expect(amp.iframe).to.be.instanceof(Element);
+      expect(amp.iframe).to.be.instanceof(iframe.win.Element);
       expect(amp.iframe.src).to.equal(iframeSrc);
       expect(amp.iframe.getAttribute('sandbox')).to.equal('');
       expect(amp.iframe.parentNode).to.equal(amp.scrollWrapper);
@@ -216,7 +217,7 @@ describe('amp-iframe', () => {
       width: 100,
       height: 100,
     }).then(amp => {
-      expect(amp.iframe).to.be.instanceof(Element);
+      expect(amp.iframe).to.be.instanceof(iframe.win.Element);
       expect(amp.iframe.src).to.equal(dataUri);
       expect(amp.iframe.getAttribute('sandbox')).to.equal('');
       expect(amp.iframe.parentNode).to.equal(amp.scrollWrapper);
@@ -235,7 +236,7 @@ describe('amp-iframe', () => {
           'parent.parent./*OK*/postMessage(\'loaded-iframe\', \'*\');}' +
           '</script>',
     }).then(amp => {
-      expect(amp.iframe).to.be.instanceof(Element);
+      expect(amp.iframe).to.be.instanceof(iframe.win.Element);
       expect(amp.iframe.src).to.match(
           /^data\:text\/html;charset=utf-8;base64,/);
       expect(amp.iframe.getAttribute('srcdoc')).to.be.null;
@@ -397,15 +398,15 @@ describe('amp-iframe', () => {
   });
 
   it('should listen for embed-ready event', () => {
-    sinon.sandbox.create();
-    const activateIframeSpy_ =
-        sandbox.spy(AmpIframe.prototype, 'activateIframe_');
+    let activateIframeSpy_;
     return getAmpIframe({
       src: clickableIframeSrc,
       sandbox: 'allow-scripts allow-same-origin',
       width: 480,
       height: 360,
       poster: 'https://i.ytimg.com/vi/cMcCTVAFBWM/hqdefault.jpg',
+    }, undefined, undefined, undefined, undefined, /* opt_runtimeOff */ true, (amp) => {
+      activateIframeSpy_ = sandbox.spy(amp.implementation_, 'activateIframe_');
     }).then(amp => {
       const impl = amp.container.implementation_;
       return timer.promise(100).then(() => {
@@ -419,47 +420,42 @@ describe('amp-iframe', () => {
     const attributes = {
       src: clickableIframeSrc,
       sandbox: 'allow-scripts allow-same-origin',
-      width: 10,
-      height: 10,
+      width: 100,
+      height: 100,
       poster: 'https://i.ytimg.com/vi/cMcCTVAFBWM/hqdefault.jpg',
     };
-    let nonTracking;
-    return getAmpIframe(attributes, null, null, null, doc => {
+    return getAmpIframe(attributes, null, null, null, iframe => {
       function addFrame() {
-        const i = doc.createElement('amp-iframe');
+        const i = iframe.doc.createElement('amp-iframe');
         for (const key in attributes) {
           i.setAttribute(key, attributes[key]);
         }
-        i.style.height = '10px';
-        i.style.width = '10px';
+        i.setAttribute('height', '10px');
+        i.setAttribute('width', '10px');
         i.style.display = 'block';
         i.style.position = 'absolute';
         i.style.top = '600px';
-        doc.body.appendChild(i);
-        return i;
+        i.implementation_.trackingIframeTimeout_ = () => 20;
+        return iframe.addElement(i);
       }
 
-      addFrame();
-      nonTracking = addFrame();
-      nonTracking.style.width = '100px';
-      nonTracking.style.height = '100px';
+      return Promise.all([addFrame(), addFrame()]);
     }).then(iframe => {
       const impl = iframe.container.implementation_;
       const doc = impl.element.ownerDocument;
-      expect(impl.looksLikeTrackingIframe_()).to.be.true;
+      expect(impl.looksLikeTrackingIframe_()).to.be.false;
       const iframes = doc.querySelectorAll('amp-iframe');
       expect(iframes[0].implementation_
-          .looksLikeTrackingIframe_()).to.be.true;
+          .looksLikeTrackingIframe_()).to.be.false;
       expect(iframes[1].implementation_
           .looksLikeTrackingIframe_()).to.be.true;
       expect(iframes[2].implementation_
-          .looksLikeTrackingIframe_()).to.be.false;
-      expect(doc.querySelectorAll('iframe,[amp-removed]')).to.have.length(2);
+          .looksLikeTrackingIframe_()).to.be.true;
       return poll('iframe removal', () => {
-        return doc.querySelectorAll('[amp-removed]').length == 1;
+        return doc.querySelectorAll('[amp-removed]').length == 2;
       }).then(() => {
         expect(doc.querySelectorAll('iframe')).to.have.length(1);
-        expect(nonTracking.implementation_.iframe_)
+        expect(iframe.container.implementation_.iframe_)
             .to.equal(doc.querySelector('iframe'));
       });
     });

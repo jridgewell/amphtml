@@ -24,7 +24,7 @@ var commonTestPaths = [
   {
     pattern: 'dist/**/*.js',
     included: false,
-    nocache: true,
+    // nocache: true,
   },
   {
     pattern: 'dist.tools/**/*.js',

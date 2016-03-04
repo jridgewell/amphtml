@@ -101,10 +101,17 @@ export class AmpFont extends AMP.BaseElement {
     /** @private @const {!Element} */
     this.documentElement_ = this.document_.documentElement;
     /** @private @const {!FontLoader} */
-    this.fontLoader_ = new FontLoader(this.getWin());
+    this.fontLoader_ = this.buildFontLoader_();
     this.startLoad_();
   }
 
+  /**
+   * Builds a new Font Loader, in lieu of Dependency Injection
+   * @visibleForTesting
+   */
+  buildFontLoader_() {
+    return new FontLoader(this.getWin());
+  }
 
   /**
    * Starts to download the font.

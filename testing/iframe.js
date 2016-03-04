@@ -15,8 +15,9 @@
  */
 
 
-import {Timer} from '../src/timer';
+import {timer} from '../src/timer';
 import {installCoreServices} from '../src/amp-core-service';
+import * as lolex from 'lolex';
 
 let iframeCount = 0;
 
@@ -167,22 +168,25 @@ export function createFixtureIframe(fixture, initialIframeHeight, opt_beforeLoad
  * - addElement: Adds an AMP element to the iframe and returns a promise for
  *   that element. When the promise is resolved we will have called the entire
  *   lifecycle including layoutCallback.
- * @param {string=} element The element currently being tested.
+ * - installTimer: Sets up a fake clock timer to bend time and space to your will.
+ *   Einstein, eat your heart out.
+ * @param {string=} opt_element The element currently being tested.
  * @param {boolean=} opt_runtimeOff Whether runtime should be turned off.
  * @param {function()=} opt_beforeLayoutCallback
+ * @param {function()=} opt_beforeBuildCallback
  * @return {!Promise<{
  *   win: !Window,
  *   doc: !Document,
  *   iframe: !Element,
  *   addElement: function(!Element):!Promise
+ *   installTimer: function():!Object
  * }>}
  */
-export function createElementTestIframe(opt_element, opt_runtimeOff, opt_beforeLayoutCallback) {
+export function createElementTestIframe(opt_element, opt_runtimeOff, opt_beforeLayoutCallback, opt_beforeBuildCallback) {
   return new Promise(function(resolve, reject) {
     let iframe = document.createElement('iframe');
     iframe.name = 'test_' + iframeCount++;
     iframe.srcdoc = '<!doctype><html><head>' +
-        maybeSwitchToCompiledJs('<script src="/base/dist/amp.js"></script>') +
         '<body style="margin:0"><div id=parent></div>';
     iframe.onload = function() {
       // Flag as being a test window.
@@ -190,38 +194,44 @@ export function createElementTestIframe(opt_element, opt_runtimeOff, opt_beforeL
       if (opt_runtimeOff) {
         iframe.contentWindow.name = '__AMP__off=1';
       }
-      installCoreServices(iframe.contentWindow);
-      const resolver = () => {
-        resolve({
-          win: iframe.contentWindow,
-          doc: iframe.contentWindow.document,
-          iframe: iframe,
-          addElement: function(element) {
-            iframe.contentWindow.document.getElementById('parent')
-            .appendChild(element);
-            // Wait for mutation observer to fire.
-            return new Timer(window).promise(16).then(() => {
-              // Make sure it has dimensions since no styles are available.
-              element.style.display = 'block';
-              element.build(true);
-              if (element.layoutCount_ == 0) {
-                if (opt_beforeLayoutCallback) {
-                  opt_beforeLayoutCallback(element);
+      const win = iframe.contentWindow;
+
+      resolve(injectScript(win, '/base/dist/amp.js').then(() => {
+        const resolver = () => {
+          return {
+            win: win,
+            doc: win.document,
+            iframe: iframe,
+            installTimer: function() {
+              return lolex.install(win);
+            },
+            addElement: function(element) {
+              win.document.getElementById('parent').appendChild(element);
+              // Wait for mutation observer to fire.
+              return timer.promise(16).then(() => {
+                if (opt_beforeBuildCallback) {
+                  opt_beforeBuildCallback(element);
                 }
-                return element.layoutCallback().then(() => {
-                  return element;
-                });
-              }
-              return element;
-            });
-          }
-        });
-      };
-      if (opt_element) {
-        injectElementScript(iframe.contentWindow, opt_element).then(resolver);
-      } else {
-        resolver();
-      }
+                element.build(true);
+                if (element.layoutCount_ == 0) {
+                  if (opt_beforeLayoutCallback) {
+                    opt_beforeLayoutCallback(element);
+                  }
+                  return element.layoutCallback().then(() => {
+                    return element;
+                  });
+                }
+                return element;
+              });
+            }
+          };
+        };
+        if (opt_element) {
+          return injectElementScript(win, opt_element).then(resolver);
+        } else {
+          return resolver();
+        }
+      }));
     };
     iframe.onerror = reject;
     document.body.appendChild(iframe);
@@ -348,12 +358,25 @@ function maybeSwitchToCompiledJs(html) {
  * @return {!Promise}
  */
 function injectElementScript(win, element) {
+  return injectScript(win, `/base/dist/v0/${element}-0.1.max.js`).
+    then(script => {
+      script.setAttribute('custom-element', element);
+      return script;
+    });
+}
+
+/**
+ * Injects a script tag into the window
+ * @param {!Window} win
+ * @param {string} src
+ * @return {!Promise}
+ */
+function injectScript(win, src) {
   return new Promise((resolve, reject) => {
     var script = win.document.createElement('script');
-    script.src = maybeSwitchToCompiledJs(`/base/dist/v0/${element}-0.1.max.js`);
-    script.setAttribute('custom-element', element);
-    script.onload = resolve;
+    script.src = maybeSwitchToCompiledJs(src);
+    script.onload = () => resolve(script);
     script.onerror = reject;
-    win.document.getElementsByTagName('head')[0].appendChild(script);
+    win.document.querySelector('head').appendChild(script);
   });
 }

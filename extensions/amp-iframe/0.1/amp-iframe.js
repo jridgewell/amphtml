@@ -33,8 +33,8 @@ let count = 0;
 /** @type {number}  */
 let trackingIframeCount = 0;
 
-/** @type {number}  */
-let trackingIframeTimeout = 5000;
+/** @const {number}  */
+const TRACKING_IFRAME_TIMEOUT = 5000;
 
 /** @const */
 const assert = AMP.assert;
@@ -228,6 +228,11 @@ export class AmpIframe extends AMP.BaseElement {
       return Promise.resolve();
     }
 
+    if (this.iframe_) {
+      // This already loaded, why are you calling me again?
+      return Promise.resolve();
+    }
+
     const isTracking = this.looksLikeTrackingIframe_();
     if (isTracking) {
       trackingIframeCount++;
@@ -236,6 +241,7 @@ export class AmpIframe extends AMP.BaseElement {
             'page. Please use amp-analytics instead or file a GitHub issue ' +
             'for your use case: ' +
             'https://github.com/ampproject/amphtml/issues/new');
+        this.scheduleTrackingIframeRemoval_();
         return Promise.resolve();
       }
     }
@@ -274,14 +280,7 @@ export class AmpIframe extends AMP.BaseElement {
       this.activateIframe_();
 
       if (isTracking) {
-        // Prevent this iframe from ever being recreated.
-        this.iframeSrc = null;
-
-        timer.promise(trackingIframeTimeout).then(() => {
-          removeElement(iframe);
-          this.element.setAttribute('amp-removed', '');
-          this.iframe_ = null;
-        });
+        this.scheduleTrackingIframeRemoval_();
       }
     };
 
@@ -393,6 +392,32 @@ export class AmpIframe extends AMP.BaseElement {
     }
     return true;
   }
+
+  /**
+   * Returns the amount of time to wait before removing a tracking iframe.
+   * @visibleForTesting
+   */
+  trackingIframeTimeout_() {
+    return TRACKING_IFRAME_TIMEOUT;
+  }
+
+  /**
+   * Schedules removal for this iframe, because tracking takes resources.
+   */
+  scheduleTrackingIframeRemoval_() {
+    // Prevent this iframe from ever being recreated.
+    this.iframeSrc = null;
+
+    timer.promise(this.trackingIframeTimeout_()).then(() => {
+      this.getVsync().mutate(() => {
+        if (this.iframe_) {
+          removeElement(this.iframe_);
+          this.iframe_ = null;
+        }
+        this.element.setAttribute('amp-removed', '');
+      });
+    });
+  }
 };
 
 /**
@@ -421,13 +446,6 @@ function makeIOsScrollable(element) {
     return wrapper;
   }
   return element;
-}
-
-/**
- * @param {number} ms
- */
-export function setTrackingIframeTimeoutForTesting(ms) {
-  trackingIframeTimeout = ms;
 }
 
 AMP.registerElement('amp-iframe', AmpIframe);

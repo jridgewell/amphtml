@@ -46,7 +46,6 @@ describe('UrlReplacements', () => {
   });
 
   function getReplacements(withCid, withActivity) {
-    debugger;
     return createElementTestIframe('amp-analytics').then(iframe => {
       iframe.doc.title = 'Pixel Test';
       const link = iframe.doc.createElement('link');

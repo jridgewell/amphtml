@@ -20,6 +20,7 @@ import * as sinon from 'sinon';
 
 describe('amp-img', () => {
   let sandbox;
+  let iframe;
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
@@ -33,8 +34,8 @@ describe('amp-img', () => {
   function getImg(attributes, children) {
     sandbox.stub(BaseElement.prototype, 'isInViewport')
         .returns(true);
-    return createElementTestIframe().then(iframe => {
-      installImg(iframe.win);
+    return createElementTestIframe().then(i => {
+      iframe = i;
       const img = iframe.doc.createElement('amp-img');
       for (const key in attributes) {
         img.setAttribute(key, attributes[key]);
@@ -56,7 +57,7 @@ describe('amp-img', () => {
       height: 200,
     }).then(ampImg => {
       const img = ampImg.querySelector('img');
-      expect(img).to.be.an.instanceof(Element);
+      expect(img).to.be.an.instanceof(iframe.win.Element);
       expect(img.tagName).to.equal('IMG');
       expect(img.getAttribute('src')).to.equal('test.jpg');
     });

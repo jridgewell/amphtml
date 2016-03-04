@@ -96,7 +96,7 @@ describe('amp-audio', () => {
         {tag: 'text', text: 'Unsupported.'},
     ]).then(a => {
       const audio = a.querySelector('audio');
-      expect(audio).to.be.an.instanceof(Element);
+      expect(audio).to.be.an.instanceof(iframe.win.Element);
       expect(audio.tagName).to.equal('AUDIO');
       expect(a.getAttribute('width')).to.be.equal('503');
       expect(a.getAttribute('height')).to.be.equal('53');

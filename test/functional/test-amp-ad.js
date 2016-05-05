@@ -466,5 +466,72 @@ function tests(name, installer) {
         });
       });
     });
+
+    describe('unlayoutCallback', () => {
+      it('should remove ad', () => {
+        return getAd({
+          width: 300,
+          height: 750,
+          type: 'a9',
+          src: 'testsrc',
+        }, 'https://schema.org').then(ad => {
+          ad.implementation_.unlayoutCallback();
+          expect(ad.implementation_.iframe_).to.be.null;
+        });
+      });
+
+      it('should display placeholder', () => {
+        let placeholder;
+        return getAd({
+          width: 300,
+          height: 750,
+          type: 'a9',
+          src: 'testsrc',
+        }, 'https://schema.org', ad => {
+          placeholder = document.createElement('div');
+          placeholder.setAttribute('placeholder', '');
+          ad.appendChild(placeholder);
+          expect(placeholder.classList.contains('amp-hidden')).to.be.false;
+
+          const fallback = document.createElement('div');
+          fallback.setAttribute('fallback', '');
+          ad.appendChild(fallback);
+          return ad;
+        }).then(ad => {
+          ad.implementation_.unlayoutCallback();
+          expect(placeholder.classList.contains('amp-hidden')).to.be.false;
+        });
+      });
+
+      it('should hide fallback', () => {
+        let fallback;
+        return getAd({
+          width: 300,
+          height: 750,
+          type: 'a9',
+          src: 'testsrc',
+        }, 'https://schema.org', ad => {
+          const placeholder = document.createElement('div');
+          placeholder.setAttribute('placeholder', '');
+          ad.appendChild(placeholder);
+          expect(placeholder.classList.contains('amp-hidden')).to.be.false;
+
+          fallback = document.createElement('div');
+          fallback.setAttribute('fallback', '');
+          ad.appendChild(fallback);
+          return ad;
+        }).then(ad => {
+          sandbox.stub(
+              ad.implementation_, 'deferMutate', function(callback) {
+                callback();
+              });
+          ad.implementation_.noContentHandler_();
+          expect(fallback.classList.contains('amp-hidden')).to.be.false;
+
+          ad.implementation_.unlayoutCallback();
+          expect(fallback.classList.contains('amp-hidden')).to.be.true;
+        });
+      });
+    });
   };
 }

@@ -31,6 +31,34 @@ const TAG_ = 'Viewport';
 
 
 /**
+ * The type of the viewport.
+ * @enum {string}
+ */
+export const ViewportType = {
+
+  /**
+   * Viewer leaves sizing and scrolling up to the AMP document's window.
+   */
+  NATURAL: 'natural',
+
+  /**
+   * Viewer sets and updates sizing and scrolling.
+   */
+  VIRTUAL: 'virtual',
+
+  /**
+   * This is AMP-specific type and doesn't come from viewer. This is the type
+   * that AMP sets when Viewer has requested "natural" viewport on a iOS
+   * device.
+   * See:
+   * https://github.com/ampproject/amphtml/blob/master/spec/amp-html-layout.md
+   * and {@link ViewportBindingNaturalIosEmbed_} for more details.
+   */
+  NATURAL_IOS_EMBED: 'natural-ios-embed',
+};
+
+
+/**
  * @typedef {{
  *   relayoutAll: boolean,
  *   top: number,
@@ -1085,9 +1113,9 @@ export function updateViewportMetaString(currentValue, updateParams) {
 function createViewport_(window) {
   const viewer = installViewerService(window);
   let binding;
-  if (viewer.getViewportType() == 'virtual') {
+  if (viewer.getViewportType() == ViewportType.VIRTUAL) {
     binding = new ViewportBindingVirtual_(window, viewer);
-  } else if (viewer.getViewportType() == 'natural-ios-embed') {
+  } else if (viewer.getViewportType() == ViewportType.NATURAL_IOS_EMBED) {
     binding = new ViewportBindingNaturalIosEmbed_(window);
   } else {
     binding = new ViewportBindingNatural_(window);

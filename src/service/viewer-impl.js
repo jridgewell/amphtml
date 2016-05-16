@@ -23,6 +23,7 @@ import {parseQueryString, parseUrl, removeFragment} from '../url';
 import {platform} from '../platform';
 import {timer} from '../timer';
 import {reportError} from '../error';
+import {ViewportType} from './viewport-impl';
 
 
 const TAG_ = 'Viewer';
@@ -35,34 +36,6 @@ const SENTINEL_ = '__AMP__';
  * @private {number}
  */
 const VIEWER_ORIGIN_TIMEOUT_ = 1000;
-
-/**
- * The type of the viewport.
- * @enum {string}
- */
-export const ViewportType = {
-
-  /**
-   * Viewer leaves sizing and scrolling up to the AMP document's window.
-   */
-  NATURAL: 'natural',
-
-  /**
-   * Viewer sets and updates sizing and scrolling.
-   */
-  VIRTUAL: 'virtual',
-
-  /**
-   * This is AMP-specific type and doesn't come from viewer. This is the type
-   * that AMP sets when Viewer has requested "natural" viewport on a iOS
-   * device.
-   * See:
-   * https://github.com/ampproject/amphtml/blob/master/spec/amp-html-layout.md
-   * and {@link ViewportBindingNaturalIosEmbed_} for more details.
-   */
-  NATURAL_IOS_EMBED: 'natural-ios-embed',
-};
-
 
 /**
  * Visibility state of the AMP document.

@@ -18,6 +18,7 @@
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
   <title>The AMP Validator</title>
   <meta charset="utf-8"/>
+  <link rel="shortcut icon" href="/amp_favicon.png">
   <script src="webcomponents-lite.js"></script>
   <link rel="import" href="/pm/iron-collapse/iron-collapse.html">
   <link rel="import" href="/pm/iron-flex-layout/iron-flex-layout.html">
@@ -40,7 +41,7 @@
   <script src="/cm/mode/htmlmixed/htmlmixed.js"></script>
   <script src="/cm/mode/javascript/javascript.js"></script>
   <script src="/cm/mode/xml/xml.js"></script>
-  <script src="$$VALIDATOR_SCRIPT$$"></script>
+  <script src="https://cdn.ampproject.org/v0/validator.js"></script>
   <style is="custom-style">
     paper-item {
       --paper-item: {
@@ -448,7 +449,7 @@
               var xmlHttp = new XMLHttpRequest();
               xmlHttp.onreadystatechange = function() {
                 if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-                  editor.setEditorValue(JSON.parse(xmlHttp.responseText).contents);
+                  editor.setEditorValue(JSON.parse(xmlHttp.responseText).Contents);
                 }
               };
               xmlHttp.open("GET", "/fetch?url=" + encodeURIComponent(urlToFetch), true);

@@ -37,7 +37,7 @@ class AmpFlyingCarpet extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
-    this.isExperimentOn_ = isExperimentOn(this.getWin(), EXPERIMENT);
+    this.isExperimentOn_ = true || isExperimentOn(this.getWin(), EXPERIMENT);
     if (!this.isExperimentOn_) {
       dev.warn(EXPERIMENT, `Experiment ${EXPERIMENT} disabled`);
       return;

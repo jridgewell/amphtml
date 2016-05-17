@@ -724,12 +724,12 @@ describe('ViewportBindingNaturalIosEmbed', () => {
     expect(bodyChildren.length).to.equal(4);
 
     // scrollpos is inserted as first child
-    expect(bodyChildren[0].id).to.equal('-amp-scrollpos');
-    expect(bodyChildren[0].style.position).to.be.undefined;
-    expect(bodyChildren[0].style.top).to.be.undefined;
-    expect(bodyChildren[0].style.width).to.equal(0);
-    expect(bodyChildren[0].style.height).to.equal(0);
-    expect(bodyChildren[0].style.visibility).to.equal('hidden');
+    expect(bodyChildren[1].id).to.equal('-amp-scrollpos');
+    expect(bodyChildren[1].style.position).to.be.undefined;
+    expect(bodyChildren[1].style.top).to.be.undefined;
+    expect(bodyChildren[1].style.width).to.equal(0);
+    expect(bodyChildren[1].style.height).to.equal(0);
+    expect(bodyChildren[1].style.visibility).to.equal('hidden');
 
     // scrollmove is appended
     expect(bodyChildren[2].id).to.equal('-amp-scrollmove');
@@ -765,7 +765,7 @@ describe('ViewportBindingNaturalIosEmbed', () => {
   });
 
   it('should calculate scrollTop from scrollpos element', () => {
-    bodyChildren[0].getBoundingClientRect = () => {
+    bodyChildren[1].getBoundingClientRect = () => {
       return {top: -17, left: -11};
     };
     binding.onScrolled_();
@@ -773,7 +773,7 @@ describe('ViewportBindingNaturalIosEmbed', () => {
   });
 
   it('should calculate scrollHeight from scrollpos/endpos elements', () => {
-    bodyChildren[0].getBoundingClientRect = () => {
+    bodyChildren[1].getBoundingClientRect = () => {
       return {top: -17, left: -11};
     };
     bodyChildren[3].getBoundingClientRect = () => {
@@ -791,7 +791,7 @@ describe('ViewportBindingNaturalIosEmbed', () => {
   });
 
   it('should offset client rect for layout', () => {
-    bodyChildren[0].getBoundingClientRect = () => {
+    bodyChildren[1].getBoundingClientRect = () => {
       return {top: -200, left: -100};
     };
     binding.onScrolled_();
@@ -816,7 +816,7 @@ describe('ViewportBindingNaturalIosEmbed', () => {
   });
 
   it('should adjust scroll position when scrolled to 0', () => {
-    const posEl = bodyChildren[0];
+    const posEl = bodyChildren[1];
     posEl.getBoundingClientRect = () => {return {top: 0, left: 0};};
     const moveEl = bodyChildren[2];
     const event = {preventDefault: sandbox.spy()};
@@ -828,7 +828,7 @@ describe('ViewportBindingNaturalIosEmbed', () => {
   });
 
   it('should adjust scroll position when scrolled to 0; w/o event', () => {
-    const posEl = bodyChildren[0];
+    const posEl = bodyChildren[1];
     posEl.getBoundingClientRect = () => {return {top: 0, left: 0};};
     const moveEl = bodyChildren[2];
     binding.adjustScrollPos_();
@@ -836,7 +836,7 @@ describe('ViewportBindingNaturalIosEmbed', () => {
   });
 
   it('should NOT adjust scroll position when scrolled away from 0', () => {
-    const posEl = bodyChildren[0];
+    const posEl = bodyChildren[1];
     posEl.getBoundingClientRect = () => {return {top: -10, left: 0};};
     const moveEl = bodyChildren[2];
     const event = {preventDefault: sandbox.spy()};
@@ -846,7 +846,7 @@ describe('ViewportBindingNaturalIosEmbed', () => {
   });
 
   it('should NOT adjust scroll position when overscrolled', () => {
-    const posEl = bodyChildren[0];
+    const posEl = bodyChildren[1];
     posEl.getBoundingClientRect = () => {return {top: 10, left: 0};};
     const moveEl = bodyChildren[2];
     const event = {preventDefault: sandbox.spy()};

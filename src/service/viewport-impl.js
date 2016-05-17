@@ -791,11 +791,14 @@ export class ViewportBindingNaturalIosEmbed_ extends ViewportBindingDef {
     this.scrollPosEl_ = this.win.document.createElement('div');
     this.scrollPosEl_.id = '-amp-scrollpos';
     setStyles(this.scrollPosEl_, {
+      position: 'absolute',
+      top: 0,
+      left: 0,
       width: 0,
       height: 0,
       visibility: 'hidden',
     });
-    documentBody.insertBefore(this.scrollPosEl_, documentBody.firstChild);
+    documentBody.appendChild(this.scrollPosEl_);
 
     // Insert scrollMove element into DOM. See {@link adjustScrollPos_} for why
     // this is needed.
@@ -872,7 +875,6 @@ export class ViewportBindingNaturalIosEmbed_ extends ViewportBindingDef {
     if (!this.scrollMoveEl_) {
       return;
     }
-    scrollPos -= this.getScrollTop();
     setStyle(this.scrollMoveEl_, 'transform', `translateY(${scrollPos}px)`);
     this.scrollMoveEl_./*OK*/scrollIntoView(true);
   }

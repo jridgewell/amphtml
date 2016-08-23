@@ -168,48 +168,52 @@ export class Vsync {
   /**
    * Runs the mutate operation via vsync.
    * @param {function()} mutator
+   * @param {!VsyncStateDef=} opt_state
    */
-  mutate(mutator) {
+  mutate(mutator, opt_state) {
     this.run({
       measure: undefined,  // For uniform hidden class.
       mutate: mutator,
-    });
+    }, opt_state);
   }
 
   /**
    * Runs `mutate` wrapped in a promise.
    * @param {function()} mutator
+   * @param {!VsyncStateDef=} opt_state
    * @return {!Promise}
    */
-  mutatePromise(mutator) {
+  mutatePromise(mutator, opt_state) {
     return this.runPromise({
       measure: undefined,
       mutate: mutator,
-    });
+    }, opt_state);
   }
 
   /**
    * Runs the measure operation via vsync.
    * @param {function()} measurer
+   * @param {!VsyncStateDef=} opt_state
    */
-  measure(measurer) {
+  measure(measurer, opt_state) {
     this.run({
       measure: measurer,
       mutate: undefined,  // For uniform hidden class.
-    });
+    }, opt_state);
   }
 
   /**
    * Runs `measure` wrapped in a promise.
    * @param {function():TYPE} measurer
+   * @param {!VsyncStateDef=} opt_state
    * @return {!Promise<TYPE>}
    * @template TYPE
    */
-  measurePromise(measurer) {
+  measurePromise(measurer, opt_state) {
     return new Promise(resolve => {
       this.measure(() => {
         resolve(measurer());
-      });
+      }, opt_state);
     });
   }
 

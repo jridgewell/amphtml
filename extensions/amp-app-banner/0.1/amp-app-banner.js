@@ -93,10 +93,7 @@ export class AbstractAppBanner extends AMP.BaseElement {
    * @protected
    */
   onDismissButtonClick_() {
-    this.getVsync().run({
-      measure: null,
-      mutate: handleDismiss,
-    }, {
+    this.getVsync().mutate(handleDismiss, {
       element: this.element,
       viewport: this.getViewport(),
       storagePromise: storageFor(this.win),
@@ -138,10 +135,7 @@ export class AbstractAppBanner extends AMP.BaseElement {
 
   /** @protected */
   hide_() {
-    return this.getVsync().runPromise({
-      measure: null,
-      mutate: hideBanner,
-    }, {
+    return this.getVsync().mutatePromise(hideBanner, {
       element: this.element,
       viewport: this.getViewport(),
     });

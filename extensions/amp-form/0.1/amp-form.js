@@ -187,10 +187,7 @@ export class AmpForm {
     if (this.shouldValidate_ && !isValid) {
       e.stopImmediatePropagation();
       // TODO(#3776): Use .mutate method when it supports passing state.
-      this.vsync_.run({
-        measure: undefined,
-        mutate: reportValidity,
-      }, {form: this.form_});
+      this.vsync_.mutate(reportValidity, {form: this.form_});
       return;
     }
 

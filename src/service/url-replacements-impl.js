@@ -296,13 +296,13 @@ export class UrlReplacements {
     // Returns the viewport height.
     this.set_('VIEWPORT_HEIGHT', () => {
       return vsyncFor(this.win_).measurePromise(
-        () => viewportFor(this.win_).getSize().height);
+        () => viewportFor(this.win_).getHeight());
     });
 
     // Returns the viewport width.
     this.set_('VIEWPORT_WIDTH', () => {
       return vsyncFor(this.win_).measurePromise(
-        () => viewportFor(this.win_).getSize().width);
+        () => viewportFor(this.win_).getWidth());
     });
 
     // Returns document characterset.

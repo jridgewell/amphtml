@@ -201,9 +201,6 @@ export class Viewer {
         this.overtakeHistory_);
     dev().fine(TAG_, '- history:', this.overtakeHistory_);
 
-    this.setVisibilityState_(this.params_['visibilityState']);
-    dev().fine(TAG_, '- visibilityState:', this.getVisibilityState());
-
     this.prerenderSize_ = parseInt(this.params_['prerenderSize'], 10) ||
         this.prerenderSize_;
     dev().fine(TAG_, '- prerenderSize:', this.prerenderSize_);
@@ -239,6 +236,9 @@ export class Viewer {
      */
     this.isEmbedded_ = (this.isIframed_ || this.params_['webview'] === '1') &&
         !this.win.AMP_TEST_IFRAME;
+
+    this.setVisibilityState_(this.params_['visibilityState']);
+    dev().fine(TAG_, '- visibilityState:', this.getVisibilityState());
 
     /** @private {boolean} */
     this.hasBeenVisible_ = this.isVisible();

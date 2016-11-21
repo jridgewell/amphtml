@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { sizeRect } from '../size-rect';
 import {
   layoutRectLtwh,
   layoutRectsOverlap,
@@ -131,6 +132,9 @@ export class Resource {
     /** @private {boolean} */
     this.blacklisted_ = false;
 
+    /** @private {boolean} */
+    this.hasBeenMeasured_ = false;
+
     /** @private {!AmpElement|undefined|null} */
     this.owner_ = undefined;
 
@@ -144,11 +148,14 @@ export class Resource {
     /** @private {boolean} */
     this.isFixed_ = false;
 
-    /** @private {!../layout-rect.LayoutRectDef} */
-    this.layoutBox_ = layoutRectLtwh(-10000, -10000, 0, 0);
+    /** @private {!../size-rect.SizeRectDef} */
+    this.size_ = sizeRect(0, 0);
 
-    /** @private {?../layout-rect.LayoutRectDef} */
-    this.initialLayoutBox_ = null;
+    /** @private {!../position.PositionDef} */
+    this.position_ = positionLt(-10000, -10000);
+
+    /** @private {number} */
+    this.initialPositionBottom_ = this.position_.top + this.size_.height;
 
     /** @private {boolean} */
     this.isMeasureRequested_ = false;
@@ -326,10 +333,14 @@ export class Resource {
   measure() {
     this.isMeasureRequested_ = false;
 
-    let box = this.resources_.getViewport().getLayoutRect(this.element);
-    const oldBox = this.layoutBox_;
+    const oldPosition = this.position_;
+    const oldSize = this.size_;
     const viewport = this.resources_.getViewport();
-    this.layoutBox_ = box;
+
+    // TODO
+    let box = viewport.getLayoutRect(this.element);
+    let position = positionLt(box.left, box.top);
+    this.size = sizeWh(box.width, box.height);
 
     // Calculate whether the element is currently is or in `position:fixed`.
     let isFixed = false;
@@ -352,17 +363,18 @@ export class Resource {
 
     if (isFixed) {
       // For fixed position elements, we need the relative position to the
-      // viewport. When accessing the layoutBox through #getLayoutBox, we'll
+      // viewport. When accessing the position through #getPosition, we'll
       // return the new absolute position.
-      box = this.layoutBox_ = moveLayoutRect(box, -viewport.getScrollLeft(),
+      position = movePosition(position, -viewport.getScrollLeft(),
           -viewport.getScrollTop());
     }
+    this.position_ = position;
 
     // Note that "left" doesn't affect readiness for the layout.
     if (this.state_ == ResourceState.NOT_LAID_OUT ||
-          oldBox.top != box.top ||
-          oldBox.width != box.width ||
-          oldBox.height != box.height) {
+          oldPosition.top != box.top ||
+          oldSize.width != box.width ||
+          oldSize.height != box.height) {
 
       if (this.element.isUpgraded() &&
               this.state_ != ResourceState.NOT_BUILT &&
@@ -373,7 +385,8 @@ export class Resource {
     }
 
     if (!this.hasBeenMeasured()) {
-      this.initialLayoutBox_ = box;
+      this.hasBeenMeasured_ = true;
+      this.initialPositionBottom_ = box.bottom;
     }
 
     this.element.updateLayoutBox(box);
@@ -385,12 +398,9 @@ export class Resource {
    */
   completeCollapse() {
     toggle(this.element, false);
-    this.layoutBox_ = layoutRectLtwh(
-        this.layoutBox_.left,
-        this.layoutBox_.top,
-        0, 0);
+    this.size_ = sizeRect(0, 0);
     this.isFixed_ = false;
-    this.element.updateLayoutBox(this.layoutBox_);
+    this.element.updateLayoutBox(this.getLayoutBox());
   }
 
   /**
@@ -405,7 +415,7 @@ export class Resource {
    * @return {boolean}
    */
   hasBeenMeasured() {
-    return !!this.initialLayoutBox_;
+    return this.hasBeenMeasured_;
   }
 
   /**
@@ -419,27 +429,34 @@ export class Resource {
     this.isMeasureRequested_ = true;
   }
 
+  getSize() {
+    return this.size_;
+  }
+
+  getPosition() {
+    if (!this.isFixed_ || !this.isDisplayed()) {
+      return this.position_;
+    }
+    const viewport = this.resources_.getViewport();
+    return movePosition(this.position_, viewport.getScrollLeft(),
+        viewport.getScrollTop());
+  }
+
   /**
    * Returns a previously measured layout box.
    * @return {!../layout-rect.LayoutRectDef}
    */
   getLayoutBox() {
-    if (!this.isFixed_) {
-      return this.layoutBox_;
-    }
-    const viewport = this.resources_.getViewport();
-    return moveLayoutRect(this.layoutBox_, viewport.getScrollLeft(),
-        viewport.getScrollTop());
+    return layoutRectFromPositionAndSize(this.getPosition(), this.getSize());
   }
 
   /**
-   * Returns the first measured layout box.
-   * @return {!../layout-rect.LayoutRectDef}
+   * Returns the first measured layout box's bottom.
+   * @return {number}
    */
-  getInitialLayoutBox() {
-    // Before the first measure, there will be no initial layoutBox.
-    // Luckily, layoutBox will be present but essentially useless.
-    return this.initialLayoutBox_ || this.layoutBox_;
+  getInitialPositionBottom() {
+    // Before the first measure, there will be a useless bottom position.
+    return this.initialPositionBottom_;
   }
 
   /**
@@ -448,7 +465,7 @@ export class Resource {
    * @return {boolean}
    */
   isDisplayed() {
-    return this.layoutBox_.height > 0 && this.layoutBox_.width > 0;
+    return this.size_.height > 0 && this.size_.width > 0;
   }
 
   /**
@@ -463,6 +480,7 @@ export class Resource {
    * Whether the element's layout box overlaps with the specified rect.
    * @param {!../layout-rect.LayoutRectDef} rect
    * @return {boolean}
+   * TODO
    */
   overlaps(rect) {
     return layoutRectsOverlap(this.getLayoutBox(), rect);
@@ -500,6 +518,7 @@ export class Resource {
     // Numeric interface, element is allowed to render outside viewport when it
     // is within X times the viewport height of the current viewport.
     const viewportBox = this.resources_.getViewport().getRect();
+    // TODO
     const layoutBox = this.getLayoutBox();
     const scrollDirection = this.resources_.getScrollDirection();
     const multipler = Math.max(renders, 0);

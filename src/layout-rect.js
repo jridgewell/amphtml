@@ -105,14 +105,15 @@ export function rectIntersection(a, b) {
  * @return {!LayoutRectDef}
  */
 export function expandLayoutRect(rect, dw, dh) {
-  return {
-    top: rect.top - rect.height * dh,
-    bottom: rect.bottom + rect.height * dh,
-    left: rect.left - rect.width * dw,
-    right: rect.right + rect.width * dw,
-    width: rect.width * (1 + dw * 2),
-    height: rect.height * (1 + dh * 2),
-  };
+  if (dw == 0 && dh == 0) {
+    return rect;
+  }
+  return layoutRectLtwh(
+    rect.top - rect.height * dh,
+    rect.left - rect.width * dw,
+    rect.width * (1 + dw * 2),
+    rect.height * (1 + dh * 2),
+  );
 }
 
 
@@ -130,4 +131,15 @@ export function moveLayoutRect(rect, dx, dy) {
   }
   return layoutRectLtwh(rect.left + dx, rect.top + dy,
       rect.width, rect.height);
+}
+
+
+/**
+ * Creates a layout rectangle using the position and size of an element.
+ * @param {!./position.PositionDef} position
+ * @param {!./size.SizeDef} size
+ * @return {!LayoutRectDef}
+ */
+export function layoutRectFromPositionAndSize(position, size) {
+  return layoutRectLtwh(position.left, position.top, size.width, size.height);
 }

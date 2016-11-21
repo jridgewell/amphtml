@@ -990,6 +990,14 @@ function createBaseCustomElementClass(win) {
     }
 
     /**
+     * @return {!./size.SizeDef}
+     * @final @this {!Element}
+     */
+    getSize() {
+      return this.getResources().getResourceForElement(this).getSize();
+    }
+
+    /**
      * @return {!./layout-rect.LayoutRectDef}
      * @final @this {!Element}
      */

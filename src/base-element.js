@@ -168,6 +168,13 @@ export class BaseElement {
   }
 
   /**
+   * Returns a previously measured size of the element.
+   * @return {!./size.SizeDef}
+   */
+  getSize() {
+    return this.element.getSize();
+  }
+  /**
    * Returns a previously measured layout box of the element.
    * @return {!./layout-rect.LayoutRectDef}
    */

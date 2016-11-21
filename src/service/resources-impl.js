@@ -696,6 +696,7 @@ export class Resources {
    * @param {!Element} element
    */
   collapseElement(element) {
+    // TODO
     const box = this.viewport_.getLayoutRect(element);
     const resource = Resource.forElement(element);
     if (box.width != 0 && box.height != 0) {
@@ -826,8 +827,9 @@ export class Resources {
         const request = requestsChangeSize[i];
         /** @const {!Resource} */
         const resource = request.resource;
+        // TODO
         const box = resource.getLayoutBox();
-        const iniBox = resource.getInitialLayoutBox();
+        const iniBottom = resource.getInitialPositionBottom();
         const diff = request.newHeight - box.height;
 
         // Check resize rules. It will either resize element immediately, or
@@ -860,7 +862,7 @@ export class Resources {
             this.requestsChangeSize_.push(request);
           }
           continue;
-        } else if (iniBox.bottom >= docBottomOffset ||
+        } else if (iniBottom >= docBottomOffset ||
                       box.bottom >= docBottomOffset) {
           // 6. Elements close to the bottom of the document (not viewport)
           // are resized immediately.
@@ -903,8 +905,9 @@ export class Resources {
           mutate: state => {
             let minTop = -1;
             scrollAdjSet.forEach(request => {
-              const box = request.resource.getLayoutBox();
-              minTop = minTop == -1 ? box.top : Math.min(minTop, box.top);
+              const position = request.resource.getPosition();
+              minTop = minTop == -1 ? position.top : Math.min(minTop,
+                  position.top);
               request.resource./*OK*/changeSize(
                   request.newHeight, request.newWidth);
               if (request.callback) {
@@ -1013,6 +1016,7 @@ export class Resources {
         if (relayoutAll ||
                 r.getState() == ResourceState.NOT_LAID_OUT ||
                 r.isMeasureRequested() ||
+                // TODO
                 relayoutTop != -1 && r.getLayoutBox().bottom >= relayoutTop) {
           const wasDisplayed = r.isDisplayed();
           r.measure();
@@ -1202,8 +1206,8 @@ export class Resources {
    */
   calcTaskScore_(task) {
     const viewport = this.viewport_.getRect();
-    const box = task.resource.getLayoutBox();
-    let posPriority = Math.floor((box.top - viewport.top) / viewport.height);
+    const pos = task.resource.getPosition();
+    let posPriority = Math.floor((pos.top - viewport.top) / viewport.height);
     if (Math.sign(posPriority) != this.getScrollDirection()) {
       posPriority *= 2;
     }
@@ -1319,9 +1323,9 @@ export class Resources {
   completeScheduleChangeSize_(resource, newHeight, newWidth, force,
       opt_callback) {
     resource.resetPendingChangeSize();
-    const layoutBox = resource.getLayoutBox();
-    if ((newHeight === undefined || newHeight == layoutBox.height) &&
-        (newWidth === undefined || newWidth == layoutBox.width)) {
+    const size = resource.getSizeBox();
+    if ((newHeight === undefined || newHeight == size.height) &&
+        (newWidth === undefined || newWidth == size.width)) {
       if (newHeight === undefined && newWidth === undefined) {
         dev().error(
             TAG_, 'attempting to change size with undefined dimensions',

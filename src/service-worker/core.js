@@ -48,6 +48,13 @@ const BLACKLIST = self.AMP_CONFIG[`${TAG}-blacklist`] || [];
 const BASE_RTV_VERSION = self.AMP_CONFIG.v;
 
 /**
+ * The SW's current environment.
+ * @const
+ * @type {string}
+ */
+const BASE_RTV_ENV = rtvEnvironment(BASE_RTV_VERSION);
+
+/**
  * Our cache of CDN JS files.
  *
  * @type {!Cache}
@@ -112,9 +119,20 @@ const CDN_JS_REGEX = new RegExp(
  * @visibleForTesting
  */
 export function rtvVersion(url) {
-  // RTVs are 2 digit prefixes followed by the timestamp of the release.
   const match = CDN_JS_REGEX.exec(url);
   return (match && match[1]) || '';
+}
+
+/**
+ * Returns the RTV environment of a given versioned JS file.
+ * This is the first two digits of the RTV.
+ *
+ * @param {RtvVersion} rtv
+ * @return {string}
+ * @visibleForTesting
+ */
+export function rtvEnvironment(rtv) {
+  return rtv.substr(0, 2);
 }
 
 /**
@@ -239,42 +257,91 @@ const cachePromise = self.caches.open('cdn-js').then(result => {
  *
  * @param {!Cache} cache
  * @param {!Request} request
- * @param {string} requestPath the pathname of the request
- * @param {RtvVersion} requestVersion the version of the request
+ * @param {boolean} prodEnv Whether the request is for the same environment
+ *     as the SW. If so, we'll purge old responses and attempt to fetch any
+ *     diversions of the response.
  * @return {!Promise<!Response>}
  * @visibleForTesting
  */
-export function fetchAndCache(cache, request, requestPath, requestVersion) {
-  // TODO(jridgewell): we should also fetch this requestVersion for all files
-  // we know about.
-  return fetch(request).then(response => {
+export function fetchAndCache(cache, request, prodEnv) {
+  const fetched = fetch(request);
+
+  // This intentionally does not block the request resolution to speed things
+  // up. This is likely fine since you don't have multiple `<script>`s with the
+  // same `src` on a page.
+  fetched.then(response => {
     // Did we receive a valid response (200 <= status < 300)?
     if (response && response.ok) {
       // You must clone to prevent double reading the body.
       cache.put(request, response.clone());
 
-      // Prune old versions of this file from the cache.
-      // This intentionally does not block the request resolution to speed
-      // things up. This is likely fine since you don't have multiple
-      // `<script>`s with the same `src` on a page.
-      cache.keys().then(requests => {
-        for (let i = 0; i < requests.length; i++) {
-          const request = requests[i];
-          const url = request.url;
-          if (requestPath !== pathname(url)) {
-            continue;
-          }
-          if (requestVersion === rtvVersion(url)) {
-            continue;
-          }
+      if (prodEnv) {
+        // Prune old versions of this file from the cache.
+        const purgePromise = purgeResponses(cache, request.url);
 
-          cache.delete(request);
-        }
-      });
+        // Now, fetch all the diversions of this file.
+        fetchDiversions(cache, request, response.headers, purgePromise);
+      }
+    }
+  });
+
+  return fetched;
+}
+
+/**
+ * Purges all responses for a script, except for the one explicitly
+ * matching url.
+ *
+ * @param {!Cache} cache
+ * @param {string} url
+ * @return {!Promise}
+ */
+function purgeResponses(cache, url) {
+  return cache.keys().then(requests => {
+    const requestPath = pathname(url);
+
+    const deletes = [];
+    for (let i = 0; i < requests.length; i++) {
+      const request = requests[i];
+      const cachedUrl = request.url;
+      if (url === cachedUrl) {
+        continue;
+      }
+      if (requestPath !== pathname(cachedUrl)) {
+        continue;
+      }
+
+      deletes.push(cache.delete(request));
     }
 
-    return response;
+    return Promise.all(deletes);
   });
+}
+
+/**
+ * Fetch and cache all diversions of a script. Diversions are canary versions
+ * of the production scripts that we serve based on a random percentage.
+ *
+ * @param {!Cache} cache
+ * @param {!Request} request The production script request
+ * @param {!Headers} headers The response headers from the request
+ * @param {!Promise} waitPromise A promise to wait upon before fetching the
+ *     diversions.
+ */
+function fetchDiversions(cache, request, headers, waitPromise) {
+  const diversionsHeader = response.headers.get('X-Cache-SW-Diversions');
+  if (!diversionsHeader) {
+    return;
+  }
+
+  const diversions = diversionsHeader.split(/\s*,\s*/);
+
+  for (let i = 0; i < diversions.length; i++) {
+    const diversionRequest = normalizedRequest(request, diversions[i]);
+    waitPromise = waitPromise.then(() => {
+      return fetchAndCache(cache, diversionRequest, false)
+    });
+  }
 }
 
 /**
@@ -364,9 +431,12 @@ export function handleFetch(request, maybeClientId) {
 
   const requestPath = pathname(url);
   const requestVersion = rtvVersion(url) || BASE_RTV_VERSION;
+  const requestEnv = rtvEnvironment(requestVersion);
   // Rewrite unversioned requests to the versioned RTV URL. This is a noop if
   // it's already versioned.
   request = normalizedRequest(request, requestVersion);
+
+  const prodEnv = requestEnv === BASE_RTV_ENV;
 
   // Wait for the cachePromise to resolve. This is necessary
   // since the SW thread may be killed and restarted at any time.
@@ -375,6 +445,12 @@ export function handleFetch(request, maybeClientId) {
     // version.
     if (clientsVersion[clientId]) {
       return clientsVersion[clientId];
+    }
+
+    // If another environment was requested, we must serve with the
+    // requested version.
+    if (!prodEnv) {
+      return clientsVersion[clientId] = Promise.resolve(requestVersion);
     }
 
     // If not, let's find the version to serve up.
@@ -390,14 +466,14 @@ export function handleFetch(request, maybeClientId) {
         // they requested this exact version; If we served an old version,
         // let's get the new one.
         if (version !== requestVersion && requestVersion == BASE_RTV_VERSION) {
-          fetchAndCache(cache, request, requestPath, requestVersion);
+          fetchAndCache(cache, request, prodEnv);
         }
 
         return response;
       }
 
       // If not, let's fetch and cache the request.
-      return fetchAndCache(cache, versionedRequest, requestPath, version);
+      return fetchAndCache(cache, versionedRequest, prodEnv);
     });
   });
 }

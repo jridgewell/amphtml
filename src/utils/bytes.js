@@ -110,7 +110,11 @@ export function stringToBytes(str) {
  * @return {string}
  */
 export function bytesToString(bytes) {
-  return String.fromCharCode.apply(String, bytes);
+  const array = Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) {
+    array[i] = String.fromCharCode(bytes[i]);
+  }
+  return array.join('');
 };
 
 /**

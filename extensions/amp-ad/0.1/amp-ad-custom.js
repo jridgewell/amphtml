@@ -19,7 +19,7 @@ import {user} from '../../../src/log';
 import {templatesFor} from '../../../src/template';
 import {xhrFor} from '../../../src/xhr';
 import {addParamToUrl} from '../../../src/url';
-import {ancestorElementsByTag} from '../../../src/dom';
+import {closestByTag} from '../../../src/dom';
 import {removeChildren} from '../../../src/dom';
 import {AdDisplayState, AmpAdUIHandler} from './amp-ad-ui';
 
@@ -136,7 +136,7 @@ export class AmpAdCustom extends AMP.BaseElement {
 
       // Get the parent body of this amp-ad element. It could be the body of
       // the main document, or it could be an enclosing iframe.
-      const body = ancestorElementsByTag(this.element, 'BODY')[0];
+      const body = closestByTag(this.element, 'BODY');
       const elements = body.querySelectorAll('amp-ad[type=custom]');
       for (let index = 0; index < elements.length; index++) {
         const elem = elements[index];

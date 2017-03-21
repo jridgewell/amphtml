@@ -614,7 +614,7 @@ export function handleFetch(request, maybeClientId) {
         // Now, was it because we served an old cached version or because
         // they requested this exact version; If we served an old version,
         // let's get the new one.
-        if (version !== rtv && rtv == BASE_RTV_VERSION) {
+        if (version !== rtv && rtvEnvironment(rtv) === BASE_RTV_ENVIRONMENT) {
           fetchJsFile(cache, rtvRequest, pathname, rtv);
         }
 

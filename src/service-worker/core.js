@@ -35,6 +35,17 @@ export let RtvVersion;
  */
 export let RtvEnvironment;
 
+/**
+ * Holds information about the current client, including everything they have
+ * requested and the version that was served to them.
+ * @typedef {{
+ *   rtvs: !Array<!RtvVersion>,
+ *   pathnames: !Array<string>,
+ *   promise: ?Promise<!RtvVersion>,
+ * }}
+ */
+export let ClientInfo;
+
 /** @const */
 const TAG = 'cache-service-worker';
 
@@ -68,12 +79,12 @@ const BASE_RTV_ENVIRONMENT = rtvEnvironment(BASE_RTV_VERSION);
 let cache;
 
 /**
- * A mapping from a Client's (unique per tab _and_ refresh) ID to the AMP
- * release version we are serving it.
+ * A mapping from a Client's (unique per tab _and_ refresh) ID the ClientInfo
+ * we have stored about it.
  *
- * @type {!Object<string, !Promise<!RtvVersion>>}
+ * @type {!Object<string, !ClientInfo>}
  */
-const clientsVersion = Object.create(null);
+const clientsMap = Object.create(null);
 
 /**
  * A mapping from a client's referrer into the time that referrer last made a
@@ -222,6 +233,31 @@ function normalizedRequest(request, version) {
 }
 
 /**
+ * Stores the files and versions that the client requests, along with a promise
+ * that resolves the version that should be served to this client. This
+ * information will eventually be used to determine the promise's value.
+ *
+ * @param {string} clientId
+ * @param {!RtvVersion} rtv
+ * @param {string} pathname
+ * @return {!ClientInfo}
+ */
+function clientRequsted(clientId, rtv, pathname) {
+  let client = clientsMap[clientId];
+  if (!client) {
+    client = clientsMap[clientId] = {
+      rtvs: [],
+      pathnames: [],
+      promise: null,
+    };
+  }
+
+  client.rtvs.push(rtv);
+  client.pathnames.push(pathname);
+  return client;
+}
+
+/**
  * Determines if a AMP version is blacklisted.
  * @param {!RtvVersion} version
  * @return {boolean}
@@ -347,12 +383,12 @@ export function diversions(cache) {
 }
 
 /*
- * Resets clientsVersion, referrersLastRequestTime, and fetchPromises.
+ * Resets clientsMap, referrersLastRequestTime, and fetchPromises.
  * @visibleForTesting
  */
 export function resetMemosForTesting() {
-  for (const key in clientsVersion) {
-    delete clientsVersion[key];
+  for (const key in clientsMap) {
+    delete clientsMap[key];
   }
   for (const key in referrersLastRequestTime) {
     delete referrersLastRequestTime[key];
@@ -491,30 +527,33 @@ function purge(cache, version, pathname, diversions) {
  * main binary and the first requested file.
  *
  * @param {!Cache} cache
- * @param {!RtvVersion} requestVersion
- * @param {string} requestPath
+ * @param {!ClientInfo} client
  * @return {!Promise<!RtvVersion>}
  * @visibleForTesting
  */
-export function getCachedVersion(cache, requestVersion, requestPath) {
-  const requestEnv = rtvEnvironment(requestVersion);
+export function getCachedVersion(cache, client) {
+  const {rtvs, pathnames, promise} = client;
+  if (promise) {
+    return promise;
+  }
+
   // If a request comes in for a version that does not match the SW's
   // environment (eg, a percent diversion when the SW is using the production
   // env), we must serve with the requested version.
-  if (requestEnv !== BASE_RTV_ENVIRONMENT) {
-    return Promise.resolve(requestVersion);
+  for (let i = 0; i < rtvs.length; i++) {
+    const rtv = rtvs[i];
+    if (rtvEnvironment(rtv) !== BASE_RTV_ENVIRONMENT) {
+      return client.promise = Promise.resolve(rtv);
+    }
   }
 
-  // TODO(jridgewell): Maybe we should add a very short delay (~5ms) to collect
-  // several requests. Then, use all requests to determine what to serve.
-  return cache.keys().then(requests => {
+  return client.promise = cache.keys().then(requests => {
     const counts = {};
-    let most = requestVersion;
+    let most = rtvs[0];
     let mostCount = 0;
 
-    // Generates a weighted maximum version, ie the version with the most
-    // cached files. Given every file we've cached, determine what version
-    // it is, and increment the number of files we have for that version.
+    // Determines which RTV we have that is most common among the cached files
+    // that were requested.
     for (let i = 0; i < requests.length; i++) {
       const url = requests[i].url;
       const data = requestData(url);
@@ -524,10 +563,9 @@ export function getCachedVersion(cache, requestVersion, requestPath) {
 
       const {pathname, rtv} = data;
 
-      // We will not stale serve a version that does not match the request's
-      // environment. This is so cached percent diversions will not be "stale"
-      // served when requesting a production script.
-      if (requestEnv !== rtvEnvironment(rtv)) {
+      // We will not stale serve a diversion to a production request (which
+      // this is).
+      if (rtvEnvironment(rtv) !== BASE_RTV_ENVIRONMENT) {
         continue;
       }
 
@@ -537,24 +575,15 @@ export function getCachedVersion(cache, requestVersion, requestPath) {
         continue;
       }
 
-      let count = counts[rtv] || 0;
-
-      // Incrementing the number of "files" that have this version with a
-      // weight.
-      // The main binary (arguably the most important file to cache) is given a
-      // heavy weight, while the first requested file is given a slight weight.
-      // Everything else increments normally.
-      if (pathname.indexOf('/', 1) === -1) {
-        // Main binary
-        count += 5;
-      } else if (requestPath === pathname) {
-        // Give a little precedence to the requested file
-        count += 2;
-      } else {
-        count++;
+      // Only consider files that were actually requested.
+      if (pathnames.indexOf(pathname) === -1) {
+        continue;
       }
 
+      let count = counts[rtv] || 0;
+      count++;
       counts[rtv] = count;
+
       if (count > mostCount) {
         most = rtv;
         mostCount = count;
@@ -591,6 +620,7 @@ export function handleFetch(request, maybeClientId) {
   const clientId = /** @type {string} */(maybeClientId);
   const {pathname, rtv} = data;
 
+  const client = clientRequsted(clientId, rtv, pathname);
   // Rewrite unversioned requests to the versioned RTV URL. This is a noop if
   // it's already versioned.
   request = normalizedRequest(request, rtv);
@@ -598,14 +628,7 @@ export function handleFetch(request, maybeClientId) {
   // Wait for the cachePromise to resolve. This is necessary
   // since the SW thread may be killed and restarted at any time.
   return /** @type {!Promise<!Response>} */ (cachePromise.then(() => {
-    // If we already registered this client, we must always use the same
-    // version.
-    if (clientsVersion[clientId]) {
-      return clientsVersion[clientId];
-    }
-
-    // If not, let's find the version to serve up.
-    return clientsVersion[clientId] = getCachedVersion(cache, rtv, pathname);
+    return getCachedVersion(cache, client);
   }).then(version => {
     const versionedRequest = normalizedRequest(request, version);
 

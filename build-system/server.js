@@ -752,6 +752,7 @@ app.get(['/dist/cache-sw.min.html', '/dist/cache-sw.max.html'], function(req, re
     }
     file = file.replace(/dist\/v0/g, `dist/rtv/${env}${n}/v0`);
     file = file.replace(/CURRENT_RTV/, env + n);
+    file = file.replace(/RANDOM/g, () => Math.random().toFixed(1));
 
     res.setHeader('Content-Type', 'text/html');
     res.end(file);

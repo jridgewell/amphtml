@@ -71,7 +71,7 @@ module.exports = {
   ],
 
   // Number of sauce tests to start in parallel
-  concurrency: 6,
+  concurrency: 3,
 
   customLaunchers: {
     /*eslint "google-camelcase/google-camelcase": 0*/

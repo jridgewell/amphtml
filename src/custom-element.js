@@ -1068,6 +1068,7 @@ function createBaseCustomElementClass(win) {
       this.isInViewport_ = inViewport;
       if (this.layoutCount_ == 0) {
         if (!inViewport) {
+          //TODO
           this.toggleLoading_(false);
         } else {
           // Set a minimum delay in case the element loads very fast or if it
@@ -1079,6 +1080,7 @@ function createBaseCustomElementClass(win) {
             if (this.isInViewport_ &&
                 this.ownerDocument &&
                 this.ownerDocument.defaultView) {
+              // TODO
               this.toggleLoading_(true);
             }
           }, 100);
@@ -1331,6 +1333,7 @@ function createBaseCustomElementClass(win) {
      * @param {boolean} displayOn
      */
     toggleLayoutDisplay(displayOn) {
+      // TODO
       this.classList.toggle('i-amphtml-display', displayOn);
     }
 
@@ -1355,6 +1358,7 @@ function createBaseCustomElementClass(win) {
      * @package @final @this {!Element}
      */
     togglePlaceholder(show) {
+      // TODO
       assertNotTemplate(this);
       if (show) {
         const placeholder = this.getPlaceholder();
@@ -1385,6 +1389,7 @@ function createBaseCustomElementClass(win) {
      * @package @final @this {!Element}
      */
     toggleFallback(show) {
+      // TODO
       assertNotTemplate(this);
       const resourceState = this.getResourceState_();
       // Do not show fallback before layout
@@ -1412,6 +1417,7 @@ function createBaseCustomElementClass(win) {
      * @package @final @this {!Element}
      */
     renderStarted() {
+      // TODO
       this.signals_.signal(CommonSignals.RENDER_START);
       this.togglePlaceholder(false);
       this.toggleLoading_(false);
@@ -1491,6 +1497,7 @@ function createBaseCustomElementClass(win) {
      * @private @final @this {!Element}
      */
     toggleLoading_(state, opt_cleanup) {
+      // TODO
       assertNotTemplate(this);
       if (state &&
           (this.layoutCount_ > 0 ||

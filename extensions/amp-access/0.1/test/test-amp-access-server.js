@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+import * as lolex from 'lolex';
 import {AccessServerAdapter} from '../amp-access-server';
 import {removeFragment} from '../../../../src/url';
-import * as lolex from 'lolex';
 
 
 describes.realWin('AccessServerAdapter', {amp: true}, env => {
@@ -33,7 +33,7 @@ describes.realWin('AccessServerAdapter', {amp: true}, env => {
     win = env.win;
     document = win.document;
     ampdoc = env.ampdoc;
-    clock = lolex.install(win);
+    clock = lolex.install({target: win});
 
     validConfig = {
       'authorization': 'https://acme.com/a?rid=READER_ID',
@@ -53,6 +53,7 @@ describes.realWin('AccessServerAdapter', {amp: true}, env => {
   });
 
   afterEach(() => {
+    clock.uninstall();
     contextMock.verify();
   });
 
@@ -72,9 +73,9 @@ describes.realWin('AccessServerAdapter', {amp: true}, env => {
 
     it('should fail if config is invalid', () => {
       delete validConfig['authorization'];
-      expect(() => {
+      allowConsoleError(() => { expect(() => {
         new AccessServerAdapter(ampdoc, validConfig, context);
-      }).to.throw(/"authorization" URL must be specified/);
+      }).to.throw(/"authorization" URL must be specified/); });
     });
 
     it('should tolerate when i-amphtml-access-state is missing', () => {
@@ -182,10 +183,11 @@ describes.realWin('AccessServerAdapter', {amp: true}, env => {
             })
             .returns(Promise.resolve(responseDoc))
             .once();
-        const replaceSectionsStub = sandbox.stub(adapter, 'replaceSections_',
-            () => {
-              return Promise.resolve();
-            });
+        const replaceSectionsStub =
+            sandbox.stub(adapter, 'replaceSections_').callsFake(
+                () => {
+                  return Promise.resolve();
+                });
         return adapter.authorize().then(response => {
           expect(response).to.exist;
           expect(response.access).to.equal('A');
@@ -258,7 +260,7 @@ describes.realWin('AccessServerAdapter', {amp: true}, env => {
               },
               requireAmpResponseSourceOrigin: false,
             })
-            .returns(new Promise(() => {}))  // Never resolved.
+            .returns(new Promise(() => {})) // Never resolved.
             .once();
         const promise = adapter.authorize();
         return Promise.resolve().then(() => {

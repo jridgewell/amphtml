@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {writeScript, validateData} from '../3p/3p';
+import {validateData, writeScript} from '../3p/3p';
 
 const adbladeFields = ['width', 'height', 'cid'];
 const adbladeHostname = 'web.adblade.com';
@@ -35,8 +35,8 @@ function addAdiantUnit(hostname, global, data) {
   global.document.getElementById('c').appendChild(ins);
 
   ins.parentNode.addEventListener(
-    'eventAdbladeRenderStart',
-    global.context.renderStart()
+      'eventAdbladeRenderStart',
+      global.context.renderStart()
   );
 
   // run our JavaScript code to display the ad unit

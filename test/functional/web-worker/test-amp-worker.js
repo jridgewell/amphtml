@@ -14,24 +14,29 @@
  * limitations under the License.
  */
 
-import {dev} from '../../../src/log';
-import {
-  invokeWebWorker,
-  ampWorkerForTesting,
-} from '../../../src/web-worker/amp-worker';
-import {installXhrService} from '../../../src/service/xhr-impl';
-import {xhrFor} from '../../../src/services';
 import * as sinon from 'sinon';
+import {Services} from '../../../src/services';
+import {
+  ampWorkerForTesting,
+  invokeWebWorker,
+} from '../../../src/web-worker/amp-worker';
+import {dev} from '../../../src/log';
+import {installXhrService} from '../../../src/service/xhr-impl';
 
 describe('invokeWebWorker', () => {
   let sandbox;
   let fakeWin;
+
+  let ampWorker;
   let postMessageStub;
   let fakeWorker;
   let workerReadyPromise;
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
+    sandbox.stub(Services, 'ampdocServiceFor').returns({
+      isSingleDoc: () => false,
+    });
 
     postMessageStub = sandbox.stub();
 
@@ -48,9 +53,14 @@ describe('invokeWebWorker', () => {
 
     // Stub xhr.fetchText() to return a resolved promise.
     installXhrService(fakeWin);
-    sandbox.stub(xhrFor(fakeWin), 'fetchText', () => Promise.resolve());
+    sandbox.stub(Services.xhrFor(fakeWin), 'fetchText').callsFake(
+        () => Promise.resolve({
+          text() {
+            return Promise.resolve();
+          },
+        }));
 
-    const ampWorker = ampWorkerForTesting(fakeWin);
+    ampWorker = ampWorkerForTesting(fakeWin);
     workerReadyPromise = ampWorker.fetchPromiseForTesting();
   });
 
@@ -60,8 +70,10 @@ describe('invokeWebWorker', () => {
 
   it('should check if Worker is supported', () => {
     fakeWin.Worker = undefined;
-    return expect(invokeWebWorker(fakeWin, 'foo'))
-        .to.eventually.be.rejectedWith('not supported');
+    allowConsoleError(() => {
+      return expect(invokeWebWorker(fakeWin, 'foo'))
+          .to.eventually.be.rejectedWith('not supported');
+    });
   });
 
   it('should send and receive a message', () => {
@@ -180,19 +192,17 @@ describe('invokeWebWorker', () => {
       expect(errorStub).to.have.been.calledWith('web-worker');
 
       // Unexpected method at valid `id`.
-      expect(() => {
+      allowConsoleError(() => { expect(() => {
         fakeWorker.onmessage({data: {
           method: 'bar',
           returnValue: undefined,
           id: 0,
         }});
-      }).to.throw('mismatched method');
+      }).to.throw('mismatched method'); });
     });
   });
 
   it('should clean up storage after message completion', () => {
-    const ampWorker = ampWorkerForTesting(fakeWin);
-
     invokeWebWorker(fakeWin, 'foo');
 
     return workerReadyPromise.then(() => {
@@ -205,6 +215,41 @@ describe('invokeWebWorker', () => {
       }});
 
       expect(ampWorker.hasPendingMessages()).to.be.false;
+    });
+  });
+
+  it('should send unique scope IDs per `opt_localWin` value', () => {
+    const scopeOne = {};
+    const scopeTwo = {};
+
+    // Sending.
+    invokeWebWorker(fakeWin, 'a'); // Default scope == 0.
+    invokeWebWorker(fakeWin, 'b', undefined, /* opt_localWin */ scopeOne);
+    invokeWebWorker(fakeWin, 'c', undefined, /* opt_localWin */ scopeTwo);
+    invokeWebWorker(fakeWin, 'd', undefined, /* opt_localWin */ scopeOne);
+    invokeWebWorker(fakeWin, 'e', undefined, /* opt_localWin */ fakeWin);
+
+    return workerReadyPromise.then(() => {
+      expect(postMessageStub).to.have.been.calledWithMatch({
+        method: 'a',
+        scope: 0,
+      });
+      expect(postMessageStub).to.have.been.calledWithMatch({
+        method: 'b',
+        scope: 1,
+      });
+      expect(postMessageStub).to.have.been.calledWithMatch({
+        method: 'c',
+        scope: 2,
+      });
+      expect(postMessageStub).to.have.been.calledWithMatch({
+        method: 'd',
+        scope: 1,
+      });
+      expect(postMessageStub).to.have.been.calledWithMatch({
+        method: 'e',
+        scope: 0,
+      });
     });
   });
 });

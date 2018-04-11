@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
+import {AmpEvents} from '../amp-events';
+import {Layout} from '../layout';
+import {computedStyle, toggle} from '../style';
+import {dev} from '../log';
+import {isBlockedByConsent} from '../error';
+import {isExperimentOn} from '../experiments';
 import {
   layoutRectLtwh,
   layoutRectsOverlap,
   moveLayoutRect,
 } from '../layout-rect';
-import {dev} from '../log';
 import {startsWith} from '../string';
-import {toggle, computedStyle} from '../style';
+import {toWin} from '../types';
 
 const TAG = 'Resource';
 const RESOURCE_PROP_ = '__AMP__RESOURCE';
@@ -80,8 +85,8 @@ export class Resource {
    */
   static forElement(element) {
     return /** @type {!Resource} */ (
-        dev().assert(Resource.forElementOptional(element),
-            'Missing resource prop on %s', element));
+      dev().assert(Resource.forElementOptional(element),
+          'Missing resource prop on %s', element));
   }
 
   /**
@@ -133,7 +138,7 @@ export class Resource {
     this.debugid = element.tagName.toLowerCase() + '#' + id;
 
     /** @const {!Window} */
-    this.hostWin = element.ownerDocument.defaultView;
+    this.hostWin = toWin(element.ownerDocument.defaultView);
 
     /** @const @private {!./resources-impl.Resources} */
     this.resources_ = resources;
@@ -142,14 +147,14 @@ export class Resource {
     this.isPlaceholder_ = element.hasAttribute('placeholder');
 
     /** @private {boolean} */
-    this.blacklisted_ = false;
+    this.isBuilding_ = false;
 
     /** @private {!AmpElement|undefined|null} */
     this.owner_ = undefined;
 
     /** @private {!ResourceState} */
     this.state_ = element.isBuilt() ? ResourceState.NOT_LAID_OUT :
-        ResourceState.NOT_BUILT;
+      ResourceState.NOT_BUILT;
 
     /** @private {number} */
     this.priorityOverride_ = -1;
@@ -172,9 +177,6 @@ export class Resource {
     /** @private {boolean} */
     this.isMeasureRequested_ = false;
 
-    /** @private {boolean} */
-    this.isInViewport_ = false;
-
     /** @private {?Promise} */
     this.renderOutsideViewportPromise_ = null;
 
@@ -184,7 +186,7 @@ export class Resource {
     /** @private {?Promise<undefined>} */
     this.layoutPromise_ = null;
 
-   /**
+    /**
     * Pending change size that was requested but could not be satisfied.
     * @private {!./resources-impl.SizeDef|undefined}
     */
@@ -201,8 +203,8 @@ export class Resource {
       this.loadPromiseResolve_ = resolve;
     });
 
-    /** @private {boolean} */
-    this.paused_ = false;
+    /** @private @const {boolean} */
+    this.useLayers_ = isExperimentOn(this.hostWin, 'layers');
   }
 
   /**
@@ -252,18 +254,18 @@ export class Resource {
    * Returns the resource's element priority.
    * @return {number}
    */
-  getPriority() {
+  getLayoutPriority() {
     if (this.priorityOverride_ != -1) {
       return this.priorityOverride_;
     }
-    return this.element.getPriority();
+    return this.element.getLayoutPriority();
   }
 
   /**
    * Overrides the element's priority.
    * @param {number} newPriority
    */
-  updatePriority(newPriority) {
+  updateLayoutPriority(newPriority) {
     this.priorityOverride_ = newPriority;
   }
 
@@ -276,39 +278,63 @@ export class Resource {
   }
 
   /**
-   * Returns whether the resource has been blacklisted.
+   * Returns whether the resource has been fully built.
    * @return {boolean}
    */
-  isBlacklisted() {
-    return this.blacklisted_;
+  isBuilt() {
+    return this.element.isBuilt();
+  }
+
+  /**
+   * Returns whether the resource is currently being built.
+   * @return {boolean}
+   */
+  isBuilding() {
+    return this.isBuilding_;
+  }
+
+  /**
+   * Returns promise that resolves when the element has been built.
+   * @return {!Promise}
+   */
+  whenBuilt() {
+    // TODO(dvoytenko): merge with the standard BUILT signal.
+    return this.element.signals().whenSignal('res-built');
   }
 
   /**
    * Requests the resource's element to be built. See {@link AmpElement.build}
    * for details.
+   * @return {?Promise}
    */
   build() {
-    if (this.blacklisted_ || !this.element.isUpgraded()
-        || !this.resources_.grantBuildPermission()) {
-      return;
+    if (this.isBuilding_ ||
+        !this.element.isUpgraded() ||
+        !this.resources_.grantBuildPermission()) {
+      return null;
     }
-    try {
-      this.element.build();
-    } catch (e) {
-      dev().error(TAG, 'failed to build:', this.debugid, e);
-      this.blacklisted_ = true;
-      return;
-    }
-
-    if (this.hasBeenMeasured()) {
-      this.state_ = ResourceState.READY_FOR_LAYOUT;
-      this.element.updateLayoutBox(this.layoutBox_);
-    } else {
-      this.state_ = ResourceState.NOT_LAID_OUT;
-    }
-    // TODO(dvoytenko, #7389): cleanup once amp-sticky-ad signals are
-    // in PROD.
-    this.element.dispatchCustomEvent('amp:built');
+    this.isBuilding_ = true;
+    return this.element.build().then(() => {
+      this.isBuilding_ = false;
+      if (this.hasBeenMeasured()) {
+        this.state_ = ResourceState.READY_FOR_LAYOUT;
+        this.element.updateLayoutBox(this.getLayoutBox());
+      } else {
+        this.state_ = ResourceState.NOT_LAID_OUT;
+      }
+      // TODO(dvoytenko): merge with the standard BUILT signal.
+      this.element.signals().signal('res-built');
+      // TODO(dvoytenko, #7389): cleanup once amp-sticky-ad signals are
+      // in PROD.
+      this.element.dispatchCustomEvent(AmpEvents.BUILT);
+    }, reason => {
+      if (!isBlockedByConsent(reason)) {
+        dev().error(TAG, 'failed to build:', this.debugid, reason);
+      }
+      this.isBuilding_ = false;
+      this.element.signals().rejectSignal('res-built', reason);
+      throw reason;
+    });
   }
 
   /**
@@ -328,10 +354,8 @@ export class Resource {
   changeSize(newHeight, newWidth, opt_newMargins) {
     this.element./*OK*/changeSize(newHeight, newWidth, opt_newMargins);
 
-    // Schedule for re-layout.
-    if (this.state_ != ResourceState.NOT_BUILT) {
-      this.state_ = ResourceState.NOT_LAID_OUT;
-    }
+    // Schedule for re-measure and possible re-layout.
+    this.requestMeasure();
   }
 
   /**
@@ -343,7 +367,7 @@ export class Resource {
    *     requestedMargins
    */
   overflowCallback(overflown, requestedHeight, requestedWidth,
-      requestedMargins) {
+    requestedMargins) {
     if (overflown) {
       this.pendingChangeSize_ = {
         height: requestedHeight,
@@ -364,6 +388,15 @@ export class Resource {
    */
   getPendingChangeSize() {
     return this.pendingChangeSize_;
+  }
+
+  /**
+   * Time delay imposed by baseElement upgradeCallback.  If no
+   * upgradeCallback specified or not yet executed, delay is 0.
+   * @return {number}
+   */
+  getUpgradeDelayMs() {
+    return this.element.getUpgradeDelayMs();
   }
 
   /**
@@ -388,37 +421,13 @@ export class Resource {
 
     this.isMeasureRequested_ = false;
 
-    let box = this.resources_.getViewport().getLayoutRect(this.element);
-    const oldBox = this.layoutBox_;
-    const viewport = this.resources_.getViewport();
-    this.layoutBox_ = box;
-
-    // Calculate whether the element is currently is or in `position:fixed`.
-    let isFixed = false;
-    if (this.isDisplayed()) {
-      const win = this.resources_.win;
-      const body = win.document.body;
-      for (let n = this.element; n && n != body; n = n./*OK*/offsetParent) {
-        if (n.isAlwaysFixed && n.isAlwaysFixed()) {
-          isFixed = true;
-          break;
-        }
-        if (viewport.isDeclaredFixed(n)
-            && computedStyle(win, n).position == 'fixed') {
-          isFixed = true;
-          break;
-        }
-      }
+    const oldBox = this.getPageLayoutBox();
+    if (this.useLayers_) {
+      this.measureViaLayers_();
+    } else {
+      this.measureViaResources_();
     }
-    this.isFixed_ = isFixed;
-
-    if (isFixed) {
-      // For fixed position elements, we need the relative position to the
-      // viewport. When accessing the layoutBox through #getLayoutBox, we'll
-      // return the new absolute position.
-      box = this.layoutBox_ = moveLayoutRect(box, -viewport.getScrollLeft(),
-          -viewport.getScrollTop());
-    }
+    const box = this.getPageLayoutBox();
 
     // Note that "left" doesn't affect readiness for the layout.
     if (this.state_ == ResourceState.NOT_LAID_OUT ||
@@ -441,18 +450,72 @@ export class Resource {
     this.element.updateLayoutBox(box);
   }
 
+  measureViaResources_() {
+    const viewport = this.resources_.getViewport();
+    const box = this.resources_.getViewport().getLayoutRect(this.element);
+    this.layoutBox_ = box;
+
+    // Calculate whether the element is currently is or in `position:fixed`.
+    let isFixed = false;
+    if (viewport.supportsPositionFixed() && this.isDisplayed()) {
+      const win = this.resources_.win;
+      const body = win.document.body;
+      for (let n = this.element; n && n != body; n = n./*OK*/offsetParent) {
+        if (n.isAlwaysFixed && n.isAlwaysFixed()) {
+          isFixed = true;
+          break;
+        }
+        if (viewport.isDeclaredFixed(n)
+            && computedStyle(win, n).position == 'fixed') {
+          isFixed = true;
+          break;
+        }
+      }
+    }
+    this.isFixed_ = isFixed;
+
+    if (isFixed) {
+      // For fixed position elements, we need the relative position to the
+      // viewport. When accessing the layoutBox through #getLayoutBox, we'll
+      // return the new absolute position.
+      this.layoutBox_ = moveLayoutRect(box, -viewport.getScrollLeft(),
+          -viewport.getScrollTop());
+    }
+  }
+
+  measureViaLayers_() {
+    const {element} = this;
+    const layers = element.getLayers();
+    /**
+     * TODO(jridgewell): This force remeasure shouldn't be necessary. We
+     * essentially have 3 phases of measurements:
+     * 1. Initial measurements during page load, where we're not mutating
+     * 2. Remeasurements after page load, where we might have mutated (but
+     *    really shouldn't, it's a bug we haven't fixed yet)
+     * 3. Mutation remeasurements
+     *
+     * We can optimize the initial measurements by not forcing remeasure. But
+     * for both 2 and 3, we need for force it.
+     */
+    layers.remeasure(element, /* opt_force */ true);
+  }
+
   /**
    * Completes collapse: ensures that the element is `display:none` and
    * updates layout box.
    */
   completeCollapse() {
     toggle(this.element, false);
-    this.layoutBox_ = layoutRectLtwh(
-        this.layoutBox_.left,
-        this.layoutBox_.top,
-        0, 0);
+    if (this.useLayers_) {
+      this.layoutBox_ = layoutRectLtwh(0, 0, 0, 0);
+    } else {
+      this.layoutBox_ = layoutRectLtwh(
+          this.layoutBox_.left,
+          this.layoutBox_.top,
+          0, 0);
+    }
     this.isFixed_ = false;
-    this.element.updateLayoutBox(this.layoutBox_);
+    this.element.updateLayoutBox(this.getLayoutBox());
     const owner = this.getOwner();
     if (owner) {
       owner.collapsedCallback(this.element);
@@ -488,10 +551,6 @@ export class Resource {
    * Requests the element to be remeasured on the next pass.
    */
   requestMeasure() {
-    if (this.state_ == ResourceState.NOT_BUILT) {
-      // Can't measure unbuilt element.
-      return;
-    }
     this.isMeasureRequested_ = true;
   }
 
@@ -502,6 +561,16 @@ export class Resource {
    * @return {!../layout-rect.LayoutRectDef}
    */
   getLayoutBox() {
+    if (this.useLayers_) {
+      // TODO(jridgewell): transition all callers to position and/or size calls
+      // directly.
+      const {element} = this;
+      const layers = element.getLayers();
+      const pos = layers.getScrolledPosition(element);
+      const size = layers.getSize(element);
+      return layoutRectLtwh(pos.left, pos.top, size.width, size.height);
+    }
+
     if (!this.isFixed_) {
       return this.layoutBox_;
     }
@@ -516,6 +585,14 @@ export class Resource {
    * @return {!../layout-rect.LayoutRectDef}
    */
   getPageLayoutBox() {
+    if (this.useLayers_) {
+      const {element} = this;
+      const layers = element.getLayers();
+      const pos = layers.getOffsetPosition(element);
+      const size = layers.getSize(element);
+      return layoutRectLtwh(pos.left, pos.top, size.width, size.height);
+    }
+
     return this.layoutBox_;
   }
 
@@ -535,9 +612,13 @@ export class Resource {
    * @return {boolean}
    */
   isDisplayed() {
-    return (this.layoutBox_.height > 0 && this.layoutBox_.width > 0 &&
+    const isFluid = this.element.getLayout() == Layout.FLUID;
+    // TODO(jridgewell): #getSize
+    const box = this.getLayoutBox();
+    const hasNonZeroSize = box.height > 0 && box.width > 0;
+    return (isFluid || hasNonZeroSize) &&
         !!this.element.ownerDocument &&
-        !!this.element.ownerDocument.defaultView);
+        !!this.element.ownerDocument.defaultView;
   }
 
   /**
@@ -595,43 +676,41 @@ export class Resource {
   }
 
   /**
-   * Whether this is allowed to render when not in viewport.
-   * @return {boolean}
+   * @param {number|boolean} multiplier
+   * @return {boolean} whether resource is within provider multiplier of
+   *    viewports from current visible viewport.
+   * @visibleForTesting
    */
-  renderOutsideViewport() {
-    // The exception is for owned resources, since they only attempt to
-    // render outside viewport when the owner has explicitly allowed it.
-    // TODO(jridgewell, #5803): Resources should be asking owner if it can
-    // prerender this resource, so that it can avoid expensive elements wayyy
-    // outside of viewport. For now, blindly trust that owner knows what it's
-    // doing.
-    if (this.hasOwner()) {
-      this.resolveRenderOutsideViewport_();
-      return true;
+  withinViewportMultiplier(multiplier) {
+    // Boolean interface controls explicit result.
+    if (multiplier === true || multiplier === false) {
+      return multiplier;
     }
 
-    const renders = this.element.renderOutsideViewport();
-    // Boolean interface, element is either always allowed or never allowed to
-    // render outside viewport.
-    if (renders === true || renders === false) {
-      if (renders === true) {
-        this.resolveRenderOutsideViewport_();
-      }
-      return renders;
-    }
     // Numeric interface, element is allowed to render outside viewport when it
     // is within X times the viewport height of the current viewport.
     const viewportBox = this.resources_.getViewport().getRect();
     const layoutBox = this.getLayoutBox();
     const scrollDirection = this.resources_.getScrollDirection();
-    const multipler = Math.max(renders, 0);
+    multiplier = Math.max(multiplier, 0);
     let scrollPenalty = 1;
-    let distance;
-    if (viewportBox.right < layoutBox.left ||
-        viewportBox.left > layoutBox.right) {
-      // If outside of viewport's x-axis, element is not in viewport.
-      return false;
+    let distance = 0;
+
+    // TODO(jridgewell): Switch all viewport distance calculations to use
+    // Layer's definition of ancestry layer viewports.
+
+    if (this.useLayers_) {
+      distance += Math.max(0,
+          layoutBox.left - viewportBox.right,
+          viewportBox.left - layoutBox.right);
+    } else {
+      if (viewportBox.right < layoutBox.left ||
+          viewportBox.left > layoutBox.right) {
+        // If outside of viewport's x-axis, element is not in viewport.
+        return false;
+      }
     }
+
     if (viewportBox.bottom < layoutBox.top) {
       // Element is below viewport
       distance = layoutBox.top - viewportBox.bottom;
@@ -650,21 +729,50 @@ export class Resource {
       }
     } else {
       // Element is in viewport
+      return true;
+    }
+    return distance < viewportBox.height * multiplier / scrollPenalty;
+  }
+
+  /**
+   * Whether this is allowed to render when not in viewport.
+   * @return {boolean}
+   */
+  renderOutsideViewport() {
+    // The exception is for owned resources, since they only attempt to
+    // render outside viewport when the owner has explicitly allowed it.
+    // TODO(jridgewell, #5803): Resources should be asking owner if it can
+    // prerender this resource, so that it can avoid expensive elements wayyy
+    // outside of viewport. For now, blindly trust that owner knows what it's
+    // doing.
+    if (this.hasOwner()) {
       this.resolveRenderOutsideViewport_();
       return true;
     }
-    const result = distance < viewportBox.height * multipler / scrollPenalty;
-    if (result) {
+    if (this.withinViewportMultiplier(this.element.renderOutsideViewport())) {
       this.resolveRenderOutsideViewport_();
+      return true;
     }
-    return result;
+    return false;
+  }
+
+  /**
+   * Whether this is allowed to render when scheduler is idle but not in
+   * viewport.
+   * @return {boolean}
+   */
+  idleRenderOutsideViewport() {
+    return this.withinViewportMultiplier(
+        this.element.idleRenderOutsideViewport());
   }
 
   /**
    * Sets the resource's state to LAYOUT_SCHEDULED.
+   * @param {number} scheduleTime The time at which layout was scheduled.
    */
-  layoutScheduled() {
+  layoutScheduled(scheduleTime) {
     this.state_ = ResourceState.LAYOUT_SCHEDULED;
+    this.element.layoutScheduleTime = scheduleTime;
   }
 
   /**
@@ -673,8 +781,8 @@ export class Resource {
   layoutCanceled() {
     this.state_ =
         this.hasBeenMeasured() ?
-        ResourceState.READY_FOR_LAYOUT :
-        ResourceState.NOT_LAID_OUT;
+          ResourceState.READY_FOR_LAYOUT :
+          ResourceState.NOT_LAID_OUT;
   }
 
   /**
@@ -737,7 +845,7 @@ export class Resource {
     this.layoutPromise_ = null;
     this.loadedOnce_ = true;
     this.state_ = success ? ResourceState.LAYOUT_COMPLETE :
-        ResourceState.LAYOUT_FAILED;
+      ResourceState.LAYOUT_FAILED;
     this.lastLayoutError_ = opt_reason;
     if (success) {
       dev().fine(TAG, 'layout complete:', this.debugid);
@@ -779,7 +887,7 @@ export class Resource {
    * @return {boolean}
    */
   isInViewport() {
-    return this.isInViewport_;
+    return this.element.isInViewport();
   }
 
   /**
@@ -787,15 +895,6 @@ export class Resource {
    * @param {boolean} inViewport
    */
   setInViewport(inViewport) {
-    // TODO(dvoytenko, #9177): investigate/cleanup viewport signals for
-    // elements in dead iframes.
-    if (inViewport == this.isInViewport_ ||
-        !this.element.ownerDocument ||
-        !this.element.ownerDocument.defaultView) {
-      return;
-    }
-    dev().fine(TAG, 'inViewport:', this.debugid, inViewport);
-    this.isInViewport_ = inViewport;
     this.element.viewportCallback(inViewport);
   }
 
@@ -830,11 +929,6 @@ export class Resource {
    * Calls element's pauseCallback callback.
    */
   pause() {
-    if (this.state_ == ResourceState.NOT_BUILT || this.paused_) {
-      return;
-    }
-    this.paused_ = true;
-    this.setInViewport(false);
     this.element.pauseCallback();
     if (this.element.unlayoutOnPause()) {
       this.unlayout();
@@ -845,14 +939,6 @@ export class Resource {
    * Calls element's pauseCallback callback.
    */
   pauseOnRemove() {
-    if (this.state_ == ResourceState.NOT_BUILT) {
-      return;
-    }
-    this.setInViewport(false);
-    if (this.paused_) {
-      return;
-    }
-    this.paused_ = true;
     this.element.pauseCallback();
   }
 
@@ -860,10 +946,6 @@ export class Resource {
    * Calls element's resumeCallback callback.
    */
   resume() {
-    if (this.state_ == ResourceState.NOT_BUILT || !this.paused_) {
-      return;
-    }
-    this.paused_ = false;
     this.element.resumeCallback();
   }
 

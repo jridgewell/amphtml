@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
+import * as lolex from 'lolex';
+import {Services} from '../../src/services';
 import {adConfig} from '../../ads/_config';
-import {ampdocServiceFor} from '../../src/ampdoc';
-import {createIframePromise} from '../../testing/iframe';
-import {cidServiceForDocForTesting,} from
-    '../../extensions/amp-analytics/0.1/cid-impl';
-import {installDocService} from '../../src/service/ampdoc-impl';
+import {
+  cidServiceForDocForTesting,
+} from '../../src/service/cid-impl';
 import {getAdCid} from '../../src/ad-cid';
-import {setCookie} from '../../src/cookies';
-import {timerFor} from '../../src/services';
-import * as sinon from 'sinon';
 
-describe('ad-cid', () => {
+describes.realWin('ad-cid', {amp: true}, env => {
   const cidScope = 'cid-in-ads-test';
   const config = adConfig['_ping_'];
   let sandbox;
@@ -34,32 +31,33 @@ describe('ad-cid', () => {
   let clock;
   let element;
   let adElement;
+  let win;
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
-    clock = sandbox.useFakeTimers();
-    element = document.createElement('amp-ad');
+    win = env.win;
+    sandbox = env.sandbox;
+    clock = lolex.install({
+      target: win, toFake: ['Date', 'setTimeout', 'clearTimeout']});
+    element = env.win.document.createElement('amp-ad');
     element.setAttribute('type', '_ping_');
-    installDocService(window, /* isSingleDoc */ true);
-    const ampdoc = ampdocServiceFor(window).getAmpDoc();
+    const ampdoc = env.ampdoc;
     cidService = cidServiceForDocForTesting(ampdoc);
     adElement = {
       getAmpDoc: () => ampdoc,
       element,
-      win: window,
+      win,
     };
   });
 
   afterEach(() => {
-    sandbox.restore();
-    setCookie(window, cidScope, '', Date.now() - 5000);
+    clock.uninstall();
   });
 
   it('should get correct cid', () => {
     config.clientIdScope = cidScope;
 
     let getCidStruct;
-    sandbox.stub(cidService, 'get', struct => {
+    sandbox.stub(cidService, 'get').callsFake(struct => {
       getCidStruct = struct;
       return Promise.resolve('test123');
     });
@@ -67,6 +65,7 @@ describe('ad-cid', () => {
       expect(cid).to.equal('test123');
       expect(getCidStruct).to.deep.equal({
         scope: cidScope,
+        createCookieIfNotPresent: true,
         cookieName: undefined,
       });
     });
@@ -77,7 +76,7 @@ describe('ad-cid', () => {
     config.clientIdCookieName = 'different-cookie-name';
 
     let getCidStruct;
-    sandbox.stub(cidService, 'get', struct => {
+    sandbox.stub(cidService, 'get').callsFake(struct => {
       getCidStruct = struct;
       return Promise.resolve('test123');
     });
@@ -85,6 +84,7 @@ describe('ad-cid', () => {
       expect(cid).to.equal('test123');
       expect(getCidStruct).to.deep.equal({
         scope: cidScope,
+        createCookieIfNotPresent: true,
         cookieName: 'different-cookie-name',
       });
     });
@@ -92,12 +92,12 @@ describe('ad-cid', () => {
 
   it('should return on timeout', () => {
     config.clientIdScope = cidScope;
-    sandbox.stub(cidService, 'get', () => {
-      return timerFor(window).promise(2000);
+    sandbox.stub(cidService, 'get').callsFake(() => {
+      return Services.timerFor(win).promise(2000);
     });
     const p = getAdCid(adElement).then(cid => {
       expect(cid).to.be.undefined;
-      expect(Date.now()).to.equal(1000);
+      expect(win.Date.now()).to.equal(1000);
     });
     clock.tick(999);
     // Let promises resolve before ticking 1 more ms.
@@ -109,21 +109,11 @@ describe('ad-cid', () => {
 
   it('should return undefined on failed CID', () => {
     config.clientIdScope = cidScope;
-    sandbox.stub(cidService, 'get', () => {
+    sandbox.stub(cidService, 'get').callsFake(() => {
       return Promise.reject(new Error('nope'));
     });
-    return getAdCid(adElement).then(cid => {
-      expect(cid).to.be.undefined;
-    });
-  });
-
-  it('should return null if cid service not available', () => {
-    config.clientIdScope = cidScope;
-    return createIframePromise(true /* runtimeOff */).then(iframe => {
-      adElement.win = iframe.win;
-      return getAdCid(adElement).then(cid => {
-        expect(cid).to.be.null;
-      });
+    allowConsoleError(() => {
+      return expect(getAdCid(adElement)).to.eventually.be.undefined;
     });
   });
 });

@@ -20,13 +20,12 @@
  */
 
 
+import {Services} from './services';
+import {dev} from './log';
 import {getService, registerServiceBuilder} from './service';
 import {parseUrl} from './url';
-import {timerFor} from './services';
-import {platformFor} from './services';
-import {viewerForDoc} from './services';
-import {dev} from './log';
 import {startsWith} from './string';
+import {toWin} from './types';
 
 const ACTIVE_CONNECTION_TIMEOUT_MS = 180 * 1000;
 const PRECONNECT_TIMEOUT_MS = 10 * 1000;
@@ -51,13 +50,16 @@ let preconnectFeatures = null;
  */
 function getPreconnectFeatures(win) {
   if (!preconnectFeatures) {
-    const tokenList = win.document.createElement('link')['relList'];
+    const linkTag = win.document.createElement('link');
+    const tokenList = linkTag['relList'];
+    linkTag.as = 'invalid-value';
     if (!tokenList || !tokenList.supports) {
       return {};
     }
     preconnectFeatures = {
       preconnect: tokenList.supports('preconnect'),
       preload: tokenList.supports('preload'),
+      onlyValidAs: linkTag.as != 'invalid-value',
     };
   }
   return preconnectFeatures;
@@ -95,7 +97,7 @@ class PreconnectService {
      */
     this.urls_ = {};
     /** @private @const {!./service/platform-impl.Platform}  */
-    this.platform_ = platformFor(win);
+    this.platform_ = Services.platformFor(win);
     // Mark current origin as preconnected.
     this.origins_[parseUrl(win.location.href).origin] = true;
 
@@ -108,7 +110,7 @@ class PreconnectService {
     this.features_ = getPreconnectFeatures(win);
 
     /** @private @const {!./service/timer-impl.Timer} */
-    this.timer_ = timerFor(win);
+    this.timer_ = Services.timerFor(win);
   }
 
   /**
@@ -125,6 +127,25 @@ class PreconnectService {
    *    will be used very soon.
    */
   url(viewer, url, opt_alsoConnecting) {
+    viewer.whenFirstVisible().then(() => {
+      this.url_(viewer, url, opt_alsoConnecting);
+    });
+  }
+
+  /**
+   * Preconnects to a URL. Always also does a dns-prefetch because
+   * browser support for that is better.
+   * @param {!./service/viewer-impl.Viewer} viewer
+   * @param {string} url
+   * @param {boolean=} opt_alsoConnecting Set this flag if you also just
+   *    did or are about to connect to this host. This is for the case
+   *    where preconnect is issued immediate before or after actual connect
+   *    and preconnect is used to flatten a deep HTTP request chain.
+   *    E.g. when you preconnect to a host that an embed will connect to
+   *    when it is more fully rendered, you already know that the connection
+   *    will be used very soon.
+   */
+  url_(viewer, url, opt_alsoConnecting) {
     if (!this.isInterestingUrl_(url)) {
       return;
     }
@@ -140,8 +161,8 @@ class PreconnectService {
     // If we are about to use the connection, don't re-preconnect for
     // 180 seconds.
     const timeout = opt_alsoConnecting
-        ? ACTIVE_CONNECTION_TIMEOUT_MS
-        : PRECONNECT_TIMEOUT_MS;
+      ? ACTIVE_CONNECTION_TIMEOUT_MS
+      : PRECONNECT_TIMEOUT_MS;
     this.origins_[origin] = now + timeout;
     // If we know that preconnect is supported, there is no need to do
     // dedicated dns-prefetch.
@@ -186,9 +207,11 @@ class PreconnectService {
     if (this.urls_[url]) {
       return;
     }
-    const command = this.features_.preload ? 'preload' : 'prefetch';
     this.urls_[url] = true;
     this.url(viewer, url, /* opt_alsoConnecting */ true);
+    if (!this.features_.preload) {
+      return;
+    }
     if (opt_preloadAs == 'document' && this.platform_.isSafari()) {
       // Preloading documents currently does not work in Safari,
       // because it
@@ -198,20 +221,30 @@ class PreconnectService {
       return;
     }
     viewer.whenFirstVisible().then(() => {
-      const preload = this.document_.createElement('link');
-      preload.setAttribute('rel', command);
-      preload.setAttribute('href', url);
-      preload.setAttribute('referrerpolicy', 'origin');
-      // Do not set 'as' attribute for now, for 2 reasons
-      // - document value is not yet supported and dropped
-      // - script is blocked due to CSP.
-      // if (opt_preloadAs) {
-      //  preload.setAttribute('as', opt_preloadAs);
-      // }
-      this.head_.appendChild(preload);
-      // As opposed to preconnect we do not clean this tag up, because there is
-      // no expectation as to it having an immediate effect.
+      this.performPreload_(url);
     });
+  }
+
+  performPreload_(url) {
+    const preload = this.document_.createElement('link');
+    preload.setAttribute('rel', 'preload');
+    preload.setAttribute('href', url);
+    preload.setAttribute('referrerpolicy', 'origin');
+    // Do not set 'as' attribute to correct value for now, for 2 reasons
+    // - document value is not yet supported and dropped
+    // - script is blocked due to CSP.
+    // Due to spec change we now have to also preload with the "as"
+    // being set to `fetch` when it would previously would be empty.
+    // See https://github.com/w3c/preload/issues/80
+    // for details.
+    if (this.features_.onlyValidAs) {
+      preload.as = 'fetch';
+    } else {
+      preload.as = '';
+    }
+    this.head_.appendChild(preload);
+    // As opposed to preconnect we do not clean this tag up, because there is
+    // no expectation as to it having an immediate effect.
   }
 
   /**
@@ -254,31 +287,29 @@ class PreconnectService {
       return;
     }
 
-    viewer.whenFirstVisible().then(() => {
-      // Don't attempt to preconnect for ACTIVE_CONNECTION_TIMEOUT_MS since
-      // we effectively create an active connection.
-      // TODO(@cramforce): Confirm actual http2 timeout in Safari.
-      const now = Date.now();
-      this.origins_[origin] = now + ACTIVE_CONNECTION_TIMEOUT_MS;
-      // Make the URL change whenever we want to make a new request,
-      // but make it stay stable in between. While a given page
-      // would not actually make a new request, another page might
-      // and with this it has the same URL. If (and that is a big if)
-      // the server responds with a cacheable response, this reduces
-      // requests we make. More importantly, though, it reduces URL
-      // entropy as seen by servers and thus allows reverse proxies
-      // (read CDNs) to respond more efficiently.
-      const cacheBust = now - (now % ACTIVE_CONNECTION_TIMEOUT_MS);
-      const url = origin +
-          '/amp_preconnect_polyfill_404_or_other_error_expected.' +
-          '_Do_not_worry_about_it?' + cacheBust;
-      // We use an XHR without withCredentials(true), so we do not send cookies
-      // to the host and the host cannot set cookies.
-      const xhr = new XMLHttpRequest();
-      xhr.open('HEAD', url, true);
+    // Don't attempt to preconnect for ACTIVE_CONNECTION_TIMEOUT_MS since
+    // we effectively create an active connection.
+    // TODO(@cramforce): Confirm actual http2 timeout in Safari.
+    const now = Date.now();
+    this.origins_[origin] = now + ACTIVE_CONNECTION_TIMEOUT_MS;
+    // Make the URL change whenever we want to make a new request,
+    // but make it stay stable in between. While a given page
+    // would not actually make a new request, another page might
+    // and with this it has the same URL. If (and that is a big if)
+    // the server responds with a cacheable response, this reduces
+    // requests we make. More importantly, though, it reduces URL
+    // entropy as seen by servers and thus allows reverse proxies
+    // (read CDNs) to respond more efficiently.
+    const cacheBust = now - (now % ACTIVE_CONNECTION_TIMEOUT_MS);
+    const url = origin +
+        '/amp_preconnect_polyfill_404_or_other_error_expected.' +
+        '_Do_not_worry_about_it?' + cacheBust;
+    const xhr = new XMLHttpRequest();
+    xhr.open('HEAD', url, true);
+    // We only support credentialed preconnect for now.
+    xhr.withCredentials = true;
 
-      xhr.send();
-    });
+    xhr.send();
   }
 }
 
@@ -305,7 +336,7 @@ export class Preconnect {
    */
   getViewer_() {
     if (!this.viewer_) {
-      this.viewer_ = viewerForDoc(this.element_);
+      this.viewer_ = Services.viewerForDoc(this.element_);
     }
     return this.viewer_;
   }
@@ -343,7 +374,7 @@ export class Preconnect {
  * @return {!Preconnect}
  */
 export function preconnectForElement(element) {
-  const serviceHolder = element.ownerDocument.defaultView;
+  const serviceHolder = toWin(element.ownerDocument.defaultView);
   registerServiceBuilder(serviceHolder, 'preconnect', PreconnectService);
   const preconnectService = getService(serviceHolder, 'preconnect');
   return new Preconnect(preconnectService, element);

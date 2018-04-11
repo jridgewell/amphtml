@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+import * as sinon from 'sinon';
 import {JwtHelper} from '../jwt';
 import {pemToBytes} from '../../../../src/utils/pem';
-import * as sinon from 'sinon';
 
 
 describe('JwtHelper', () => {
@@ -63,23 +63,23 @@ describe('JwtHelper', () => {
     });
 
     it('should fail on invalid format', () => {
-      expect(() => {
+      allowConsoleError(() => { expect(() => {
         helper.decodeInternal_('ABC');
-      }).to.throw(/Invalid token/);
+      }).to.throw(/Invalid token/); });
     });
 
     it('should fail on invalid JSON in header', () => {
-      expect(() => {
+      allowConsoleError(() => { expect(() => {
         helper.decodeInternal_(
             `${TOKEN_HEADER.substring(1)}.${TOKEN_PAYLOAD}.${TOKEN_SIG}`);
-      }).to.throw(/Invalid token/);
+      }).to.throw(/Invalid token/); });
     });
 
     it('should fail on invalid JSON in payload', () => {
-      expect(() => {
+      allowConsoleError(() => { expect(() => {
         helper.decodeInternal_(
             `${TOKEN_HEADER}.${TOKEN_PAYLOAD.substring(1)}.${TOKEN_SIG}`);
-      }).to.throw(/Invalid token/);
+      }).to.throw(/Invalid token/); });
     });
 
     it('should decode web safe and non-web-safe base64', () => {
@@ -116,15 +116,16 @@ describe('JwtHelper', () => {
 
     // TODO(aghassemi, 6292): Unskip for Safari after #6292
     it.configure().skipSafari().run('should decode and verify token correctly',
-    () => {
-      // Skip on non-subtle browser.
-      if (!helper.isVerificationSupported()) {
-        return;
-      }
-      return helper.decodeAndVerify(TOKEN, Promise.resolve(PEM)).then(tok => {
-        expect(tok['name']).to.equal('John Do');
-      });
-    });
+        () => {
+          // Skip on non-subtle browser.
+          if (!helper.isVerificationSupported()) {
+            return;
+          }
+          return helper.decodeAndVerify(TOKEN, Promise.resolve(PEM))
+              .then(tok => {
+                expect(tok['name']).to.equal('John Do');
+              });
+        });
 
     it.configure().skipSafari().run('should fail invalid signature', () => {
       // Skip on non-subtle browser.
@@ -211,24 +212,24 @@ describe('JwtHelper', () => {
     it('should fetch they key and verify', () => {
       const key = 'KEY';
       subtleMock.expects('importKey')
-        .withExactArgs(
+          .withExactArgs(
           /* format */ 'spki',
-          pemToBytes(PEM),
-          {name: 'RSASSA-PKCS1-v1_5', hash: {name: 'SHA-256'}},
-          /* extractable */ false,
-          /* uses */ ['verify']
-        )
-        .returns(Promise.resolve(key))
-        .once();
+              pemToBytes(PEM),
+              {name: 'RSASSA-PKCS1-v1_5', hash: {name: 'SHA-256'}},
+              /* extractable */ false,
+              /* uses */ ['verify']
+          )
+          .returns(Promise.resolve(key))
+          .once();
       subtleMock.expects('verify')
-        .withExactArgs(
-          {name: 'RSASSA-PKCS1-v1_5'},
-          key,
-          /* sig */ sinon.match(() => true),
-          /* verifiable */ sinon.match(() => true)
-        )
-        .returns(Promise.resolve(true))
-        .once();
+          .withExactArgs(
+              {name: 'RSASSA-PKCS1-v1_5'},
+              key,
+              /* sig */ sinon.match(() => true),
+              /* verifiable */ sinon.match(() => true)
+          )
+          .returns(Promise.resolve(true))
+          .once();
       return helper.decodeAndVerify(TOKEN, Promise.resolve(PEM)).then(tok => {
         expect(tok['name']).to.equal('John Do');
       });

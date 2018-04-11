@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+import * as sinon from 'sinon';
 import {handleClick, warmupDynamic, warmupStatic} from '../../ads/alp/handler';
 import {parseUrl} from '../../src/url';
-import * as sinon from 'sinon';
 
 describe('alp-handler', () => {
 
@@ -33,7 +33,7 @@ describe('alp-handler', () => {
     win = {
       location: {},
       open: () => null,
-      Image: function() {
+      Image() {
         image = this;
       },
       postMessage: sandbox.stub(),
@@ -55,7 +55,7 @@ describe('alp-handler', () => {
       postMessage: sandbox.stub(),
       _id: 'p3',
     };
-    open = sandbox.stub(win, 'open', () => {
+    open = sandbox.stub(win, 'open').callsFake(() => {
       return {};
     });
     const doc = {
@@ -297,7 +297,7 @@ describe('alp-handler', () => {
 
   it('should warmup statically', () => {
     warmupStatic(win);
-    expect(image).to.be.defined;
+    expect(image).to.exist;
     expect(image.src).to.equal('https://cdn.ampproject.org/preconnect.gif');
     expect(win.document.head.appendChild).to.be.calledOnce;
     const link = win.document.head.appendChild.lastCall.args[0];
@@ -307,10 +307,15 @@ describe('alp-handler', () => {
 
   it('should warmup dynamically', () => {
     warmupDynamic(event);
-    expect(win.document.head.appendChild).to.be.calledOnce;
-    const link = win.document.head.appendChild.lastCall.args[0];
-    expect(link.rel).to.equal('preload');
-    expect(link.href).to.equal(
+    expect(win.document.head.appendChild).to.be.callCount(2);
+    const link0 = win.document.head.appendChild.firstCall.args[0];
+    expect(link0.rel).to.equal('preload');
+    expect(link0.href).to.equal(
+        'https://cdn.ampproject.org/c/www.example.com/amp.html');
+    const link1 = win.document.head.appendChild.secondCall.args[0];
+    expect(link1.rel).to.equal('preload');
+    expect(link1.as).to.equal('fetch');
+    expect(link1.href).to.equal(
         'https://cdn.ampproject.org/c/www.example.com/amp.html');
   });
 

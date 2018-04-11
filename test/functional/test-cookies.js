@@ -85,17 +85,17 @@ describe('cookies', () => {
         document: doc,
         location: {
           hostname,
-          href: 'https://' + hostname + ':8000/test.html',
+          href: 'https://' + hostname + '/test.html',
         }},
-          'c&1', 'v&1', 1447383159853, {
-            highestAvailableDomain: true,
-            allowOnProxyOrigin: !!opt_allowOnProxyOrigin,
-          });
+      'c&1', 'v&1', 1447383159853, {
+        highestAvailableDomain: true,
+        allowOnProxyOrigin: !!opt_allowOnProxyOrigin,
+      });
       if (opt_noset) {
         expect(cookie).to.be.undefined;
       } else {
         expect(cookie).to.equal(
-           'c%261=v%261; path=/; domain=' + targetDomain +
+            'c%261=v%261; path=/; domain=' + targetDomain +
             '; expires=Fri, 13 Nov 2015 02:52:39 GMT');
       }
     }
@@ -107,28 +107,32 @@ describe('cookies', () => {
     test('www.example.net', 'example.com', true);
     test('example.net', 'example.com', true);
     test('cdn.ampproject.org', 'ampproject.org', true, true);
-    expect(() => {
-      test('cdn.ampproject.org', 'ampproject.org', true);
-    }).to.throw(/Should never attempt to set cookie on proxy origin\: c\&1/);
-    expect(() => {
-      test('CDN.ampproject.org', 'ampproject.org', true);
-    }).to.throw(/Should never attempt to set cookie on proxy origin\: c\&1/);
-    expect(() => {
-      test('CDN.ampproject.org', 'AMPproject.org', true);
-    }).to.throw(/Should never attempt to set cookie on proxy origin\: c\&1/);
+    allowConsoleError(() => {
+      expect(() => {
+        test('cdn.ampproject.org', 'ampproject.org', true);
+      }).to.throw(/Should never attempt to set cookie on proxy origin\: c\&1/);
+      expect(() => {
+        test('CDN.ampproject.org', 'ampproject.org', true);
+      }).to.throw(/Should never attempt to set cookie on proxy origin\: c\&1/);
+      expect(() => {
+        test('CDN.ampproject.org', 'AMPproject.org', true);
+      }).to.throw(/Should never attempt to set cookie on proxy origin\: c\&1/);
+    });
     test('www.ampproject.org', 'www.ampproject.org');
     test('cdn.ampproject.org', 'cdn.ampproject.org', false, true);
-    expect(() => {
-      test('cdn.ampproject.org', 'cdn.ampproject.org', false);
-    }).to.throw(/Should never attempt to set cookie on proxy origin\: c\&1/);
-    expect(() => {
-      test('foo.bar.cdn.ampproject.org', 'foo.bar.cdn.ampproject.org', false);
-    }).to.throw(/in depth check/);
-    expect(() => {
-      test('&&&.cdn.ampproject.org', '&&&.cdn.ampproject.org', false);
-    }).to.throw(/in depth check/);
-    expect(() => {
-      test('&&&.CDN.ampproject.org', '&&&.cdn.AMPproject.org', false);
-    }).to.throw(/in depth check/);
+    allowConsoleError(() => {
+      expect(() => {
+        test('cdn.ampproject.org', 'cdn.ampproject.org', false);
+      }).to.throw(/Should never attempt to set cookie on proxy origin\: c\&1/);
+      expect(() => {
+        test('foo.bar.cdn.ampproject.org', 'foo.bar.cdn.ampproject.org', false);
+      }).to.throw(/in depth check/);
+      expect(() => {
+        test('&&&.cdn.ampproject.org', '&&&.cdn.ampproject.org', false);
+      }).to.throw(/in depth check/);
+      expect(() => {
+        test('&&&.CDN.ampproject.org', '&&&.cdn.AMPproject.org', false);
+      }).to.throw(/in depth check/);
+    });
   });
 });

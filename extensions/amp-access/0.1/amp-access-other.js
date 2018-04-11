@@ -21,22 +21,22 @@ import {isProxyOrigin} from '../../../src/url';
 const TAG = 'amp-access-other';
 
 
-/** @implements {AccessTypeAdapterDef} */
+/** @implements {./amp-access-source.AccessTypeAdapterDef} */
 export class AccessOtherAdapter {
 
   /**
    * @param {!../../../src/service/ampdoc-impl.AmpDoc} ampdoc
-   * @param {!JSONType} configJson
-   * @param {!AccessTypeAdapterContextDef} context
+   * @param {!JsonObject} configJson
+   * @param {!./amp-access-source.AccessTypeAdapterContextDef} context
    */
   constructor(ampdoc, configJson, context) {
     /** @const */
     this.ampdoc = ampdoc;
 
-    /** @const @private {!AccessTypeAdapterContextDef} */
+    /** @const @private {!./amp-access-source.AccessTypeAdapterContextDef} */
     this.context_ = context;
 
-    /** @private {?JSONType} */
+    /** @private {?JsonObject} */
     this.authorizationResponse_ =
         configJson['authorizationFallbackResponse'] || null;
 
@@ -75,5 +75,10 @@ export class AccessOtherAdapter {
   pingback() {
     dev().fine(TAG, 'Ignore pingback');
     return Promise.resolve();
+  }
+
+  /** @override */
+  postAction() {
+    // Nothing to do.
   }
 }

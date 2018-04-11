@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import {isLayoutSizeDefined} from '../../../src/layout';
 import {addParamsToUrl} from '../../../src/url';
 import {getDataParamsFromAttributes, removeElement} from '../../../src/dom';
+import {isLayoutSizeDefined} from '../../../src/layout';
 import {user} from '../../../src/log';
 
 class AmpBrightcove extends AMP.BaseElement {
@@ -151,6 +151,9 @@ class AmpBrightcove extends AMP.BaseElement {
     }
     return true;
   }
-};
+}
 
-AMP.registerElement('amp-brightcove', AmpBrightcove);
+
+AMP.extension('amp-brightcove', '0.1', AMP => {
+  AMP.registerElement('amp-brightcove', AmpBrightcove);
+});

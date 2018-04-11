@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-import PriorityQueue from './utils/priority-queue';
+import {Services} from './services';
 import {dev} from './log';
-import {registerServiceBuilderForDoc, getServiceForDoc} from './service';
+import {getData} from './event-helper';
+import {getServiceForDoc, registerServiceBuilderForDoc} from './service';
 import {makeBodyVisible} from './style-installer';
-import {viewerPromiseForDoc} from './services';
+import PriorityQueue from './utils/priority-queue';
 
 /**
  * @const {string}
@@ -103,11 +104,11 @@ export function chunkInstanceForTesting(nodeOrAmpDoc) {
  */
 export function deactivateChunking() {
   deactivated = true;
-};
+}
 
 export function activateChunkingForTesting() {
   deactivated = false;
-};
+}
 
 /**
  * Runs all currently scheduled chunks.
@@ -154,7 +155,7 @@ const TaskState = {
  */
 class Task {
   /**
-   * @param {!function(?IdleDeadline)} fn
+   * @param {function(?IdleDeadline)} fn
    */
   constructor(fn) {
     /** @public {TaskState} */
@@ -228,7 +229,7 @@ class Task {
  */
 class StartupTask extends Task {
   /**
-   * @param {!function(?IdleDeadline)} fn
+   * @param {function(?IdleDeadline)} fn
    * @param {!Window} win
    * @param {!Promise<!./service/viewer-impl.Viewer>} viewerPromise
    */
@@ -314,10 +315,10 @@ class Chunks {
     this.boundExecute_ = this.execute_.bind(this);
 
     /** @private @const {!Promise<!./service/viewer-impl.Viewer>} */
-    this.viewerPromise_ = viewerPromiseForDoc(ampDoc);
+    this.viewerPromise_ = Services.viewerPromiseForDoc(ampDoc);
 
     this.win_.addEventListener('message', e => {
-      if (e.data == 'amp-macro-task') {
+      if (getData(e) == 'amp-macro-task') {
         this.execute_(/* idleDeadline */ null);
       }
     });

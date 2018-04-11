@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import {removeElement} from '../../../src/dom';
 import {isLayoutSizeDefined} from '../../../src/layout';
+import {removeElement} from '../../../src/dom';
 import {user} from '../../../src/log';
 
 class AmpJWPlayer extends AMP.BaseElement {
@@ -34,7 +34,10 @@ class AmpJWPlayer extends AMP.BaseElement {
     this.iframe_ = null;
   }
 
-    /** @override */
+  /**
+   * @param {boolean=} onLayout
+   * @override
+   */
   preconnectCallback(onLayout) {
     // Host that serves player configuration and content redirects
     this.preconnect.url('https://content.jwplatform.com', onLayout);
@@ -50,16 +53,16 @@ class AmpJWPlayer extends AMP.BaseElement {
   /** @override */
   buildCallback() {
     this.contentid_ = user().assert(
-      (this.element.getAttribute('data-playlist-id') ||
+        (this.element.getAttribute('data-playlist-id') ||
       this.element.getAttribute('data-media-id')),
-      'Either the data-media-id or the data-playlist-id ' +
+        'Either the data-media-id or the data-playlist-id ' +
       'attributes must be specified for <amp-jwplayer> %s',
-      this.element);
+        this.element);
 
     this.playerid_ = user().assert(
-      this.element.getAttribute('data-player-id'),
-      'The data-player-id attribute is required for <amp-jwplayer> %s',
-      this.element);
+        this.element.getAttribute('data-player-id'),
+        'The data-player-id attribute is required for <amp-jwplayer> %s',
+        this.element);
   }
 
 
@@ -84,7 +87,7 @@ class AmpJWPlayer extends AMP.BaseElement {
       // The /players page can respond to "play" and "pause" commands from the
       // iframe's parent
       this.iframe_.contentWindow./*OK*/postMessage('pause',
-        'https://content.jwplatform.com');
+          'https://content.jwplatform.com');
     }
   }
 
@@ -103,14 +106,24 @@ class AmpJWPlayer extends AMP.BaseElement {
       return;
     }
     const placeholder = this.win.document.createElement('amp-img');
+    this.propagateAttributes(['aria-label'], placeholder);
     placeholder.setAttribute('src', 'https://content.jwplatform.com/thumbs/' +
         encodeURIComponent(this.contentid_) + '-720.jpg');
     placeholder.setAttribute('layout', 'fill');
     placeholder.setAttribute('placeholder', '');
     placeholder.setAttribute('referrerpolicy', 'origin');
+    if (placeholder.hasAttribute('aria-label')) {
+      placeholder.setAttribute('alt',
+          'Loading video - ' + placeholder.getAttribute('aria-label')
+      );
+    } else {
+      placeholder.setAttribute('alt', 'Loading video');
+    }
     return placeholder;
   }
+}
 
-};
 
-AMP.registerElement('amp-jwplayer', AmpJWPlayer);
+AMP.extension('amp-jwplayer', '0.1', AMP => {
+  AMP.registerElement('amp-jwplayer', AmpJWPlayer);
+});

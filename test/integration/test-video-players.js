@@ -50,7 +50,16 @@ describe.skip('amp-youtube', () => {
   });
 });
 
-describe.configure().skipIos().run('amp-3q-player', () => {
+//TODO(aghassemi, #9379): unskip
+describe.skip('amp-dailymotion', () => {
+  runVideoPlayerIntegrationTests(fixture => {
+    const video = fixture.doc.createElement('amp-dailymotion');
+    video.setAttribute('data-videoid', 'x3rdtfy');
+    return video;
+  });
+});
+
+describe.configure().skip('amp-3q-player', () => {
   runVideoPlayerIntegrationTests(fixture => {
     const video = fixture.doc.createElement('amp-3q-player');
     video.setAttribute('data-id', 'c8dbe7f4-7f7f-11e6-a407-0cc47a188158');
@@ -92,4 +101,3 @@ describe.configure().skipIos().run('amp-brid-player', () => {
     return video;
   });
 });
-

@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import {user} from '../../../src/log';
-import {startsWith} from '../../../src/string';
+import {dict} from '../../../src/utils/object';
 import {isArray, isObject} from '../../../src/types';
+import {startsWith} from '../../../src/string';
+import {user} from '../../../src/log';
 
 /** @const */
 const TAG = 'amp-auto-ads';
@@ -29,26 +30,26 @@ const NON_DATA_ATTRIBUTE_WHITELIST = {
 };
 
 /**
- * @param {!Object} configObj
- * @return {!Object<string, string>}
+ * @param {!JsonObject} configObj
+ * @return {!JsonObject<string, string>}
  */
 export function getAttributesFromConfigObj(configObj) {
   if (!configObj['attributes']) {
-    return {};
+    return dict();
   }
   if (!isObject(configObj['attributes']) || isArray(configObj['attributes'])) {
     user().warn(TAG, 'attributes property not an object');
-    return {};
+    return dict();
   }
   return parseAttributes(configObj['attributes']);
 }
 
 /**
- * @param {!Object} attributeObject
- * @return {!Object<string, string>}
+ * @param {!JsonObject} attributeObject
+ * @return {!JsonObject<string, string>}
  */
 function parseAttributes(attributeObject) {
-  const attributes = {};
+  const attributes = dict();
   for (const key in attributeObject) {
     if (!NON_DATA_ATTRIBUTE_WHITELIST[key] && !startsWith(key, 'data-')) {
       user().warn(TAG, 'Attribute not whitlisted: ' + key);
@@ -63,4 +64,4 @@ function parseAttributes(attributeObject) {
     attributes[key] = String(attributeObject[key]);
   }
   return attributes;
-};
+}

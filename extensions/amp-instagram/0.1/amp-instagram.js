@@ -47,14 +47,14 @@
  */
 
 import {CSS} from '../../../build/amp-instagram-0.1.css';
+import {getData, listen} from '../../../src/event-helper';
 import {isLayoutSizeDefined} from '../../../src/layout';
-import {setStyles} from '../../../src/style';
-import {removeElement} from '../../../src/dom';
-import {user} from '../../../src/log';
-import {tryParseJson} from '../../../src/json';
 import {isObject} from '../../../src/types';
-import {listen} from '../../../src/event-helper';
+import {removeElement} from '../../../src/dom';
+import {setStyles} from '../../../src/style';
 import {startsWith} from '../../../src/string';
+import {tryParseJson} from '../../../src/json';
+import {user} from '../../../src/log';
 
 /*
  * These padding values are specifc to intagram embeds with
@@ -87,7 +87,7 @@ class AmpInstagram extends AMP.BaseElement {
     /** @private {string}  */
     this.captioned_ = '';
   }
- /**
+  /**
   * @param {boolean=} opt_onLayout
   * @override
   */
@@ -114,7 +114,7 @@ class AmpInstagram extends AMP.BaseElement {
         'The data-shortcode attribute is required for <amp-instagram> %s',
         this.element);
     this.captioned_ = this.element.hasAttribute('data-captioned') ?
-        'captioned/' : '';
+      'captioned/' : '';
   }
 
   /** @override */
@@ -161,9 +161,9 @@ class AmpInstagram extends AMP.BaseElement {
     this.iframe_ = iframe;
 
     this.unlistenMessage_ = listen(
-      this.win,
-      'message',
-      this.handleInstagramMessages_.bind(this)
+        this.win,
+        'message',
+        this.handleInstagramMessages_.bind(this)
     );
 
     iframe.setAttribute('scrolling', 'no');
@@ -195,21 +195,22 @@ class AmpInstagram extends AMP.BaseElement {
         event.source != this.iframe_.contentWindow) {
       return;
     }
-    if (!event.data || !(isObject(event.data) || startsWith(event.data, '{'))) {
-      return;  // Doesn't look like JSON.
+    const eventData = getData(event);
+    if (!eventData || !(isObject(eventData)
+        || startsWith(/** @type {string} */ (eventData), '{'))) {
+      return; // Doesn't look like JSON.
     }
-    const data = isObject(event.data) ? event.data : tryParseJson(event.data);
+    const data = isObject(eventData) ? eventData : tryParseJson(eventData);
     if (data === undefined) {
       return; // We only process valid JSON.
     }
-    if (data.type == 'MEASURE' && data.details) {
-      const height = data.details.height;
+    if (data['type'] == 'MEASURE' && data['details']) {
+      const height = data['details']['height'];
       this.getVsync().measure(() => {
         if (this.iframe_ && this.iframe_./*OK*/offsetHeight !== height) {
           // Height returned by Instagram includes header, so
           // subtract 48px top padding
-          this.attemptChangeHeight(height - (PADDING_TOP + PADDING_BOTTOM))
-              .catch(() => {});
+          this./*OK*/changeHeight(height - (PADDING_TOP + PADDING_BOTTOM));
         }
       });
     }
@@ -230,8 +231,11 @@ class AmpInstagram extends AMP.BaseElement {
     if (this.unlistenMessage_) {
       this.unlistenMessage_();
     }
-    return true;  // Call layoutCallback again.
+    return true; // Call layoutCallback again.
   }
-};
+}
 
-AMP.registerElement('amp-instagram', AmpInstagram, CSS);
+
+AMP.extension('amp-instagram', '0.1', AMP => {
+  AMP.registerElement('amp-instagram', AmpInstagram, CSS);
+});

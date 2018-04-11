@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import {AmpDocSingle} from '../../src/service/ampdoc-impl';
-import {checkAndFix} from '../../src/service/ios-scrollfreeze-bug';
 import * as sinon from 'sinon';
+import {AmpDocSingle} from '../../src/service/ampdoc-impl';
+import {checkAndFix} from '../../src/service/viewport/ios-scrollfreeze-bug';
 
 
 describe('ios-scrollfreeze-bug', () => {
@@ -52,10 +52,10 @@ describe('ios-scrollfreeze-bug', () => {
     bodyBottom = '0px';
     bodySetSpy = sandbox.spy();
     Object.defineProperty(windowApi.document.body.style, 'bottom', {
-      get: function() {
+      get() {
         return bodyBottom;
       },
-      set: function(value) {
+      set(value) {
         bodySetSpy(value);
         bodyBottom = value;
       },
@@ -64,7 +64,7 @@ describe('ios-scrollfreeze-bug', () => {
     vsyncApi = {
       mutate: () => {},
     };
-    mutateStub = sandbox.stub(vsyncApi, 'mutate', callback => {
+    mutateStub = sandbox.stub(vsyncApi, 'mutate').callsFake(callback => {
       callback();
     });
 

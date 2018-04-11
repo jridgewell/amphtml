@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import {KeyCodes} from '../../../src/utils/key-codes';
-import {timerFor} from '../../../src/services';
+import {Services} from '../../../src/services';
 
 /**
  * @abstract
@@ -37,7 +37,9 @@ export class BaseCarousel extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
-    this.showControls_ = this.element.hasAttribute('controls');
+    const input = Services.inputFor(this.win);
+    this.showControls_ = input.isMouseDetected() ||
+        this.element.hasAttribute('controls');
 
     if (this.showControls_) {
       this.element.classList.add('i-amphtml-carousel-has-controls');
@@ -69,9 +71,13 @@ export class BaseCarousel extends AMP.BaseElement {
     this.prevButton_.classList.add('amp-carousel-button');
     this.prevButton_.classList.add('amp-carousel-button-prev');
     this.prevButton_.setAttribute('role', 'button');
-    // TODO(erwinm): Does label need i18n support in the future? or provide
-    // a way to be overridden.
-    this.prevButton_.setAttribute('aria-label', 'Previous item in carousel');
+    if (this.element.hasAttribute('data-previous-button-aria-label')) {
+      this.prevButton_.setAttribute('aria-label',
+          this.element.getAttribute('data-previous-button-aria-label'));
+    } else {
+      this.prevButton_.setAttribute('aria-label',
+          'Previous item in carousel');
+    }
     this.prevButton_.setAttribute('tabindex', 0);
     this.prevButton_.onkeydown = event => {
       if (event.keyCode == KeyCodes.ENTER || event.keyCode == KeyCodes.SPACE) {
@@ -90,7 +96,13 @@ export class BaseCarousel extends AMP.BaseElement {
     this.nextButton_.classList.add('amp-carousel-button');
     this.nextButton_.classList.add('amp-carousel-button-next');
     this.nextButton_.setAttribute('role', 'button');
-    this.nextButton_.setAttribute('aria-label', 'Next item in carousel');
+    if (this.element.hasAttribute('data-next-button-aria-label')) {
+      this.nextButton_.setAttribute('aria-label',
+          this.element.getAttribute('data-next-button-aria-label'));
+    } else {
+      this.nextButton_.setAttribute('aria-label',
+          'Next item in carousel');
+    }
     this.nextButton_.setAttribute('tabindex', 0);
     this.nextButton_.onkeydown = event => {
       if (event.keyCode == KeyCodes.ENTER || event.keyCode == KeyCodes.SPACE) {
@@ -172,8 +184,14 @@ export class BaseCarousel extends AMP.BaseElement {
     this.getVsync().mutate(() => {
       const className = 'i-amphtml-carousel-button-start-hint';
       this.element.classList.add(className);
-      timerFor(this.win).delay(() => {
-        this.deferMutate(() => this.element.classList.remove(className));
+      Services.timerFor(this.win).delay(() => {
+        this.mutateElement(() => {
+          this.element.classList.remove(className);
+          this.prevButton_.classList.toggle(
+              'i-amphtml-screen-reader', !this.showControls_);
+          this.nextButton_.classList.toggle(
+              'i-amphtml-screen-reader', !this.showControls_);
+        });
       }, 4000);
     });
   }

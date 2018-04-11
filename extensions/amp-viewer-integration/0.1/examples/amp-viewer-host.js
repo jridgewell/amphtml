@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-import '../../../../third_party/babel/custom-babel-helpers';
-import {initLogConstructor} from '../../../../src/log';
-import {APP, Messaging, MessageType, WindowPortEmulator} from '../messaging';
+import {
+  APP,
+  MessageType,
+  Messaging,
+  WindowPortEmulator,
+} from '../messaging/messaging';
 import {listen} from '../../../../src/event-helper';
 
-initLogConstructor();
 const CHANNEL_OPEN_MSG = 'channelOpen';
 
 /**
@@ -39,7 +41,7 @@ export class AmpViewerHost {
    * looking at.
    */
   constructor(win, ampIframe, frameOrigin, messageHandler, opt_logsId,
-      opt_isWebview, opt_isHandshakePoll) {
+    opt_isWebview, opt_isHandshakePoll) {
     /** @const {!Window} */
     this.win = win;
     /** @private {!HTMLIFrameElement} */
@@ -54,7 +56,7 @@ export class AmpViewerHost {
     if (this.isWebview_ || opt_isHandshakePoll) {
       /** @private {number} */
       this.pollingIntervalId_ = setInterval(
-        this.initiateHandshake_.bind(this, this.intervalCtr) , 1000); //poll every second
+          this.initiateHandshake_.bind(this, this.intervalCtr) , 1000); //poll every second
     } else {
       this.waitForHandshake_(frameOrigin);
     }
@@ -73,7 +75,7 @@ export class AmpViewerHost {
       };
       message = this.isWebview_ ? JSON.stringify(message) : message;
       this.ampIframe_.contentWindow./*OK*/postMessage(
-        message, '*', [channel.port2]);
+          message, '*', [channel.port2]);
 
       channel.port1.onmessage = function(e) {
         const data = this.isWebview_ ? JSON.parse(e.data) : e.data;
@@ -132,7 +134,7 @@ export class AmpViewerHost {
       state: this.visibilityState_,
       prerenderSize: this.prerenderSize,
     }, true);
-  };
+  }
 
   /**
    * @param {*} eventData
@@ -141,7 +143,7 @@ export class AmpViewerHost {
    */
   isChannelOpen_(eventData) {
     return eventData.app == APP && eventData.name == CHANNEL_OPEN_MSG;
-  };
+  }
 
   /**
    * @param {string} type
@@ -155,7 +157,7 @@ export class AmpViewerHost {
       return;
     }
     return this.messaging_.sendRequest(type, data, awaitResponse);
-  };
+  }
 
   log() {
     const var_args = Array.prototype.slice.call(arguments, 0);

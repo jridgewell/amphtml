@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-import {actionServiceForDoc} from './services';
-import {dev, user} from './log';
+import {ActionTrust} from './action-trust';
 import {
+  SOURCE_ORIGIN_PARAM,
   assertHttpsUrl,
   checkCorsUrl,
-  SOURCE_ORIGIN_PARAM,
   isProxyOrigin,
 } from './url';
+import {Services} from './services';
+import {dev, user} from './log';
 
 /**
  * @param {!./service/ampdoc-impl.AmpDoc} ampdoc
@@ -68,7 +69,7 @@ export function onDocumentFormSubmit_(e) {
   for (let i = 0; i < inputs.length; i++) {
     user().assert(!inputs[i].name ||
         inputs[i].name != SOURCE_ORIGIN_PARAM,
-        'Illegal input name, %s found: %s', SOURCE_ORIGIN_PARAM, inputs[i]);
+    'Illegal input name, %s found: %s', SOURCE_ORIGIN_PARAM, inputs[i]);
   }
 
   const action = form.getAttribute('action');
@@ -128,6 +129,10 @@ export function onDocumentFormSubmit_(e) {
     // handling of the event in cases were we are delegating to action service
     // to deliver the submission event.
     e.stopImmediatePropagation();
-    actionServiceForDoc(form).execute(form, 'submit', /*args*/ null, form, e);
+
+    const actions = Services.actionServiceForDoc(form);
+    actions.execute(
+        form, 'submit', /*args*/ null, /*source*/ form, /*caller*/ form, e,
+        ActionTrust.HIGH);
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 The AMP HTML Authors. All Rights Reserved.
+ * Copyright 2017 The AMP HTML Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,34 +14,46 @@
  * limitations under the License.
  */
 
+import {ActionTrust} from '../../../src/action-trust';
 import {CSS} from '../../../build/amp-sidebar-0.1.css';
 import {KeyCodes} from '../../../src/utils/key-codes';
-import {closestByTag, tryFocus} from '../../../src/dom';
 import {Layout} from '../../../src/layout';
+import {Services} from '../../../src/services';
+import {Toolbar} from './toolbar';
+import {closestByTag, isRTL, tryFocus} from '../../../src/dom';
+import {createCustomEvent} from '../../../src/event-helper';
+import {debounce} from '../../../src/utils/rate-limit';
 import {dev} from '../../../src/log';
-import {historyForDoc} from '../../../src/services';
-import {platformFor} from '../../../src/services';
+import {parseUrl, removeFragment} from '../../../src/url';
 import {setStyles, toggle} from '../../../src/style';
-import {removeFragment, parseUrl} from '../../../src/url';
-import {vsyncFor} from '../../../src/services';
-import {timerFor} from '../../../src/services';
-
+import {toArray} from '../../../src/types';
 /** @const */
-const ANIMATION_TIMEOUT = 550;
+const TAG = 'amp-sidebar toolbar';
+/** @const */
+const ANIMATION_TIMEOUT = 350;
 
 /** @const */
 const IOS_SAFARI_BOTTOMBAR_HEIGHT = '10vh';
+
+/**  @enum {string} */
+const SidebarEvents = {
+  OPEN: 'sidebarOpen',
+  CLOSE: 'sidebarClose',
+};
 
 export class AmpSidebar extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
 
-    /** @private {?../../../src/service/viewport-impl.Viewport} */
+    /** @private {?../../../src/service/viewport/viewport-impl.Viewport} */
     this.viewport_ = null;
 
     /** @const @private {!../../../src/service/vsync-impl.Vsync} */
-    this.vsync_ = vsyncFor(this.win);
+    this.vsync_ = Services.vsyncFor(this.win);
+
+    /** @private {?../../../src/service/action-impl.ActionService} */
+    this.action_ = null;
 
     /** @private {?Element} */
     this.maskElement_ = null;
@@ -55,10 +67,16 @@ export class AmpSidebar extends AMP.BaseElement {
     /** @private {?string} */
     this.side_ = null;
 
-    const platform = platformFor(this.win);
+    /** @private {Array} */
+    this.toolbars_ = [];
+
+    const platform = Services.platformFor(this.win);
 
     /** @private @const {boolean} */
-    this.isIosSafari_ = platform.isIos() && platform.isSafari();
+    this.isIos_ = platform.isIos();
+
+    /** @private @const {boolean} */
+    this.isSafari_ = platform.isSafari();
 
     /** @private {number} */
     this.historyId_ = -1;
@@ -66,11 +84,18 @@ export class AmpSidebar extends AMP.BaseElement {
     /** @private {boolean} */
     this.bottomBarCompensated_ = false;
 
-    /** @private @const {!../../../src/service/timer-impl.Timer} */
-    this.timer_ = timerFor(this.win);
-
     /** @private {number|string|null} */
     this.openOrCloseTimeOut_ = null;
+
+    /** @const {function()} */
+    this.boundOnAnimationEnd_ =
+        debounce(this.win, this.onAnimationEnd_.bind(this), ANIMATION_TIMEOUT);
+
+    /** @private {?Element} */
+    this.openerElement_ = null;
+
+    /** @private {number} */
+    this.initialScrollTop_ = 0;
   }
 
   /** @override */
@@ -80,22 +105,35 @@ export class AmpSidebar extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
+    this.element.classList.add('i-amphtml-overlay');
+
     this.side_ = this.element.getAttribute('side');
 
     this.viewport_ = this.getViewport();
 
-    this.viewport_.addToFixedLayer(this.element, /* forceTransfer */ true);
+    this.action_ = Services.actionServiceForDoc(this.element);
 
     if (this.side_ != 'left' && this.side_ != 'right') {
-      const pageDir =
-          this.document_.body.getAttribute('dir') ||
-          this.documentElement_.getAttribute('dir') ||
-          'ltr';
-      this.side_ = (pageDir == 'rtl') ? 'right' : 'left';
+      this.side_ = isRTL(this.document_) ? 'right' : 'left';
       this.element.setAttribute('side', this.side_);
     }
 
-    if (this.isIosSafari_) {
+    const ampdoc = this.getAmpDoc();
+    // Get the toolbar attribute from the child navs.
+    const toolbarElements =
+      toArray(this.element.querySelectorAll('nav[toolbar]'));
+
+    toolbarElements.forEach(toolbarElement => {
+      try {
+        this.toolbars_.push(new Toolbar(toolbarElement, this.vsync_,
+            ampdoc));
+      } catch (e) {
+        this.user().error(TAG, 'Failed to instantiate toolbar', e);
+      }
+    });
+
+
+    if (this.isIos_) {
       this.fixIosElasticScrollLeak_();
     }
 
@@ -118,10 +156,14 @@ export class AmpSidebar extends AMP.BaseElement {
       }
     });
 
+    // Replacement label for invisible close button set value in amp sidebar
+    const ariaLabel = this.element.getAttribute('data-close-button-aria-label')
+    || 'Close the sidebar';
+
     // Invisible close button at the end of sidebar for screen-readers.
     const screenReaderCloseButton = this.document_.createElement('button');
-    // TODO(aghassemi, #4146) i18n
-    screenReaderCloseButton.textContent = 'Close the sidebar';
+
+    screenReaderCloseButton.textContent = ariaLabel;
     screenReaderCloseButton.classList.add('i-amphtml-screen-reader');
     // This is for screen-readers only, should not get a tab stop.
     screenReaderCloseButton.tabIndex = -1;
@@ -153,6 +195,32 @@ export class AmpSidebar extends AMP.BaseElement {
         }
       }
     }, true);
+
+    this.element.addEventListener('transitionend', this.boundOnAnimationEnd_);
+    this.element.addEventListener('animationend', this.boundOnAnimationEnd_);
+  }
+
+  /** @override */
+  activate(invocation) {
+    this.open_(invocation);
+  }
+
+  /** @override */
+  onLayoutMeasure() {
+    this.getAmpDoc().whenReady().then(() => {
+      // Check our toolbars for changes
+      this.toolbars_.forEach(toolbar => {
+        toolbar.onLayoutChange(() => this.onToolbarOpen_());
+      });
+    });
+  }
+
+  /**
+   * Function called whenever a tollbar is opened.
+   * @private
+   */
+  onToolbarOpen_() {
+    this.close_();
   }
 
   /**
@@ -164,59 +232,52 @@ export class AmpSidebar extends AMP.BaseElement {
     return this.element.hasAttribute('open');
   }
 
-  /** @override */
-  activate() {
-    this.open_();
-  }
-
-
   /**
    * Toggles the open/close state of the sidebar.
+   * @param {?../../../src/service/action-impl.ActionInvocation=} opt_invocation
    * @private
    */
-  toggle_() {
+  toggle_(opt_invocation) {
     if (this.isOpen_()) {
       this.close_();
     } else {
-      this.open_();
+      this.open_(opt_invocation);
     }
   }
 
   /**
    * Reveals the sidebar.
+   * @param {?../../../src/service/action-impl.ActionInvocation=} opt_invocation
    * @private
    */
-  open_() {
+  open_(opt_invocation) {
     if (this.isOpen_()) {
       return;
     }
     this.viewport_.enterOverlayMode();
     this.vsync_.mutate(() => {
       toggle(this.element, /* display */true);
-      this.openMask_();
-      if (this.isIosSafari_) {
+      this.viewport_.addToFixedLayer(this.element, /* forceTransfer */ true);
+
+      if (this.isIos_ && this.isSafari_) {
         this.compensateIosBottombar_();
       }
       this.element./*OK*/scrollTop = 1;
       // Start animation in a separate vsync due to display:block; set above.
       this.vsync_.mutate(() => {
+        this.openMask_();
         this.element.setAttribute('open', '');
+        this.boundOnAnimationEnd_();
         this.element.setAttribute('aria-hidden', 'false');
-        if (this.openOrCloseTimeOut_) {
-          this.timer_.cancel(this.openOrCloseTimeOut_);
-        }
-        this.openOrCloseTimeOut_ = this.timer_.delay(() => {
-          const children = this.getRealChildren();
-          this.scheduleLayout(children);
-          this.scheduleResume(children);
-          // Focus on the sidebar for a11y.
-          tryFocus(this.element);
-        }, ANIMATION_TIMEOUT);
       });
     });
     this.getHistory_().push(this.close_.bind(this)).then(historyId => {
       this.historyId_ = historyId;
     });
+    if (opt_invocation) {
+      this.openerElement_ = opt_invocation.caller;
+      this.initialScrollTop_ = this.viewport_.getScrollTop();
+    }
   }
 
   /**
@@ -228,25 +289,22 @@ export class AmpSidebar extends AMP.BaseElement {
       return;
     }
     this.viewport_.leaveOverlayMode();
+    const scrollDidNotChange =
+      (this.initialScrollTop_ == this.viewport_.getScrollTop());
+    const sidebarIsActive =
+        this.element.contains(this.document_.activeElement);
     this.vsync_.mutate(() => {
       this.closeMask_();
       this.element.removeAttribute('open');
+      this.boundOnAnimationEnd_();
       this.element.setAttribute('aria-hidden', 'true');
-      if (this.openOrCloseTimeOut_) {
-        this.timer_.cancel(this.openOrCloseTimeOut_);
-      }
-      this.openOrCloseTimeOut_ = this.timer_.delay(() => {
-        if (!this.isOpen_()) {
-          this.vsync_.mutate(() => {
-            toggle(this.element, /* display */false);
-            this.schedulePause(this.getRealChildren());
-          });
-        }
-      }, ANIMATION_TIMEOUT);
     });
     if (this.historyId_ != -1) {
       this.getHistory_().pop(this.historyId_);
       this.historyId_ = -1;
+    }
+    if (this.openerElement_ && sidebarIsActive && scrollDidNotChange) {
+      tryFocus(this.openerElement_);
     }
   }
 
@@ -319,8 +377,40 @@ export class AmpSidebar extends AMP.BaseElement {
    * @private @return {!../../../src/service/history-impl.History}
    */
   getHistory_() {
-    return historyForDoc(this.getAmpDoc());
+    return Services.historyForDoc(this.getAmpDoc());
+  }
+
+  /**
+   * Get called when animation/transition end when open/close sidebar
+   * @private
+   */
+  onAnimationEnd_() {
+    if (this.isOpen_()) {
+      // On open sidebar
+      const children = this.getRealChildren();
+      this.scheduleLayout(children);
+      this.scheduleResume(children);
+      tryFocus(this.element);
+      this.triggerEvent_(SidebarEvents.OPEN);
+    } else {
+      // On close sidebar
+      this.vsync_.mutate(() => {
+        toggle(this.element, /* display */false);
+        this.schedulePause(this.getRealChildren());
+        this.triggerEvent_(SidebarEvents.CLOSE);
+      });
+    }
+  }
+
+  /**
+   * @private
+   */
+  triggerEvent_(name) {
+    const event = createCustomEvent(this.win, `${TAG}.${name}`, {});
+    this.action_.trigger(this.element, name, event, ActionTrust.HIGH);
   }
 }
 
-AMP.registerElement('amp-sidebar', AmpSidebar, CSS);
+AMP.extension('amp-sidebar', '0.1', AMP => {
+  AMP.registerElement('amp-sidebar', AmpSidebar, CSS);
+});

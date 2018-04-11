@@ -17,15 +17,15 @@
 import {
   base64UrlDecodeToBytes,
 } from '../../../src/utils/base64';
-import {stringToBytes, utf8DecodeSync} from '../../../src/utils/bytes';
 import {pemToBytes} from '../../../src/utils/pem';
+import {stringToBytes, utf8Decode} from '../../../src/utils/bytes';
 import {tryParseJson} from '../../../src/json';
 
 
 /**
  * @typedef {{
- *   header: !JSONObject,
- *   payload: !JSONObject,
+ *   header: (?JsonObject|undefined),
+ *   payload: (?JsonObject|undefined),
  *   verifiable: string,
  *   sig: string,
  * }}
@@ -48,7 +48,7 @@ export class JwtHelper {
 
     /**
      * Might be `null` if the platform does not support Crypto Subtle.
-     * @const @private {?SubtleCrypto}
+     * @const @private {?webCrypto.SubtleCrypto}
      */
     this.subtle_ = win.crypto &&
         (win.crypto.subtle || win.crypto.webkitSubtle) || null;
@@ -57,7 +57,7 @@ export class JwtHelper {
   /**
    * Decodes JWT token and returns its payload.
    * @param {string} encodedToken
-   * @return {!JSONObject}
+   * @return {?JsonObject|undefined}
    */
   decode(encodedToken) {
     return this.decodeInternal_(encodedToken).payload;
@@ -75,7 +75,7 @@ export class JwtHelper {
    * Decodes HWT token and verifies its signature.
    * @param {string} encodedToken
    * @param {!Promise<string>} pemPromise
-   * @return {!Promise<!JSONObject>}
+   * @return {!Promise<!JsonObject>}
    */
   decodeAndVerify(encodedToken, pemPromise) {
     if (!this.subtle_) {
@@ -92,10 +92,10 @@ export class JwtHelper {
       return this.importKey_(pemPromise).then(key => {
         const sig = base64UrlDecodeToBytes(decoded.sig);
         return this.subtle_.verify(
-          /* options */ {name: 'RSASSA-PKCS1-v1_5'},
-          key,
-          sig,
-          stringToBytes(decoded.verifiable)
+            /* options */ {name: 'RSASSA-PKCS1-v1_5'},
+            key,
+            sig,
+            stringToBytes(decoded.verifiable)
         );
       }).then(isValid => {
         if (isValid) {
@@ -127,8 +127,8 @@ export class JwtHelper {
     const headerUtf8Bytes = base64UrlDecodeToBytes(parts[0]);
     const payloadUtf8Bytes = base64UrlDecodeToBytes(parts[1]);
     return {
-      header: tryParseJson(utf8DecodeSync(headerUtf8Bytes), invalidToken),
-      payload: tryParseJson(utf8DecodeSync(payloadUtf8Bytes), invalidToken),
+      header: tryParseJson(utf8Decode(headerUtf8Bytes), invalidToken),
+      payload: tryParseJson(utf8Decode(payloadUtf8Bytes), invalidToken),
       verifiable: `${parts[0]}.${parts[1]}`,
       sig: parts[2],
     };
@@ -136,19 +136,19 @@ export class JwtHelper {
 
   /**
    * @param {!Promise<string>} pemPromise
-   * @return {!Promise<!CryptoKey>}
+   * @return {!Promise<!webCrypto.CryptoKey>}
    */
   importKey_(pemPromise) {
     return pemPromise.then(pem => {
       return this.subtle_.importKey(
-        /* format */ 'spki',
-        pemToBytes(pem),
-        /* algo options */ {
-          name: 'RSASSA-PKCS1-v1_5',
-          hash: {name: 'SHA-256'},
-        },
-        /* extractable */ false,
-        /* uses */ ['verify']);
+          /* format */ 'spki',
+          pemToBytes(pem),
+          /* algo options */ {
+            name: 'RSASSA-PKCS1-v1_5',
+            hash: {name: 'SHA-256'},
+          },
+          /* extractable */ false,
+          /* uses */ ['verify']);
     });
   }
 }

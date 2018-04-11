@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+'use strict';
 
-
-var INVALID_PROPS = [
+const INVALID_PROPS = [
   'EPSILON',
   'MAX_SAFE_INTEGER',
   'MIN_SAFE_INTEGER',
@@ -39,6 +39,6 @@ module.exports = function(context) {
         context.report(node,
             'no ES2015 "Number" methods and properties allowed to be used.');
       }
-    }
+    },
   };
 };

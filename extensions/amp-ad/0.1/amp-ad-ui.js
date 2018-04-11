@@ -14,41 +14,7 @@
  * limitations under the License.
  */
 
-import {dev} from '../../../src/log';
 import {getAdContainer} from '../../../src/ad-helper';
-import {isExperimentOn} from '../../../src/experiments';
-
-const TAG = 'AmpAdUIHandler';
-
-/**
- * Ad display state.
- * @enum {number}
- */
-export const AdDisplayState = {
-  /**
-   * The ad has not been laid out, or the ad has already be unlaid out
-   */
-  NOT_LAID_OUT: 0,
-
-  /**
-   * The ad has been laid out, but runtime haven't received any response from
-   * the ad server.
-   */
-  LOADING: 1,
-
-  /**
-   * The ad has been laid out, and runtime has received render-start msg from
-   * ad server.
-   * Not used now.
-   */
-  LOADED_RENDER_START: 2,
-
-  /**
-   * The ad has been laid out, and runtime has received no-content msg from
-   * ad server.
-   */
-  LOADED_NO_CONTENT: 3,
-};
 
 export class AmpAdUIHandler {
 
@@ -65,123 +31,47 @@ export class AmpAdUIHandler {
     /** @private @const {!Document} */
     this.doc_ = baseInstance.win.document;
 
-    /** {number} */
-    this.state = AdDisplayState.NOT_LAID_OUT;
-
-    /** {!boolean} */
-    this.hasPageProvidedFallback_ = !!baseInstance.getFallback();
-  }
-
-  /**
-   * TODO(@zhouyx): Add ad tag to the ad.
-   */
-  init() {
-    if (this.hasPageProvidedFallback_) {
-      return;
-    }
-
-    // Apply default fallback div when there's no default one
-    this.addDefaultUiComponent_('fallback');
-  }
-
-  /**
-   * Exposed function to ad that enable them to set UI to correct display state
-   * @param {number} state
-   */
-  setDisplayState(state) {
-    if (this.state == AdDisplayState.NOT_LAID_OUT) {
-      // Once unlayout UI applied, only another layout will change the UI again
-      if (state != AdDisplayState.LOADING) {
-        return;
+    if (!baseInstance.getFallback()) {
+      const fallback = this.addDefaultUiComponent_('fallback');
+      if (fallback) {
+        this.baseInstance_.element.appendChild(fallback);
       }
     }
-    switch (state) {
-      case AdDisplayState.LOADING:
-        this.displayLoadingUI_();
-        break;
-      case AdDisplayState.LOADED_RENDER_START:
-        this.displayRenderStartUI_();
-        break;
-      case AdDisplayState.LOADED_NO_CONTENT:
-        this.displayNoContentUI_();
-        break;
-      case AdDisplayState.NOT_LAID_OUT:
-        this.displayUnlayoutUI_();
-        break;
-      default:
-        dev().error(TAG, 'state is not supported');
-    }
   }
 
   /**
-   * See BaseElement method.
+   * Create a default placeholder if not provided.
+   * Should be called in baseElement createPlaceholderCallback.
    */
-  createPlaceholderCallback() {
+  createPlaceholder() {
     return this.addDefaultUiComponent_('placeholder');
   }
 
   /**
-   * TODO(@zhouyx): apply placeholder, add ad loading indicator
-   * @private
-   */
-  displayLoadingUI_() {
-    this.state = AdDisplayState.LOADING;
-    this.baseInstance_.togglePlaceholder(true);
-  }
-
-  /**
-   * TODO(@zhouyx): remove ad loading indicator
-   * @private
-   */
-  displayRenderStartUI_() {
-    this.state = AdDisplayState.LOADED_RENDER_START;
-    this.baseInstance_.togglePlaceholder(false);
-  }
-
-  /**
    * Apply UI for laid out ad with no-content
-   * If fallback exist try to display provided fallback
-   * Else try to collapse the ad (Note: may not succeed)
-   * TODO(@zhouyx): apply fallback, remove ad loading indicator
-   * @private
+   * Order: try collapse -> apply provided fallback -> apply default fallback
    */
-  displayNoContentUI_() {
+  applyNoContentUI() {
     if (getAdContainer(this.element_) == 'AMP-STICKY-AD') {
       // Special case: force collapse sticky-ad if no content.
       this.baseInstance_./*OK*/collapse();
-      this.state = AdDisplayState.LOADED_NO_CONTENT;
       return;
     }
     // The order here is collapse > user provided fallback > default fallback
-    this.baseInstance_.attemptCollapse().then(() => {
-      this.state = AdDisplayState.LOADED_NO_CONTENT;
-    }, () => {
-      this.baseInstance_.deferMutate(() => {
-        if (this.state == AdDisplayState.NOT_LAID_OUT) {
-          // If already unlaid out, do not replace current placeholder.
-          return;
-        }
+    this.baseInstance_.attemptCollapse().catch(() => {
+      this.baseInstance_.mutateElement(() => {
         this.baseInstance_.togglePlaceholder(false);
         this.baseInstance_.toggleFallback(true);
-        this.state = AdDisplayState.LOADED_NO_CONTENT;
       });
     });
   }
 
   /**
-   * Apply UI for unlaid out ad
-   * Hide fallback and show placeholder if exists
-   * Once unlayout UI applied, only another layout will change the UI again
-   * TODO(@zhouyx): remove ad loading indicator
-   * @private
+   * Apply UI for unlaid out ad: Hide fallback.
+   * Note: No need to togglePlaceholder here, unlayout show it by default.
    */
-  displayUnlayoutUI_() {
-    this.state = AdDisplayState.NOT_LAID_OUT;
-    this.baseInstance_.deferMutate(() => {
-      if (this.state != AdDisplayState.NOT_LAID_OUT) {
-        return;
-      }
-      this.baseInstance_.togglePlaceholder(true);
+  applyUnlayoutUI() {
+    this.baseInstance_.mutateElement(() => {
       this.baseInstance_.toggleFallback(false);
     });
   }
@@ -201,15 +91,11 @@ export class AmpAdUIHandler {
 
     const content = this.doc_.createElement('div');
     content.classList.add('i-amphtml-ad-default-holder');
-    if (isExperimentOn(this.baseInstance_.win, 'ad-loader-v1')) {
-      content.setAttribute('experiment1', '');
-    }
-    if (isExperimentOn(this.baseInstance_.win, 'ad-loader-v2')) {
-      content.setAttribute('experiment2', '');
-    }
+
+    // TODO(aghassemi, #4146) i18n
+    content.setAttribute('data-ad-holder-text', 'Ad');
     uiComponent.appendChild(content);
 
-    this.baseInstance_.element.appendChild(uiComponent);
     return uiComponent;
   }
 
@@ -235,7 +121,7 @@ export class AmpAdUIHandler {
           width - iframeWidth, width);
     }
 
-    /** @type {!Object<!boolean, number|undefined, number|undefined>} */
+    /** @type {!Object<boolean, number|undefined, number|undefined>} */
     const resizeInfo = {
       success: true,
       newWidth,
@@ -253,11 +139,11 @@ export class AmpAdUIHandler {
     }
     return this.baseInstance_.attemptChangeSize(
         newHeight, newWidth).then(() => {
-          return resizeInfo;
-        }, () => {
-          resizeInfo.success = false;
-          return resizeInfo;
-        });
+      return resizeInfo;
+    }, () => {
+      resizeInfo.success = false;
+      return resizeInfo;
+    });
   }
 }
 

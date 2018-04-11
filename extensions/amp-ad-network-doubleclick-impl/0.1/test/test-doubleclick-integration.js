@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import {createElementWithAttributes} from '../../../../src/dom';
-import {Xhr} from '../../../../src/service/xhr-impl';
 import {
   GoogleAdLifecycleReporter,
 } from '../../../../ads/google/a4a/performance';
+import {Xhr} from '../../../../src/service/xhr-impl';
+import {createElementWithAttributes} from '../../../../src/dom';
 
 // Still under construction.
 describes.sandboxed('A4A integration', {}, () => {
@@ -51,7 +51,11 @@ describes.sandboxed('A4A integration', {}, () => {
     it.skip('should send ping beacons for all lifecycle stages', () => {
       pingStub.returns(null);
       creativeXhrStub.returns(Promise.resolve({}));
-      keyXhrStub.returns(Promise.resolve({}));
+      keyXhrStub.returns(Promise.resolve({
+        json() {
+          return Promise.resolve({});
+        },
+      }));
       expect(0).to.equal(1);
     });
   });

@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
+import * as sinon from 'sinon';
 import {BaseElement} from '../../src/base-element';
 import {
   IntersectionObserver,
   getIntersectionChangeEntry,
 } from '../../src/intersection-observer';
-import {createAmpElementProto} from '../../src/custom-element';
+import {createAmpElementProtoForTesting} from '../../src/custom-element';
 import {layoutRectLtwh} from '../../src/layout-rect';
-import * as sinon from 'sinon';
 
 
 describe('getIntersectionChangeEntry', () => {
@@ -40,7 +40,7 @@ describe('getIntersectionChangeEntry', () => {
     const layoutBox = layoutRectLtwh(50, 50, 150, 200);
     const change = getIntersectionChangeEntry(layoutBox, null, rootBounds);
 
-    expect(change).to.be.object;
+    expect(change).to.be.an('object');
     expect(change.time).to.equal(Date.now());
 
     expect(change.rootBounds).to.deep.equal({
@@ -81,7 +81,7 @@ describe('getIntersectionChangeEntry', () => {
     const layoutBox = layoutRectLtwh(50, 200, 150, 200);
     const change = getIntersectionChangeEntry(layoutBox, null, rootBounds);
 
-    expect(change).to.be.object;
+    expect(change).to.be.an('object');
     expect(change.time).to.equal(Date.now());
 
     expect(change.rootBounds).to.deep.equal({
@@ -159,7 +159,7 @@ describe('getIntersectionChangeEntry', () => {
     const change = getIntersectionChangeEntry(layoutBox, ownerBounds,
         rootBounds);
 
-    expect(change).to.be.object;
+    expect(change).to.be.an('object');
     expect(change.time).to.equal(Date.now());
 
     expect(change.rootBounds).to.deep.equal({
@@ -202,7 +202,7 @@ describe('getIntersectionChangeEntry', () => {
     const change = getIntersectionChangeEntry(layoutBox, ownerBounds,
         rootBounds);
 
-    expect(change).to.be.object;
+    expect(change).to.be.an('object');
     expect(change.time).to.equal(Date.now());
 
     expect(change.rootBounds).to.deep.equal({
@@ -245,7 +245,7 @@ describe('getIntersectionChangeEntry', () => {
     const change = getIntersectionChangeEntry(layoutBox, ownerBounds,
         rootBounds);
 
-    expect(change).to.be.object;
+    expect(change).to.be.an('object');
     expect(change.time).to.equal(Date.now());
 
     expect(change.rootBounds).to.deep.equal({
@@ -325,7 +325,7 @@ describe('IntersectionObserver', () => {
   }
 
   const ElementClass = document.registerElement('amp-int', {
-    prototype: createAmpElementProto(window, 'amp-int', TestElement),
+    prototype: createAmpElementProtoForTesting(window, 'amp-int', TestElement),
   });
 
   const iframeSrc = 'http://iframe.localhost:' + location.port +
@@ -369,25 +369,25 @@ describe('IntersectionObserver', () => {
     element.win = window;
     element.getVsync = function() {
       return {
-        measure: function(fn) {
+        measure(fn) {
           fn();
         },
       };
     };
     element.getViewport = function() {
       return {
-        onScroll: function() {
+        onScroll() {
           onScrollSpy();
           return function() {};
         },
-        onChanged: function() {
+        onChanged() {
           onChangeSpy();
           return function() {};
         },
       };
     };
     element.element = {
-      getIntersectionChangeEntry: function() {
+      getIntersectionChangeEntry() {
         getIntersectionChangeEntrySpy();
         const rootBounds = layoutRectLtwh(198, 299, 100, 100);
         const layoutBox = layoutRectLtwh(50, 100, 150, 200);
@@ -450,8 +450,8 @@ describe('IntersectionObserver', () => {
     ioInstance.fire();
     clock.tick(1);
     ioInstance.fire();
-    ioInstance.fire();  // Same time
-    ioInstance.fire();  // Same time
+    ioInstance.fire(); // Same time
+    ioInstance.fire(); // Same time
     expect(ioInstance.pendingChanges_).to.have.length(2);
     expect(messages).to.have.length(1);
     clock.tick(1);

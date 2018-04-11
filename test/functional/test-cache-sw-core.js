@@ -165,16 +165,16 @@ runner.run('Cache SW', () => {
 
   describe('isCdnJsFile', () => {
     it('matches for CDN JS files', () => {
-      const rtvless = `https://cdn.ampproject.org/v0.js`;
+      const rtvless = 'https://cdn.ampproject.org/v0.js';
       expect(sw.isCdnJsFile(url)).to.be.true;
       expect(sw.isCdnJsFile(rtvless)).to.be.true;
     });
 
     it('matches for CDN JS extension files', () => {
       const url = `https://cdn.ampproject.org/rtv/${rtv}/v0/amp-comp-0.1.js`;
-      const rtvless = `https://cdn.ampproject.org/v0/amp-comp-0.1.js`;
+      const rtvless = 'https://cdn.ampproject.org/v0/amp-comp-0.1.js';
       const versioned = `https://cdn.ampproject.org/rtv/${rtv}/v0/amp-comp-0.1.js`;
-      const rtvlessVersioned = `https://cdn.ampproject.org/v0/amp-comp-0.1.js`;
+      const rtvlessVersioned = 'https://cdn.ampproject.org/v0/amp-comp-0.1.js';
       expect(sw.isCdnJsFile(url)).to.be.true;
       expect(sw.isCdnJsFile(rtvless)).to.be.true;
       expect(sw.isCdnJsFile(versioned)).to.be.true;
@@ -182,23 +182,23 @@ runner.run('Cache SW', () => {
     });
 
     it('does not match for fake extensions', () => {
-      expect(sw.isCdnJsFile(`https://cdn.ampproject.org/v0/experiments.js`))
+      expect(sw.isCdnJsFile('https://cdn.ampproject.org/v0/experiments.js'))
           .to.be.false;
-      expect(sw.isCdnJsFile(`https://cdn.ampproject.org/v0/validator.js`))
+      expect(sw.isCdnJsFile('https://cdn.ampproject.org/v0/validator.js'))
           .to.be.false;
     });
 
     it('does not match for other CDN files', () => {
-      expect(sw.isCdnJsFile(`https://cdn.ampproject.org/c/amp.js`)).to.be.false;
-      expect(sw.isCdnJsFile(`https://cdn.ampproject.org/v/amp.js`)).to.be.false;
-      expect(sw.isCdnJsFile(`https://cdn.ampproject.org/i/amp.js`)).to.be.false;
+      expect(sw.isCdnJsFile('https://cdn.ampproject.org/c/amp.js')).to.be.false;
+      expect(sw.isCdnJsFile('https://cdn.ampproject.org/v/amp.js')).to.be.false;
+      expect(sw.isCdnJsFile('https://cdn.ampproject.org/i/amp.js')).to.be.false;
       expect(sw.isCdnJsFile(`https://cdn.ampproject.org/rtv/${rtv}/v0.json`)).to.be.false;
-      expect(sw.isCdnJsFile(`https://cdn.ampproject.org/v0.json`)).to.be.false;
+      expect(sw.isCdnJsFile('https://cdn.ampproject.org/v0.json')).to.be.false;
     });
 
     it('does not match for non CDN domains', () => {
       const url = `https://www.malicious.com/rtv/${rtv}/v0.js`;
-      const rtvless = `https://www.malicious.com/v0.js`;
+      const rtvless = 'https://www.malicious.com/v0.js';
       expect(sw.isCdnJsFile(url)).to.be.false;
       expect(sw.isCdnJsFile(rtvless)).to.be.false;
     });
@@ -354,8 +354,8 @@ runner.run('Cache SW', () => {
 
     beforeEach(() => {
       calls = 0;
-      sandbox.stub(response, 'clone', () => response);
-      fetch = sandbox.stub(window, 'fetch', () => {
+      sandbox.stub(response, 'clone').callsFake(() => response);
+      fetch = sandbox.stub(window, 'fetch').callsFake(() => {
         calls++;
         if (calls == 1) {
           return Promise.resolve(response);
@@ -434,7 +434,7 @@ runner.run('Cache SW', () => {
       it('stores response into cache', () => {
         response.clone.restore();
         const cloned = {};
-        sandbox.stub(response, 'clone', () => cloned);
+        sandbox.stub(response, 'clone').callsFake(() => cloned);
         return sw.fetchAndCache(cache, request).then(() => {
           expect(put).to.have.been.calledWith(request, cloned);
         });
@@ -480,13 +480,13 @@ runner.run('Cache SW', () => {
 
       // "Previous" cached requests
       cache.cached.push(
-        [{url: `https://cdn.ampproject.org/rtv/${prevRtv}/v0.js`}, new Response('')],
-        // A different file
-        [{url: `https://cdn.ampproject.org/rtv/${prevRtv}/v0/amp-comp-0.1.js`}, new Response('')],
-        // A diversion of v0
-        [{url: `https://cdn.ampproject.org/rtv/${prevDiversionRtv}/v0.js`}, new Response('', {headers: expires})],
-        // A diversion of amp-comp
-        [{url: `https://cdn.ampproject.org/rtv/${prevDiversionRtv}/v0/amp-comp-0.1.js`}, , new Response('', {headers: expires})]
+          [{url: `https://cdn.ampproject.org/rtv/${prevRtv}/v0.js`}, new Response('')],
+          // A different file
+          [{url: `https://cdn.ampproject.org/rtv/${prevRtv}/v0/amp-comp-0.1.js`}, new Response('')],
+          // A diversion of v0
+          [{url: `https://cdn.ampproject.org/rtv/${prevDiversionRtv}/v0.js`}, new Response('', {headers: expires})],
+          // A diversion of amp-comp
+          [{url: `https://cdn.ampproject.org/rtv/${prevDiversionRtv}/v0/amp-comp-0.1.js`}, , new Response('', {headers: expires})]
       );
       deleter = sandbox.stub(cache, 'delete');
       fetch = sandbox.stub(window, 'fetch');
@@ -552,10 +552,11 @@ runner.run('Cache SW', () => {
 
         function waitForDiversions() {
           return sw.fetchJsFile(cache, request, rtv, '/v0.js').then(() => {
-            const setTimeout = sandbox.stub(window, 'setTimeout', callback => {
-              setTimeout.restore();
-              callback();
-            });
+            const setTimeout =
+                sandbox.stub(window, 'setTimeout').callsFake(callback => {
+                  setTimeout.restore();
+                  callback();
+                });
             return sw.diversions(cache).then(() => {
               return new Promise(resolve => setTimeout(resolve, 10));
             });
@@ -622,7 +623,7 @@ runner.run('Cache SW', () => {
 
       beforeEach(() => {
         fetch.onCall(1).returns(Promise.resolve(
-          new Response(`["${diversionRtv}","${prevDiversionRtv}"]`)));
+            new Response(`["${diversionRtv}","${prevDiversionRtv}"]`)));
         fetch.onCall(2).returns(Promise.resolve(new Response('02')));
         fetch.onCall(3).returns(Promise.resolve(new Response('03')));
       });
@@ -630,10 +631,11 @@ runner.run('Cache SW', () => {
       function waitForDiversions() {
         return sw.fetchJsFile(cache, request, diversionRtv, '/v0.js')
             .then(() => {
-              const setTimeout = sandbox.stub(window, 'setTimeout', cb => {
-                setTimeout.restore();
-                cb();
-              });
+              const setTimeout =
+                  sandbox.stub(window, 'setTimeout').callsFake(cb => {
+                    setTimeout.restore();
+                    cb();
+                  });
               return sw.diversions(cache).then(() => {
                 return new Promise(resolve => setTimeout(resolve, 10));
               });
@@ -644,7 +646,7 @@ runner.run('Cache SW', () => {
         return waitForDiversions().then(() => {
           expect(fetch).calledTwice;
           expect(fetch.getCall(0).args[0].url).to.equal(
-            `https://cdn.ampproject.org/rtv/${diversionRtv}/v0.js`);
+              `https://cdn.ampproject.org/rtv/${diversionRtv}/v0.js`);
         });
       });
 
@@ -663,7 +665,7 @@ runner.run('Cache SW', () => {
       it('prunes old diversions of new script', () => {
         // Remove prevDiversionRtv from diversions response
         fetch.onCall(1).returns(Promise.resolve(
-          new Response(`["${diversionRtv}"]`)));
+            new Response(`["${diversionRtv}"]`)));
         return waitForDiversions().then(() => {
           expect(deleter).to.have.been.calledWith(cache.cached[2][0]);
         });
@@ -672,7 +674,7 @@ runner.run('Cache SW', () => {
       it('prunes old diversions of any other script', () => {
         // Remove prevDiversionRtv from diversions response
         fetch.onCall(1).returns(Promise.resolve(
-          new Response(`["${diversionRtv}"]`)));
+            new Response(`["${diversionRtv}"]`)));
         return waitForDiversions().then(() => {
           expect(deleter).to.have.been.calledWith(cache.cached[3][0]);
         });
@@ -711,7 +713,7 @@ runner.run('Cache SW', () => {
     let keys;
     beforeEach(() => {
       keys = [{url: `https://cdn.ampproject.org/rtv/${prevRtv}/v0.js`}];
-      sandbox.stub(cache, 'keys', () => {
+      sandbox.stub(cache, 'keys').callsFake(() => {
         return Promise.resolve(keys);
       });
     });
@@ -725,9 +727,9 @@ runner.run('Cache SW', () => {
     it('defaults to requested version, if file no files are cached', () => {
       keys.length = 0;
       return sw.getCachedVersion(cache, prevRtv, '/v0.js')
-        .then(version => {
-          expect(version).to.equal(prevRtv);
-        });
+          .then(version => {
+            expect(version).to.equal(prevRtv);
+          });
     });
 
     it('returns version with most responses', () => {
@@ -748,9 +750,9 @@ runner.run('Cache SW', () => {
           {url: `https://cdn.ampproject.org/rtv/${rtv}/v0/amp-4-0.1.js`});
 
       return sw.getCachedVersion(cache, '01123', '/v0/amp-4-0.1.js')
-        .then(version => {
-          expect(version).to.equal(rtv);
-        });
+          .then(version => {
+            expect(version).to.equal(rtv);
+          });
     });
 
     it('heavily weights main binary version', () => {
@@ -760,9 +762,9 @@ runner.run('Cache SW', () => {
           {url: `https://cdn.ampproject.org/rtv/${prevRtv}/v0/amp-3-0.1.js`},
           {url: `https://cdn.ampproject.org/rtv/${rtv}/v0.js`});
       return sw.getCachedVersion(cache, '01123', '/v0.js')
-        .then(version => {
-          expect(version).to.equal(rtv);
-        });
+          .then(version => {
+            expect(version).to.equal(rtv);
+          });
     });
 
     it('ignores cached blacklisted versions', () => {
@@ -788,18 +790,18 @@ runner.run('Cache SW', () => {
     describe('when requesting diversion', () => {
       it('returns diversion explicitly', () => {
         return sw.getCachedVersion(cache, diversionRtv, '/v0.js')
-          .then(version => {
-            expect(version).to.equal(diversionRtv);
-          });
+            .then(version => {
+              expect(version).to.equal(diversionRtv);
+            });
       });
 
       it('returns diversion explicitly, even with previous diversion', () => {
         keys.splice(0, 1,
             {url: `https://cdn.ampproject.org/rtv/${prevDiversionRtv}/v0.js`});
         return sw.getCachedVersion(cache, diversionRtv, '/v0.js')
-          .then(version => {
-            expect(version).to.equal(diversionRtv);
-          });
+            .then(version => {
+              expect(version).to.equal(diversionRtv);
+            });
       });
     });
   });
@@ -817,7 +819,7 @@ runner.run('Cache SW', () => {
     function responseFromRequest(req) {
       const res = new Response('');
       Object.defineProperty(res, 'url', {value: req.url});
-      sandbox.stub(res, 'clone', () => res);
+      sandbox.stub(res, 'clone').callsFake(() => res);
       return res;
     }
 
@@ -828,7 +830,7 @@ runner.run('Cache SW', () => {
       blacklistedRequest = new Request(`https://cdn.ampproject.org/rtv/${blacklistedRtv}/v0/amp-comp-0.1.js`);
 
       clientId++;
-      fetch = sandbox.stub(window, 'fetch', req => {
+      fetch = sandbox.stub(window, 'fetch').callsFake(req => {
         return Promise.resolve(responseFromRequest(req));
       });
     });
@@ -846,7 +848,7 @@ runner.run('Cache SW', () => {
       let rtvless;
 
       beforeEach(() => {
-        rtvless = new Request(`https://cdn.ampproject.org/v0.js`);
+        rtvless = new Request('https://cdn.ampproject.org/v0.js');
       });
 
       it('fetches current prod RTV', () => {
@@ -895,9 +897,9 @@ runner.run('Cache SW', () => {
               sw.handleFetch(compRequest, clientId),
             ]).then(responses => {
               expect(rtvVersion(responses[0].url)).to.equal(
-                rtvVersion(prevRequest.url));
+                  rtvVersion(prevRequest.url));
               expect(rtvVersion(responses[1].url)).to.equal(
-                rtvVersion(prevRequest.url));
+                  rtvVersion(prevRequest.url));
             });
           });
         });
@@ -971,9 +973,9 @@ runner.run('Cache SW', () => {
               sw.handleFetch(prevRequest, clientId),
             ]).then(responses => {
               expect(rtvVersion(responses[0].url)).to.equal(
-                rtvVersion(request.url));
+                  rtvVersion(request.url));
               expect(rtvVersion(responses[1].url)).to.equal(
-                rtvVersion(request.url));
+                  rtvVersion(request.url));
             });
           });
         });

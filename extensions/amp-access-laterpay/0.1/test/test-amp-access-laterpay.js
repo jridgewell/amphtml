@@ -15,16 +15,17 @@
  */
 
 import {LaterpayVendor} from '../laterpay-impl';
-import {toggleExperiment} from '../../../../src/experiments';
 
+const TAG = 'amp-access-laterpay';
 
 describes.fakeWin('LaterpayVendor', {
   amp: true,
   location: 'https://pub.com/doc1',
 }, env => {
   let win, document, ampdoc;
+  let accessSource;
   let accessService;
-  let accessServiceMock;
+  let accessSourceMock;
   let xhrMock;
   let articleTitle;
   let laterpayConfig;
@@ -37,37 +38,36 @@ describes.fakeWin('LaterpayVendor', {
 
     laterpayConfig = {
       articleTitleSelector: '#laterpay-test-title',
+      region: 'us',
     };
-    accessService = {
-      ampdoc,
+
+    accessSource = {
       getAdapterConfig: () => { return laterpayConfig; },
       buildUrl: () => {},
       loginWithUrl: () => {},
+      getLoginUrl: () => {},
     };
-    accessServiceMock = sandbox.mock(accessService);
+
+    accessService = {
+      ampdoc,
+      getSource: () => accessSource,
+    };
+
+    accessSourceMock = sandbox.mock(accessSource);
 
     articleTitle = document.createElement('h1');
     articleTitle.id = 'laterpay-test-title';
     articleTitle.textContent = 'test title';
     document.body.appendChild(articleTitle);
 
-    vendor = new LaterpayVendor(accessService);
+    vendor = new LaterpayVendor(accessService, accessSource);
     xhrMock = sandbox.mock(vendor.xhr_);
-    toggleExperiment(win, 'amp-access-laterpay', true);
   });
 
   afterEach(() => {
     articleTitle.parentNode.removeChild(articleTitle);
-    toggleExperiment(win, 'amp-access-laterpay', false);
-    accessServiceMock.verify();
+    accessSourceMock.verify();
     xhrMock.verify();
-  });
-
-  it('should fail without experiment', () => {
-    toggleExperiment(win, 'amp-access-laterpay', false);
-    expect(() => {
-      vendor.authorize();
-    }).to.throw(/experiment/);
   });
 
   describe('authorize', () => {
@@ -77,60 +77,90 @@ describes.fakeWin('LaterpayVendor', {
       sandbox.stub(vendor, 'renderPurchaseOverlay_');
     });
 
+    it('uses a non default region', () => {
+      const buildUrl = accessSourceMock.expects('buildUrl')
+          .returns(Promise.resolve(''))
+          .once();
+      xhrMock.expects('fetchJson')
+          .returns(Promise.resolve({
+            json() {
+              return Promise.resolve({access: true});
+            },
+          }))
+          .once();
+      return vendor.authorize().then(() => {
+        expect(
+            /connector\.uselaterpay\.com/g.test(buildUrl.firstCall.args[0])
+        ).to.be.true;
+      });
+    });
+
     it('successful authorization', () => {
       vendor.purchaseConfigBaseUrl_ = 'https://baseurl?param';
-      accessServiceMock.expects('buildUrl')
-        .withExactArgs('https://baseurl?param&article_title=test%20title', false)
-        .returns(Promise.resolve('https://builturl'))
-        .once();
+      accessSourceMock.expects('buildUrl')
+          .withExactArgs('https://baseurl?param&article_title=test%20title', false)
+          .returns(Promise.resolve('https://builturl'))
+          .once();
+      accessSourceMock.expects('getLoginUrl')
+          .returns(Promise.resolve('https://builturl'))
+          .once();
       xhrMock.expects('fetchJson')
-        .withExactArgs('https://builturl', {
-          credentials: 'include',
-          requireAmpResponseSourceOrigin: true,
-        })
-        .returns(Promise.resolve({access: true}))
-        .once();
+          .withExactArgs('https://builturl', {
+            credentials: 'include',
+          })
+          .returns(Promise.resolve({
+            json() {
+              return Promise.resolve({access: true});
+            },
+          }))
+          .once();
       return vendor.authorize().then(resp => {
         expect(resp.access).to.be.true;
         expect(emptyContainerStub.called).to.be.true;
       });
     });
 
-    it('authorization fails due to lack of server config', done => {
-      accessServiceMock.expects('buildUrl')
-        .returns(Promise.resolve('https://builturl'))
-        .once();
+    it('authorization fails due to lack of server config', () => {
+      accessSourceMock.expects('buildUrl')
+          .returns(Promise.resolve('https://builturl'))
+          .once();
+      accessSourceMock.expects('getLoginUrl')
+          .returns(Promise.resolve('https://builturl'))
+          .once();
       xhrMock.expects('fetchJson')
-        .withExactArgs('https://builturl', {
-          credentials: 'include',
-          requireAmpResponseSourceOrigin: true,
-        })
-        .returns(Promise.resolve({status: 204}))
-        .once();
+          .withExactArgs('https://builturl', {
+            credentials: 'include',
+          })
+          .returns(Promise.resolve({status: 204}))
+          .once();
       return vendor.authorize().catch(err => {
         expect(err.message).to.exist;
-        done();
       });
     });
 
-    it('authorization response from server fails', done => {
-      accessServiceMock.expects('buildUrl')
-        .returns(Promise.resolve('https://builturl'))
-        .once();
+    it('authorization response from server fails', () => {
+      accessSourceMock.expects('buildUrl')
+          .returns(Promise.resolve('https://builturl'))
+          .once();
+      accessSourceMock.expects('getLoginUrl')
+          .returns(Promise.resolve('https://builturl'))
+          .once();
       xhrMock.expects('fetchJson')
-        .withExactArgs('https://builturl', {
-          credentials: 'include',
-          requireAmpResponseSourceOrigin: true,
-        })
-        .returns(Promise.reject({
-          response: {status: 402},
-          responseJson: {access: false},
-        }))
-        .once();
+          .withExactArgs('https://builturl', {
+            credentials: 'include',
+          })
+          .returns(Promise.reject({
+            response: {
+              status: 402,
+              json() {
+                return Promise.resolve({access: false});
+              },
+            },
+          }))
+          .once();
       emptyContainerStub.returns(Promise.resolve());
       return vendor.authorize().then(err => {
         expect(err.access).to.be.false;
-        done();
       });
     });
 
@@ -140,13 +170,16 @@ describes.fakeWin('LaterpayVendor', {
     let container;
     beforeEach(() => {
       container = document.createElement('div');
-      container.id = 'amp-access-laterpay-dialog';
+      container.id = TAG + '-dialog';
       document.body.appendChild(container);
       vendor.i18n_ = {};
       vendor.purchaseConfig_ = {
         premiumcontent: {
           price: {},
         },
+        subscriptions: [
+          {price: {}},
+        ],
         timepasses: [
           {price: {}},
         ],
@@ -162,8 +195,8 @@ describes.fakeWin('LaterpayVendor', {
       expect(container.querySelector('ul')).to.not.be.null;
     });
 
-    it('renders 2 purchase options', () => {
-      expect(container.querySelector('ul').childNodes.length).to.equal(2);
+    it('renders 3 purchase options', () => {
+      expect(container.querySelector('ul').childNodes.length).to.equal(3);
     });
 
   });
@@ -172,13 +205,16 @@ describes.fakeWin('LaterpayVendor', {
     let container;
     beforeEach(() => {
       container = document.createElement('div');
-      container.id = 'amp-access-laterpay-dialog';
+      container.id = TAG + '-dialog';
       document.body.appendChild(container);
       vendor.i18n_ = {};
       vendor.purchaseConfig_ = {
         premiumcontent: {
           price: {},
         },
+        subscriptions: [
+          {price: {}},
+        ],
         timepasses: [
           {price: {}},
         ],
@@ -195,7 +231,7 @@ describes.fakeWin('LaterpayVendor', {
     it('purchase option is selected', () => {
       expect(vendor.selectedPurchaseOption_).to.not.be.null;
       expect(vendor.selectedPurchaseOption_.classList
-        .contains('amp-access-laterpay-selected')).to.be.true;
+          .contains(TAG + '-selected')).to.be.true;
     });
 
   });
@@ -204,20 +240,22 @@ describes.fakeWin('LaterpayVendor', {
     let container;
     beforeEach(() => {
       container = document.createElement('div');
-      container.id = 'amp-access-laterpay-dialog';
+      container.id = TAG + '-dialog';
       document.body.appendChild(container);
       vendor.i18n_ = {};
       vendor.purchaseConfig_ = {
         premiumcontent: {
           price: {},
         },
+        subscriptions: [
+          {price: {}},
+        ],
         timepasses: [
           {price: {}},
         ],
+        apl: 'http://apllink',
       };
       vendor.renderPurchaseOverlay_();
-      const changeEv = new Event('change');
-      container.querySelector('input').dispatchEvent(changeEv);
     });
 
     afterEach(() => {
@@ -225,15 +263,31 @@ describes.fakeWin('LaterpayVendor', {
     });
 
     it('sends request for purchase', done => {
-      accessServiceMock.expects('buildUrl')
-        .returns(Promise.resolve('https://builturl'))
-        .once();
-      accessServiceMock.expects('loginWithUrl')
-        .once();
+      const changeEv = new Event('change');
+      container.querySelector('input').dispatchEvent(changeEv);
+      accessSourceMock.expects('buildUrl')
+          .returns(Promise.resolve('https://builturl'))
+          .once();
+      accessSourceMock.expects('loginWithUrl')
+          .once();
       const clickEv = new Event('click');
       container.querySelector('button').dispatchEvent(clickEv);
       setTimeout(() => {done();}, 500);
     });
+
+    it('sends request for already purchased', done => {
+      accessSourceMock.expects('buildUrl')
+          .returns(Promise.resolve('https://apllink'))
+          .once();
+      accessSourceMock.expects('loginWithUrl')
+          .once();
+      const clickEv = new Event('click');
+      container
+          .querySelector('.' + TAG + '-already-purchased-link-container > a')
+          .dispatchEvent(clickEv);
+      setTimeout(() => {done();}, 500);
+    });
+
 
   });
 });

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import {getCurve} from './curve';
+import {Services} from './services';
 import {dev} from './log';
-import {vsyncFor} from './services';
+import {getCurve} from './curve';
 
 const TAG_ = 'Animation';
 
@@ -58,7 +58,7 @@ export class Animation {
     this.contextNode_ = contextNode;
 
     /** @private @const {!./service/vsync-impl.Vsync} */
-    this.vsync_ = opt_vsync || vsyncFor(self);
+    this.vsync_ = opt_vsync || Services.vsyncFor(self);
 
     /** @private {?./curve.CurveDef} */
     this.curve_ = null;

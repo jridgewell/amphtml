@@ -15,15 +15,15 @@
  */
 
 import {
-  base64UrlDecodeToBytes,
   base64DecodeToBytes,
-  base64UrlEncodeFromBytes,
   base64EncodeFromBytes,
+  base64UrlDecodeToBytes,
+  base64UrlEncodeFromBytes,
 } from '../../../src/utils/base64';
 import {
   stringToBytes,
-  utf8DecodeSync,
-  utf8EncodeSync,
+  utf8Decode,
+  utf8Encode,
 } from '../../../src/utils/bytes';
 
 describe('base64 <> utf-8 encode/decode', () => {
@@ -59,11 +59,11 @@ describe('base64 <> utf-8 encode/decode', () => {
       describe('base64Encode/base64Decode', () => {
         testCases.forEach(testCase => {
           it(testCase, () => {
-            const utf8Bytes = utf8EncodeSync(testCase);
+            const utf8Bytes = utf8Encode(testCase);
             const encoded = base64EncodeFromBytes(utf8Bytes);
             expect(encoded).not.to.equal(testCase);
             const decodedUtf8Bytes = base64DecodeToBytes(encoded);
-            const decoded = utf8DecodeSync(decodedUtf8Bytes);
+            const decoded = utf8Decode(decodedUtf8Bytes);
             expect(decoded).to.equal(testCase);
           });
         });
@@ -72,12 +72,12 @@ describe('base64 <> utf-8 encode/decode', () => {
       describe('base64UrlEncode/base64UrlDecode', () => {
         testCases.forEach(testCase => {
           it(testCase, () => {
-            const utf8Bytes = utf8EncodeSync(testCase);
+            const utf8Bytes = utf8Encode(testCase);
             const encoded = base64UrlEncodeFromBytes(utf8Bytes);
             expect(encoded).not.to.equal(testCase);
             expect(encoded).not.to.match(/[+/=]/g);
             const decodedUtf8Bytes = base64UrlDecodeToBytes(encoded);
-            const decoded = utf8DecodeSync(decodedUtf8Bytes);
+            const decoded = utf8Decode(decodedUtf8Bytes);
             expect(decoded).to.equal(testCase);
           });
         });
@@ -89,81 +89,89 @@ describe('base64 <> utf-8 encode/decode', () => {
 describe('base64UrlDecodeToBytes', () => {
   it('should map a sample string appropriately', () => {
     expect(base64UrlDecodeToBytes('AQAB'))
-      .to.deep.equal(new Uint8Array([1, 0, 1]));
+        .to.deep.equal(new Uint8Array([1, 0, 1]));
     expect(base64UrlDecodeToBytes('_-..'))
-      .to.deep.equal(new Uint8Array([255]));
+        .to.deep.equal(new Uint8Array([255]));
   });
 
   it('should handle padded and unpadded input', () => {
     expect(base64UrlDecodeToBytes('cw')).to.deep.equal(stringToBytes('s'));
     expect(base64UrlDecodeToBytes('cw'))
-      .to.deep.equal(base64UrlDecodeToBytes('cw..'));
+        .to.deep.equal(base64UrlDecodeToBytes('cw..'));
     expect(base64UrlDecodeToBytes('c3U')).to.deep.equal(stringToBytes('su'));
     expect(base64UrlDecodeToBytes('c3U'))
-      .to.deep.equal(base64UrlDecodeToBytes('c3U.'));
+        .to.deep.equal(base64UrlDecodeToBytes('c3U.'));
     expect(base64UrlDecodeToBytes('c3Vy')).to.deep.equal(stringToBytes('sur'));
   });
 
   it('should signal an error with bad input characters', () => {
-    expect(() => base64UrlDecodeToBytes('@#*#')).to.throw();
+    allowConsoleError(() => {
+      expect(() => base64UrlDecodeToBytes('@#*#')).to.throw();
+    });
   });
 
   it('should signal an error with bad padding', () => {
-    expect(() => base64UrlDecodeToBytes('c3Vy.')).to.throw();
+    allowConsoleError(() => {
+      expect(() => base64UrlDecodeToBytes('c3Vy.')).to.throw();
+    });
   });
 });
 
 describe('base64DecodeToBytes', () => {
   it('should map a sample string appropriately', () => {
     expect(base64DecodeToBytes('AQAB'))
-      .to.deep.equal(new Uint8Array([1, 0, 1]));
+        .to.deep.equal(new Uint8Array([1, 0, 1]));
     expect(base64DecodeToBytes('/+=='))
-      .to.deep.equal(new Uint8Array([255]));
+        .to.deep.equal(new Uint8Array([255]));
   });
 
   it('should handle padded and unpadded input', () => {
     expect(base64DecodeToBytes('cw')).to.deep.equal(stringToBytes('s'));
     expect(base64DecodeToBytes('cw'))
-      .to.deep.equal(base64DecodeToBytes('cw=='));
+        .to.deep.equal(base64DecodeToBytes('cw=='));
     expect(base64DecodeToBytes('c3U')).to.deep.equal(stringToBytes('su'));
     expect(base64DecodeToBytes('c3U'))
-      .to.deep.equal(base64DecodeToBytes('c3U='));
+        .to.deep.equal(base64DecodeToBytes('c3U='));
     expect(base64DecodeToBytes('c3Vy')).to.deep.equal(stringToBytes('sur'));
   });
 
   it('should signal an error with bad input characters', () => {
-    expect(() => base64DecodeToBytes('@#*#')).to.throw();
+    allowConsoleError(() => {
+      expect(() => base64DecodeToBytes('@#*#')).to.throw();
+    });
   });
 
   it('should signal an error with bad padding', () => {
-    expect(() => base64DecodeToBytes('c3Vy=')).to.throw();
+    allowConsoleError(() => {
+      expect(() => base64DecodeToBytes('c3Vy=')).to.throw();
+    });
   });
 });
 
 describe('base64EncodeFromBytes', () => {
   it('should encode a bytes array to base64url string correctly', () => {
     expect(base64UrlEncodeFromBytes(new Uint8Array()))
-      .to.equal('');
+        .to.equal('');
     expect(base64UrlEncodeFromBytes(stringToBytes('s')))
-      .to.equal('cw..');
+        .to.equal('cw..');
     expect(base64UrlEncodeFromBytes(stringToBytes('su')))
-      .to.equal('c3U.');
+        .to.equal('c3U.');
     expect(base64UrlEncodeFromBytes(stringToBytes('sur')))
-      .to.equal('c3Vy');
+        .to.equal('c3Vy');
     expect(base64UrlEncodeFromBytes(new Uint8Array([255, 239])))
-      .to.equal('_-8.');
+        .to.equal('_-8.');
   });
 
   it('should encode a bytes array to base64 string correctly', () => {
     expect(base64EncodeFromBytes(new Uint8Array()))
-      .to.equal('');
+        .to.equal('');
     expect(base64EncodeFromBytes(stringToBytes('s')))
-      .to.equal('cw==');
+        .to.equal('cw==');
     expect(base64EncodeFromBytes(stringToBytes('su')))
-      .to.equal('c3U=');
+        .to.equal('c3U=');
     expect(base64EncodeFromBytes(stringToBytes('sur')))
-      .to.equal('c3Vy');
+        .to.equal('c3Vy');
     expect(base64EncodeFromBytes(new Uint8Array([255, 239])))
-      .to.equal('/+8=');
+        .to.equal('/+8=');
   });
 });

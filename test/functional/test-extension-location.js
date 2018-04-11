@@ -15,8 +15,8 @@
  */
 
 import {
-  calculateExtensionScriptUrl,
   calculateEntryPointScriptUrl,
+  calculateExtensionScriptUrl,
 } from '../../src/service/extension-location';
 import {
   initLogConstructor,
@@ -40,7 +40,7 @@ describes.sandboxed('Extension Location', {}, () => {
         pathname: 'examples/ads.amp.html',
         host: 'localhost:8000',
         protocol: 'http:',
-      }, 'amp-ad', true);
+      }, 'amp-ad', /*opt_extensionVersion*/ undefined, true);
       expect(script).to.equal(
           'http://localhost:8000/dist/rtv/123/v0/amp-ad-0.1.js');
     });
@@ -48,10 +48,10 @@ describes.sandboxed('Extension Location', {}, () => {
     it('with remote mode', () => {
       window.AMP_MODE = {rtvVersion: '123'};
       const script = calculateExtensionScriptUrl({
-        pathname: 'examples/ads.amp.min.html',
+        pathname: 'examples/ads.amp.html',
         host: 'localhost:8000',
         protocol: 'http:',
-      }, 'amp-ad', false);
+      }, 'amp-ad', /*opt_extensionVersion*/ undefined, false);
       expect(script).to.equal(
           'https://cdn.ampproject.org/rtv/123/v0/amp-ad-0.1.js');
     });
@@ -79,7 +79,7 @@ describes.sandboxed('Extension Location', {}, () => {
     it('with remote mode', () => {
       window.AMP_MODE = {rtvVersion: '123'};
       const script = calculateEntryPointScriptUrl({
-        pathname: 'examples/ads.amp.min.html',
+        pathname: 'examples/ads.amp.html',
         host: 'localhost:8000',
         protocol: 'http:',
       }, 'sw', /* isLocalDev */ false);
@@ -90,7 +90,7 @@ describes.sandboxed('Extension Location', {}, () => {
     it('with remote mode & rtv', () => {
       window.AMP_MODE = {rtvVersion: '123'};
       const script = calculateEntryPointScriptUrl({
-        pathname: 'examples/ads.amp.min.html',
+        pathname: 'examples/ads.amp.html',
         host: 'localhost:8000',
         protocol: 'http:',
       }, 'ww', /* isLocalDev */ false, /* opt_rtv */ true);

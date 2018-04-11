@@ -15,28 +15,36 @@
  */
 
 // This must load before all other tests.
-import '../third_party/babel/custom-babel-helpers';
 import '../src/polyfills';
-import {ampdocServiceFor} from '../src/ampdoc';
-import {removeElement} from '../src/dom';
-import {setReportError} from '../src/log';
+import 'babel-polyfill';
+import * as describes from '../testing/describes';
+import {Services} from '../src/services';
+import {activateChunkingForTesting} from '../src/chunk';
 import {
   adopt,
   installAmpdocServices,
   installRuntimeServices,
 } from '../src/runtime';
-import {activateChunkingForTesting} from '../src/chunk';
 import {installDocService} from '../src/service/ampdoc-impl';
-import {platformFor, resourcesForDoc} from '../src/services';
-import {setDefaultBootstrapBaseUrlForTesting} from '../src/3p-frame';
+import {installYieldIt} from '../testing/yield';
+import {removeElement} from '../src/dom';
 import {
-  resetAccumulatedErrorMessagesForTesting,
   reportError,
+  resetAccumulatedErrorMessagesForTesting,
 } from '../src/error';
+import {
+  resetEvtListenerOptsSupportForTesting,
+} from '../src/event-helper-listen';
 import {resetExperimentTogglesForTesting} from '../src/experiments';
-import * as describes from '../testing/describes';
+import {setDefaultBootstrapBaseUrlForTesting} from '../src/3p-frame';
+import {setReportError} from '../src/log';
 import stringify from 'json-stable-stringify';
 
+// Used to surface console errors as mocha test failures.
+let consoleErrorSandbox;
+let consoleErrorMock;
+let consoleInfoLogWarnSandbox;
+let testName;
 
 // All exposed describes.
 global.describes = describes;
@@ -99,11 +107,26 @@ class TestConfig {
      */
     this.configTasks = [];
 
-    this.platform = platformFor(window);
+    this.platform = Services.platformFor(window);
+
+    /**
+     * Predicate functions that determine whether to run tests on a platform.
+     */
+    this.runOnChrome = this.platform.isChrome.bind(this.platform);
+    this.runOnEdge = this.platform.isEdge.bind(this.platform);
+    this.runOnFirefox = this.platform.isFirefox.bind(this.platform);
+    this.runOnSafari = this.platform.isSafari.bind(this.platform);
+    this.runOnIos = this.platform.isIos.bind(this.platform);
+    this.runOnIe = this.platform.isIe.bind(this.platform);
+
+    /**
+     * By default, IE is skipped. Individual tests may opt in.
+     */
+    this.skip(this.runOnIe);
   }
 
   skipChrome() {
-    return this.skip(this.platform.isChrome.bind(this.platform));
+    return this.skip(this.runOnChrome);
   }
 
   skipOldChrome() {
@@ -113,19 +136,24 @@ class TestConfig {
   }
 
   skipEdge() {
-    return this.skip(this.platform.isEdge.bind(this.platform));
+    return this.skip(this.runOnEdge);
   }
 
   skipFirefox() {
-    return this.skip(this.platform.isFirefox.bind(this.platform));
+    return this.skip(this.runOnFirefox);
   }
 
   skipSafari() {
-    return this.skip(this.platform.isSafari.bind(this.platform));
+    return this.skip(this.runOnSafari);
   }
 
   skipIos() {
-    return this.skip(this.platform.isIos.bind(this.platform));
+    return this.skip(this.runOnIos);
+  }
+
+  enableIe() {
+    this.skipMatchers.splice(this.skipMatchers.indexOf(this.runOnIe), 1);
+    return this;
   }
 
   /**
@@ -136,24 +164,33 @@ class TestConfig {
     return this;
   }
 
+  ifNewChrome() {
+    return this.ifChrome().skipOldChrome();
+  }
+
   ifChrome() {
-    return this.if(this.platform.isChrome.bind(this.platform));
+    return this.if(this.runOnChrome);
   }
 
   ifEdge() {
-    return this.if(this.platform.isEdge.bind(this.platform));
+    return this.if(this.runOnEdge);
   }
 
   ifFirefox() {
-    return this.if(this.platform.isFirefox.bind(this.platform));
+    return this.if(this.runOnFirefox);
   }
 
   ifSafari() {
-    return this.if(this.platform.isSafari.bind(this.platform));
+    return this.if(this.runOnSafari);
   }
 
   ifIos() {
-    return this.if(this.platform.isIos.bind(this.platform));
+    return this.if(this.runOnIos);
+  }
+
+  ifIe() {
+    // It's necessary to first enable IE because we skip it by default.
+    return this.enableIe().if(this.runOnIe);
   }
 
   /**
@@ -207,6 +244,8 @@ describe.configure = function() {
   return new TestConfig(describe);
 };
 
+installYieldIt(it);
+
 it.configure = function() {
   return new TestConfig(it);
 };
@@ -229,9 +268,71 @@ sinon.sandbox.create = function(config) {
   return sandbox;
 };
 
+// Used during normal test execution, to detect unexpected console errors.
+function mockConsoleError() {
+  if (consoleErrorSandbox) {
+    consoleErrorSandbox.restore();
+  }
+  consoleErrorSandbox = sinon.sandbox.create();
+  consoleErrorMock = consoleErrorSandbox.mock(console);
+  consoleErrorMock.expects('error').never();
+  this.allowConsoleError = function(func) {
+    verifyConsoleErrorMock();
+    stubConsoleError();
+    func();
+    mockConsoleError();
+  };
+}
+
+// Used during sections of tests where an error is expected.
+function stubConsoleError() {
+  if (consoleErrorSandbox) {
+    consoleErrorSandbox.restore();
+  }
+  consoleErrorSandbox = sinon.sandbox.create();
+  consoleErrorSandbox.stub(console, 'error').callsFake(() => {});
+}
+
+// Used to silence info, log, and warn level logging during each test.
+function stubConsoleInfoLogWarn() {
+  consoleInfoLogWarnSandbox = sinon.sandbox.create();
+  consoleInfoLogWarnSandbox.stub(console, 'info').callsFake(() => {});
+  consoleInfoLogWarnSandbox.stub(console, 'log').callsFake(() => {});
+  consoleInfoLogWarnSandbox.stub(console, 'warn').callsFake(() => {});
+}
+
+// Used to restore info, log, and warn level logging after each test.
+function restoreConsoleInfoLogWarn() {
+  consoleInfoLogWarnSandbox.restore();
+}
+
+// Checks if unexpected errors were detected.
+function verifyConsoleErrorMock() {
+  try {
+    consoleErrorMock.verify();
+  } catch (e) {
+    const helpMessage = '    The test "' + testName + '"' +
+        ' resulted in a call to console.error.\n' +
+        '    ⤷ If this is not expected, fix the code that generated ' +
+            'the error.\n' +
+        '    ⤷ If this is expected, use the following pattern to wrap the ' +
+            'test code that generated the error:\n' +
+        '        \'allowConsoleError(() => { <code that generated the ' +
+            'error> });';
+    const message = e.message.split('\n', 1)[0]; // Log just the first line.
+    // TODO(rsimha, #14432): Throw an error here after all tests are fixed.
+    console/*OK*/.error(message + '\'\n' + helpMessage);
+  } finally {
+    consoleErrorSandbox.restore();
+  }
+}
+
 beforeEach(function() {
   this.timeout(BEFORE_AFTER_TIMEOUT);
   beforeTest();
+  testName = this.currentTest.fullTitle();
+  stubConsoleInfoLogWarn();
+  mockConsoleError();
 });
 
 function beforeTest() {
@@ -243,18 +344,20 @@ function beforeTest() {
   };
   window.AMP_TEST = true;
   installDocService(window, /* isSingleDoc */ true);
-  const ampdoc = ampdocServiceFor(window).getAmpDoc();
+  const ampdoc = Services.ampdocServiceFor(window).getAmpDoc();
   installRuntimeServices(window);
   installAmpdocServices(ampdoc);
-  resourcesForDoc(ampdoc).ampInitComplete();
+  Services.resourcesForDoc(ampdoc).ampInitComplete();
 }
 
 // Global cleanup of tags added during tests. Cool to add more
 // to selector.
 afterEach(function() {
+  verifyConsoleErrorMock();
+  restoreConsoleInfoLogWarn();
   this.timeout(BEFORE_AFTER_TIMEOUT);
   const cleanupTagNames = ['link', 'meta'];
-  if (!platformFor(window).isSafari()) {
+  if (!Services.platformFor(window).isSafari()) {
     cleanupTagNames.push('iframe');
   }
   const cleanup = document.querySelectorAll(cleanupTagNames.join(','));
@@ -293,6 +396,7 @@ afterEach(function() {
   setDefaultBootstrapBaseUrlForTesting(null);
   resetAccumulatedErrorMessagesForTesting();
   resetExperimentTogglesForTesting(window);
+  resetEvtListenerOptsSupportForTesting();
   setReportError(reportError);
 });
 
@@ -300,11 +404,11 @@ chai.Assertion.addMethod('attribute', function(attr) {
   const obj = this._obj;
   const tagName = obj.tagName.toLowerCase();
   this.assert(
-    obj.hasAttribute(attr),
-    'expected element \'' + tagName + '\' to have attribute #{exp}',
-    'expected element \'' + tagName + '\' to not have attribute #{act}',
-    attr,
-    attr
+      obj.hasAttribute(attr),
+      'expected element \'' + tagName + '\' to have attribute #{exp}',
+      'expected element \'' + tagName + '\' to not have attribute #{act}',
+      attr,
+      attr
   );
 });
 
@@ -312,11 +416,11 @@ chai.Assertion.addMethod('class', function(className) {
   const obj = this._obj;
   const tagName = obj.tagName.toLowerCase();
   this.assert(
-    obj.classList.contains(className),
-    'expected element \'' + tagName + '\' to have class #{exp}',
-    'expected element \'' + tagName + '\' to not have class #{act}',
-    className,
-    className
+      obj.classList.contains(className),
+      'expected element \'' + tagName + '\' to have class #{exp}',
+      'expected element \'' + tagName + '\' to not have class #{act}',
+      className,
+      className
   );
 });
 
@@ -346,13 +450,13 @@ chai.Assertion.addProperty('hidden', function() {
   const opacity = computedStyle.getPropertyValue('opacity');
   const tagName = obj.tagName.toLowerCase();
   this.assert(
-     visibility === 'hidden' || parseInt(opacity, 10) == 0,
-    'expected element \'' +
+      visibility === 'hidden' || parseInt(opacity, 10) == 0,
+      'expected element \'' +
         tagName + '\' to be #{exp}, got #{act}. with classes: ' + obj.className,
-    'expected element \'' +
+      'expected element \'' +
         tagName + '\' not to be #{act}. with classes: ' + obj.className,
-    'hidden',
-    visibility
+      'hidden',
+      visibility
   );
 });
 
@@ -361,11 +465,11 @@ chai.Assertion.addMethod('display', function(display) {
   const value = window.getComputedStyle(obj).getPropertyValue('display');
   const tagName = obj.tagName.toLowerCase();
   this.assert(
-     value === display,
-    'expected element \'' + tagName + '\' to be #{exp}, got #{act}.',
-    'expected element \'' + tagName + '\' not to be #{act}.',
-    display,
-    value
+      value === display,
+      'expected element \'' + tagName + '\' to be #{exp}, got #{act}.',
+      'expected element \'' + tagName + '\' not to be #{act}.',
+      display,
+      value
   );
 });
 
@@ -374,12 +478,10 @@ chai.Assertion.addMethod('jsonEqual', function(compare) {
   const a = stringify(compare);
   const b = stringify(obj);
   this.assert(
-    a == b,
-    'expected JSON to be equal.\nExp: #{exp}\nAct: #{act}',
-    'expected JSON to not be equal.\nExp: #{exp}\nAct: #{act}',
-    a,
-    b
+      a == b,
+      'expected JSON to be equal.\nExp: #{exp}\nAct: #{act}',
+      'expected JSON to not be equal.\nExp: #{exp}\nAct: #{act}',
+      a,
+      b
   );
 });
-
-sinon = null;

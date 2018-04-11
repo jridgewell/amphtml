@@ -17,9 +17,9 @@
 // Requires polyfills in immediate side effect.
 import '../polyfills';
 
-import {user} from '../log';
 import {registerServiceBuilder} from '../service';
 import {reportError} from '../error';
+import {user} from '../log';
 
 /**
  * Helper with all things Timer.
@@ -44,7 +44,7 @@ export class Timer {
     this.startTime_ = Date.now();
   }
 
- /**
+  /**
   * Returns time since start in milliseconds.
   * @return {number}
   */
@@ -58,7 +58,7 @@ export class Timer {
    * be close to 0 and this will NOT yield to the event queue.
    *
    * Returns the timer ID that can be used to cancel the timer (cancel method).
-   * @param {!function()} callback
+   * @param {function()} callback
    * @param {number=} opt_delay
    * @return {number|string}
    */
@@ -107,9 +107,8 @@ export class Timer {
    */
   promise(opt_delay) {
     return new Promise(resolve => {
-      let timerKey;
       // Avoid wrapping in closure if no specific result is produced.
-      timerKey = this.delay(resolve, opt_delay);
+      const timerKey = this.delay(resolve, opt_delay);
       if (timerKey == -1) {
         throw new Error('Failed to schedule timer.');
       }
@@ -128,8 +127,9 @@ export class Timer {
    * @template RESULT
    */
   timeoutPromise(delay, opt_racePromise, opt_message) {
+    let timerKey;
     const delayPromise = new Promise((_resolve, reject) => {
-      const timerKey = this.delay(() => {
+      timerKey = this.delay(() => {
         reject(user().createError(opt_message || 'timeout'));
       }, delay);
 
@@ -140,6 +140,10 @@ export class Timer {
     if (!opt_racePromise) {
       return delayPromise;
     }
+    const cancel = () => {
+      this.cancel(timerKey);
+    };
+    opt_racePromise.then(cancel, cancel);
     return Promise.race([delayPromise, opt_racePromise]);
   }
 
@@ -168,4 +172,4 @@ export class Timer {
  */
 export function installTimerService(window) {
   registerServiceBuilder(window, 'timer', Timer);
-};
+}

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import {timerFor} from '../../../src/services';
+import {Services} from '../../../src/services';
 import {user} from '../../../src/log';
 
 /**
@@ -23,12 +23,22 @@ import {user} from '../../../src/log';
  */
 const LOADING_ADS_WIN_ID_ = '3pla';
 
+/** @private {?Promise} resolves when no 3p throttle */
+let throttlePromise_ = null;
+/** @private {?Function} resolver for throttle promise */
+let throttlePromiseResolver_ = null;
+
 /**
  * @param {!Window} win
  * @return {boolean} Whether 3p is currently throttled.
  */
 export function is3pThrottled(win) {
   return !!win[LOADING_ADS_WIN_ID_];
+}
+
+/** @return {!Promise} resolves when no 3p throttle */
+export function waitFor3pThrottle() {
+  return throttlePromise_ || Promise.resolve();
 }
 
 /**
@@ -58,16 +68,23 @@ export function getAmpAdRenderOutsideViewport(element) {
 /**
  * Increments loading ads count for throttling.
  * @param {!Window} win
+ * @param {!Promise=} opt_loadingPromise
  */
-export function incrementLoadingAds(win) {
+export function incrementLoadingAds(win, opt_loadingPromise) {
   if (win[LOADING_ADS_WIN_ID_] === undefined) {
     win[LOADING_ADS_WIN_ID_] = 0;
   }
   win[LOADING_ADS_WIN_ID_]++;
-  timerFor(win).delay(() => {
-    // Unfortunately we don't really have a good way to measure how long it
-    // takes to load an ad, so we'll just pretend it takes 1 second for
-    // now.
-    win[LOADING_ADS_WIN_ID_]--;
-  }, 1000);
+  throttlePromise_ = throttlePromise_ ||
+      new Promise(resolver => throttlePromiseResolver_ = resolver);
+  Services.timerFor(win)
+      .timeoutPromise(1000, opt_loadingPromise)
+      .catch(() => {})
+      .then(() => {
+        if (!--win[LOADING_ADS_WIN_ID_]) {
+          throttlePromiseResolver_();
+          throttlePromise_ = null;
+          throttlePromiseResolver_ = null;
+        }
+      });
 }

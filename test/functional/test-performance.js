@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-import {getMode} from '../../src/mode';
-import {
-  installPerformanceService,
-  performanceFor,
-} from '../../src/service/performance-impl';
-import {resourcesForDoc} from '../../src/services';
-import {viewerForDoc} from '../../src/services';
 import * as lolex from 'lolex';
 import * as sinon from 'sinon';
+import {Services} from '../../src/services';
+import {getMode} from '../../src/mode';
+import {installPerformanceService} from '../../src/service/performance-impl';
 
 
 describes.realWin('performance', {amp: true}, env => {
@@ -31,16 +27,19 @@ describes.realWin('performance', {amp: true}, env => {
   let clock;
   let win;
   let ampdoc;
-  let hasLoadTimes;
 
   beforeEach(() => {
     win = env.win;
     sandbox = env.sandbox;
     ampdoc = env.ampdoc;
-    clock = lolex.install(win, 0, ['Date', 'setTimeout', 'clearTimeout']);
+    clock = lolex.install({
+      target: win, toFake: ['Date', 'setTimeout', 'clearTimeout']});
     installPerformanceService(env.win);
-    perf = performanceFor(env.win);
-    hasLoadTimes = window.chrome && window.chrome.loadTimes;
+    perf = Services.performanceFor(env.win);
+  });
+
+  afterEach(() => {
+    clock.uninstall();
   });
 
   describe('when viewer is not ready', () => {
@@ -75,7 +74,7 @@ describes.realWin('performance', {amp: true}, env => {
       expect(perf.events_[c])
           .to.be.jsonEqual({
             label: 'test1',
-            delta: 1,
+            delta: 0,
           });
 
       c++;
@@ -84,7 +83,7 @@ describes.realWin('performance', {amp: true}, env => {
       expect(perf.events_[c])
           .to.be.jsonEqual({
             label: 'test2',
-            delta: 1,
+            delta: 0,
           });
 
       c++;
@@ -153,7 +152,7 @@ describes.realWin('performance', {amp: true}, env => {
     let viewerSendMessageStub;
 
     beforeEach(() => {
-      viewer = viewerForDoc(ampdoc);
+      viewer = Services.viewerForDoc(ampdoc);
       viewerSendMessageStub = sandbox.stub(viewer, 'sendMessage');
     });
 
@@ -260,7 +259,7 @@ describes.realWin('performance', {amp: true}, env => {
         return perf.coreServicesAvailable().then(() => {
           expect(flushSpy).to.have.callCount(3);
           expect(perf.isMessagingReady_).to.be.false;
-          const count = hasLoadTimes ? 5 : 4;
+          const count = 4;
           expect(perf.events_.length).to.equal(count);
         });
       });
@@ -274,7 +273,8 @@ describes.realWin('performance', {amp: true}, env => {
       beforeEach(() => {
         tickDeltaStub = sandbox.stub(perf, 'tickDelta');
         firstVisibleTime = null;
-        sandbox.stub(viewer, 'getFirstVisibleTime', () => firstVisibleTime);
+        sandbox.stub(viewer, 'getFirstVisibleTime').callsFake(
+            () => firstVisibleTime);
       });
 
       it('should always be zero before viewer is set', () => {
@@ -429,21 +429,17 @@ describes.realWin('performance', {amp: true}, env => {
       });
 
       it('should call the flush callback', () => {
-        const payload = {
-          ampexp: 'rtv-' + getMode(win).rtvVersion,
-        };
-        expect(viewerSendMessageStub.withArgs('sendCsi', payload,
-            /* cancelUnsent */true)).to.have.callCount(0);
+        expect(viewerSendMessageStub.withArgs('sendCsi')).to.have.callCount(0);
         // coreServicesAvailable calls flush once.
         return perf.coreServicesAvailable().then(() => {
-          expect(viewerSendMessageStub.withArgs('sendCsi', payload,
-              /* cancelUnsent */true)).to.have.callCount(1);
+          expect(viewerSendMessageStub.withArgs('sendCsi'))
+              .to.have.callCount(1);
           perf.flush();
-          expect(viewerSendMessageStub.withArgs('sendCsi', payload,
-              /* cancelUnsent */true)).to.have.callCount(2);
+          expect(viewerSendMessageStub.withArgs('sendCsi'))
+              .to.have.callCount(2);
           perf.flush();
-          expect(viewerSendMessageStub.withArgs('sendCsi', payload,
-              /* cancelUnsent */true)).to.have.callCount(3);
+          expect(viewerSendMessageStub.withArgs('sendCsi'))
+              .to.have.callCount(3);
         });
       });
     });
@@ -460,7 +456,7 @@ describes.realWin('performance', {amp: true}, env => {
       return res;
     }
 
-    const resources = resourcesForDoc(ampdoc);
+    const resources = Services.resourcesForDoc(ampdoc);
     const resourcesMock = sandbox.mock(resources);
     perf.resources_ = resources;
 
@@ -472,7 +468,7 @@ describes.realWin('performance', {amp: true}, env => {
         .withExactArgs(
             perf.win,
             sinon.match(arg =>
-                arg.left == 0 &&
+              arg.left == 0 &&
                 arg.top == 0 &&
                 arg.width == perf.win.innerWidth &&
                 arg.height == perf.win.innerHeight),
@@ -500,8 +496,12 @@ describes.realWin('performance', {amp: true}, env => {
           .returns(visibility);
     }
 
+    function getPerformanceMarks() {
+      return win.performance.getEntriesByType('mark').map(entry => entry.name);
+    }
+
     beforeEach(() => {
-      viewer = viewerForDoc(ampdoc);
+      viewer = Services.viewerForDoc(ampdoc);
       sandbox.stub(viewer, 'whenMessagingReady')
           .returns(Promise.resolve());
       viewerSendMessageStub = sandbox.stub(viewer,
@@ -543,6 +543,9 @@ describes.realWin('performance', {amp: true}, env => {
           return perf.whenViewportLayoutComplete_().then(() => {
             expect(viewerSendMessageStub.withArgs(
                 'prerenderComplete').firstCall.args[1].value).to.equal(400);
+
+            expect(getPerformanceMarks()).to.deep.equal(
+                ['ol', 'ofv', 'pc']);
           });
         });
       });
@@ -566,16 +569,16 @@ describes.realWin('performance', {amp: true}, env => {
          'to be visible before before first viewport completion', () => {
         clock.tick(100);
         whenFirstVisibleResolve();
-        expect(tickSpy).to.have.callCount(hasLoadTimes ? 3 : 2);
+        expect(tickSpy).to.have.callCount(2);
         return viewer.whenFirstVisible().then(() => {
           clock.tick(400);
-          expect(tickSpy).to.have.callCount(hasLoadTimes ? 4 : 3);
+          expect(tickSpy).to.have.callCount(3);
           whenViewportLayoutCompleteResolve();
           return perf.whenViewportLayoutComplete_().then(() => {
-            expect(tickSpy).to.have.callCount(hasLoadTimes ? 4 : 3);
+            expect(tickSpy).to.have.callCount(3);
             expect(tickSpy.withArgs('ofv')).to.be.calledOnce;
             return whenFirstVisiblePromise.then(() => {
-              expect(tickSpy).to.have.callCount(hasLoadTimes ? 5 : 4);
+              expect(tickSpy).to.have.callCount(4);
               expect(tickSpy.withArgs('pc')).to.be.calledOnce;
               expect(Number(tickSpy.withArgs('pc').args[0][1])).to.equal(400);
             });
@@ -594,6 +597,8 @@ describes.realWin('performance', {amp: true}, env => {
           return whenFirstVisiblePromise.then(() => {
             expect(tickSpy.withArgs('pc')).to.be.calledOnce;
             expect(Number(tickSpy.withArgs('pc').args[0][1])).to.equal(0);
+            expect(getPerformanceMarks()).to.deep.equal(
+                ['ol', 'pc', 'ofv']);
           });
         });
       });
@@ -614,6 +619,7 @@ describes.realWin('performance', {amp: true}, env => {
         return perf.whenViewportLayoutComplete_().then(() => {
           expect(viewerSendMessageStub.withArgs(
               'prerenderComplete').firstCall.args[1].value).to.equal(300);
+          expect(getPerformanceMarks()).to.deep.equal(['ol', 'pc']);
         });
       });
 
@@ -625,6 +631,7 @@ describes.realWin('performance', {amp: true}, env => {
           expect(tickSpy.withArgs('ol')).to.be.calledOnce;
           expect(tickSpy.withArgs('pc')).to.be.calledOnce;
           expect(tickSpy.withArgs('pc').args[0][2]).to.be.undefined;
+          expect(getPerformanceMarks()).to.deep.equal(['ol', 'pc']);
         });
       });
     });
@@ -641,22 +648,22 @@ describes.realWin('performance with experiment', {amp: true}, env => {
   beforeEach(() => {
     win = env.win;
     sandbox = env.sandbox;
-    const viewer = viewerForDoc(env.ampdoc);
+    const viewer = Services.viewerForDoc(env.ampdoc);
     viewerSendMessageStub = sandbox.stub(viewer, 'sendMessage');
     sandbox.stub(viewer, 'whenMessagingReady').returns(Promise.resolve());
     sandbox.stub(viewer, 'getParam').withArgs('csi').returns('1');
     sandbox.stub(viewer, 'isEmbedded').returns(true);
     installPerformanceService(win);
-    perf = performanceFor(win);
+    perf = Services.performanceFor(win);
   });
 
   it('rtvVersion experiment', () => {
     return perf.coreServicesAvailable().then(() => {
       viewerSendMessageStub.reset();
       perf.flush();
-      expect(viewerSendMessageStub).to.be.calledWith('sendCsi', {
-        ampexp: 'rtv-' + getMode(win).rtvVersion,
-      });
+      expect(viewerSendMessageStub.lastCall.args[0]).to.equal('sendCsi');
+      expect(viewerSendMessageStub.lastCall.args[1].ampexp).to.equal(
+          'rtv-' + getMode(win).rtvVersion);
     });
   });
 

@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {dev} from '../src/log';
+import {AmpEvents} from '../src/amp-events';
 import {IframeMessagingClient} from './iframe-messaging-client';
 import {MessageType} from '../src/3p-frame-messaging';
-import {nextTick} from './3p';
-import {tryParseJson} from '../src/json';
+import {dev} from '../src/log';
+import {dict} from '../src/utils/object';
 import {isObject} from '../src/types';
+import {nextTick} from './3p';
+import {parseUrl} from '../src/url';
+import {tryParseJson} from '../src/json';
 
 export class AbstractAmpContext {
 
@@ -56,8 +59,11 @@ export class AbstractAmpContext {
     /** @type {?string|undefined} */
     this.container = null;
 
-    /** @type {?Object<String, *>} */
+    /** @type {?Object<string, *>} */
     this.data = null;
+
+    /** @type {?string} */
+    this.domFingerprint = null;
 
     /** @type {?boolean} */
     this.hidden = null;
@@ -91,6 +97,9 @@ export class AbstractAmpContext {
 
     /** @type {?string} */
     this.tagName = null;
+
+    /** @type {number} */
+    this.getHtmlMessageId_ = 1;
 
     this.findAndSetMetadata_();
 
@@ -128,7 +137,7 @@ export class AbstractAmpContext {
   dispatchVisibilityChangeEvent_() {
     const event = this.win_.document.createEvent('Event');
     event.data = {hidden: this.hidden};
-    event.initEvent('amp:visibilitychange', true, true);
+    event.initEvent(AmpEvents.VISIBILITY_CHANGE, true, true);
     this.win_.dispatchEvent(event);
   }
 
@@ -141,7 +150,7 @@ export class AbstractAmpContext {
    */
   onPageVisibilityChange(callback) {
     return this.client_.registerCallback(MessageType.EMBED_STATE, data => {
-      callback({hidden: data.pageHidden});
+      callback({hidden: data['pageHidden']});
     });
   }
 
@@ -169,7 +178,32 @@ export class AbstractAmpContext {
     });
 
     return unlisten;
-  };
+  }
+
+  /**
+   *  Requests HTML snippet from the parent window.
+   *  @param {string} selector CSS selector
+   *  @param {!Array<string>} attributes whitelisted attributes to be kept
+   *    in the returned HTML string
+   *  @param {function(string)} callback to be invoked with the HTML string
+   */
+  getHtml(selector, attributes, callback) {
+    const messageId = this.getHtmlMessageId_++;
+    const unlisten = this.client_.registerCallback(
+        MessageType.GET_HTML_RESULT,
+        result => {
+          if (result['messageId'] && (result['messageId'] == messageId)) {
+            unlisten();
+            callback(result['content']);
+          }
+        });
+
+    this.client_.sendMessage(MessageType.GET_HTML, dict({
+      'selector': selector,
+      'attributes': attributes,
+      'messageId': messageId,
+    }));
+  }
 
   /**
    *  Send message to runtime requesting to resize ad to height and width.
@@ -178,8 +212,11 @@ export class AbstractAmpContext {
    *  @param {number} height The new height for the ad we are requesting.
    */
   requestResize(width, height) {
-    this.client_.sendMessage(MessageType.EMBED_SIZE, {width, height});
-  };
+    this.client_.sendMessage(MessageType.EMBED_SIZE, dict({
+      'width': width,
+      'height': height,
+    }));
+  }
 
   /**
    *  Allows a creative to set the callback function for when the resize
@@ -190,8 +227,8 @@ export class AbstractAmpContext {
    */
   onResizeSuccess(callback) {
     this.client_.registerCallback(MessageType.EMBED_SIZE_CHANGED, obj => {
-      callback(obj.requestedHeight, obj.requestedWidth); });
-  };
+      callback(obj['requestedHeight'], obj['requestedWidth']); });
+  }
 
   /**
    *  Allows a creative to set the callback function for when the resize
@@ -202,9 +239,9 @@ export class AbstractAmpContext {
    */
   onResizeDenied(callback) {
     this.client_.registerCallback(MessageType.EMBED_SIZE_DENIED, obj => {
-      callback(obj.requestedHeight, obj.requestedWidth);
+      callback(obj['requestedHeight'], obj['requestedWidth']);
     });
-  };
+  }
 
   /**
    *  Takes the current name on the window, and attaches it to
@@ -230,21 +267,30 @@ export class AbstractAmpContext {
    *  @private
    */
   setupMetadata_(data) {
+    // TODO(alanorozco): Use metadata utils in 3p/frame-metadata
     const dataObject = dev().assert(
         typeof data === 'string' ? tryParseJson(data) : data,
         'Could not setup metadata.');
 
     const context = dataObject._context || dataObject.attributes._context;
 
+    this.data = dataObject.attributes || dataObject;
+
+    // TODO(alanorozco, #10576): This is really ugly. Find a better structure
+    // than passing context values via data.
+    if ('_context' in this.data) {
+      delete this.data['_context'];
+    }
+
     this.canary = context.canary;
     this.canonicalUrl = context.canonicalUrl;
     this.clientId = context.clientId;
     this.container = context.container;
-    this.data = context.tagName;
+    this.domFingerprint = context.domFingerprint;
     this.hidden = context.hidden;
     this.initialLayoutRect = context.initialLayoutRect;
     this.initialIntersection = context.initialIntersection;
-    this.location = context.location;
+    this.location = parseUrl(context.location.href);
     this.mode = context.mode;
     this.pageViewId = context.pageViewId;
     this.referrer = context.referrer;
@@ -283,7 +329,7 @@ export class AbstractAmpContext {
     // TODO(alanorozco): why the heck could AMP_CONTEXT_DATA be two different
     // types? FIX THIS.
     if (isObject(this.win_.sf_) && this.win_.sf_.cfg) {
-      this.setupMetadata_(/** @type {!string}*/(this.win_.sf_.cfg));
+      this.setupMetadata_(/** @type {string}*/(this.win_.sf_.cfg));
     } else if (this.win_.AMP_CONTEXT_DATA) {
       if (typeof this.win_.AMP_CONTEXT_DATA == 'string') {
         this.sentinel = this.win_.AMP_CONTEXT_DATA;
@@ -294,8 +340,20 @@ export class AbstractAmpContext {
       this.setupMetadata_(this.win_.name);
     }
   }
-}
 
+  /**
+   * Send 3p error to parent iframe
+   * @param {!Error} e
+   */
+  report3pError(e) {
+    if (!e.message) {
+      return;
+    }
+    this.client_.sendMessage(MessageType.USER_ERROR_IN_IFRAME, dict({
+      'message': e.message,
+    }));
+  }
+}
 
 export class AmpContext extends AbstractAmpContext {
   /** @return {boolean} */

@@ -27,10 +27,10 @@
  * </code>
  */
 
+import {Layout} from '../../../src/layout';
 import {getIframe} from '../../../src/3p-frame';
 import {listenFor} from '../../../src/iframe-helper';
 import {removeElement} from '../../../src/dom';
-import {Layout} from '../../../src/layout';
 
 export class AmpGist extends AMP.BaseElement {
 
@@ -62,7 +62,7 @@ export class AmpGist extends AMP.BaseElement {
     this.applyFillContent(iframe);
     // Triggered by window.context.requestResize() inside the iframe.
     listenFor(iframe, 'embed-size', data => {
-      this./*OK*/changeHeight(data.height);
+      this./*OK*/changeHeight(data['height']);
     }, /* opt_is3P */true);
 
     this.element.appendChild(iframe);
@@ -79,4 +79,7 @@ export class AmpGist extends AMP.BaseElement {
   }
 }
 
-AMP.registerElement('amp-gist', AmpGist);
+
+AMP.extension('amp-gist', '0.1', AMP => {
+  AMP.registerElement('amp-gist', AmpGist);
+});

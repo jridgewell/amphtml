@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/** @externs */
+
 // HACK. Define application types used in default AMP externs
 // that are not in the 3p code.
 /** @constructor */
@@ -32,6 +34,13 @@ function AmpAdUIHandler$$module$extensions$amp_ad$0_1$amp_ad_ui() {};
 
 // Under 3p folder
 
+// beopinion.js
+data.account;
+data.content;
+data.name;
+//data['my-content'];
+window.BeOpinionSDK;
+
 // facebook.js
 data.embedAs;
 data.href;
@@ -46,6 +55,13 @@ data.src;
 
 //twitter.js
 data.tweetid
+
+//mathml.js
+data.formula
+var mathjax
+mathjax.Hub
+mathjax.Hub.Queue
+window.MathJax
 
 // Under ads/google folder
 
@@ -88,6 +104,42 @@ data.tagForChildDirectedTreatment;
 data.targeting;
 data.slot;
 
+// imaVideo.js
+var google;
+google.ima;
+google.ima.AdDisplayContainer;
+google.ima.AdDisplayContainer.initialize;
+google.ima.ImaSdkSettings;
+google.ima.ImaSdkSettings.setPlayerType;
+google.ima.ImaSdkSettings.setPlayerVersion;
+google.ima.AdsLoader;
+google.ima.AdsLoader.getSettings;
+google.ima.AdsLoader.requestAds;
+google.ima.AdsManagerLoadedEvent;
+google.ima.AdsManagerLoadedEvent.Type
+google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED;
+google.ima.AdsManagerLoadedEvent.getAdsManager;
+google.ima.AdErrorEvent;
+google.ima.AdErrorEvent.Type;
+google.ima.AdErrorEvent.Type.AD_ERROR;
+google.ima.AdsRequest;
+google.ima.ViewMode;
+google.ima.ViewMode.NORMAL;
+google.ima.ViewMode.FULLSCREEN;
+google.ima.AdsRenderingSettings;
+google.ima.UiElements;
+google.ima.UiElements.AD_ATTRIBUTION;
+google.ima.UiElements.COUNTDOWN;
+google.ima.AdEvent;
+google.ima.AdEvent.Type;
+google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED;
+google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED;
+google.ima.AdsManager;
+google.ima.AdsManager.setVolume;
+google.ima.settings;
+google.ima.settings.setLocale;
+google.ima.settings.setVpaidMode;
+
 // 3P ads
 // Please sort by alphabetic order of the ad server name to avoid conflict
 
@@ -124,6 +176,9 @@ data.targetid;
 data.ws;
 data.host;
 data.s;
+
+// adpicker.js
+data.ph;
 
 // adreactor.js
 data.zid;
@@ -176,6 +231,21 @@ data.debug;
 data.adUnits;
 data.target;
 
+// adventive.js
+const adventive = {};
+adventive.Ad;
+adventive.addArgs = () => {};
+adventive.addInstance = () => {};
+adventive.ads;
+adventive.args;
+adventive.instances;
+adventive.isLibLoaded;
+adventive.modes;
+adventive.Plugin;
+adventive.plugins;
+adventive.utility;
+window.adventive = adventive;
+
 // colombia.js
 data.clmb_slot;
 data.clmb_position;
@@ -194,6 +264,9 @@ Criteo.Log.Debug;
 Criteo.CallRTA;
 Criteo.ComputeDFPTargetingForAMP;
 Criteo.PubTag = {};
+Criteo.PubTag.Adapters = {};
+Criteo.PubTag.Adapters.AMP = {};
+Criteo.PubTag.Adapters.AMP.Standalone;
 Criteo.PubTag.RTA = {};
 Criteo.PubTag.RTA.DefaultCrtgContentName;
 Criteo.PubTag.RTA.DefaultCrtgRtaCookieName
@@ -243,6 +316,13 @@ data.parameters;
 // holder.js
 data.queue;
 
+// imedia.js
+data.positions
+
+// imonomy.js
+data.pid;
+data.subId;
+
 // improvedigital.js
 data.placement;
 data.optin;
@@ -254,6 +334,14 @@ window._inmobi;
 _inmobi.getNewAd;
 data.siteid;
 data.slotid;
+
+// innity.js
+var innity_adZone;
+var innityAMPZone;
+var innityAMPTag;
+data.pub;
+data.zone;
+data.channel;
 
 // ix.js
 data.ixId;
@@ -366,24 +454,16 @@ data.section;
 window.PulsePointHeaderTag;
 
 // rubicon.js
-var rubicontag;
-rubicontag.setFPV;
-rubicontag.setFPI;
-rubicontag.getSlot;
-rubicontag.getAdServerTargeting;
-rubicontag.addKW;
-rubicontag.setUrl;
-rubicontag.setIntegration;
 data.method;
-data.overrideWidth;
 data.width;
-data.overrideHeight;
 data.height;
 data.account;
 data.kw;
 data.visitor;
 data.inventory;
 data.size;
+data.site;
+data.zone;
 data.callback;
 
 // sharethrough.js
@@ -426,6 +506,23 @@ data.tag;
 data.tag;
 data.tag.tta;
 data.tag.ttp;
+
+// uas.js
+var Phoenix;
+window.Phoenix;
+Phoenix.EQ;
+Phoenix.EQ.push;
+Phoenix.enableSingleRequestCallMode;
+Phoenix.setInfo;
+Phoenix.defineAdSlot;
+Phoenix.display;
+data.accId;
+data.adUnit;
+data.targetings;
+data.extraParams;
+data.slot.setVisibility;
+data.slot.setTargeting;
+data.slot.setExtraParameters;
 
 // webediads.js
 var wads;
@@ -494,3 +591,6 @@ data.renderer;
 // zergnet.js
 window.zergnetWidgetId;
 data.zergid;
+
+// _ping_.js
+window.networkIntegrationDataParamForTesting;

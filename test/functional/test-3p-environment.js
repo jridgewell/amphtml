@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
+import * as lolex from 'lolex';
+import {Services} from '../../src/services';
+import {createIframePromise} from '../../testing/iframe';
+import {loadPromise} from '../../src/event-helper';
 import {
   manageWin,
   setInViewportForTesting,
 } from '../../3p/environment';
-import {createIframePromise} from '../../testing/iframe';
-import {timerFor} from '../../src/services';
-import {loadPromise} from '../../src/event-helper';
-import * as lolex from 'lolex';
 
 describe('3p environment', () => {
 
   let testWin;
   let iframeCount;
-  const timer = timerFor(window);
+  const timer = Services.timerFor(window);
 
   beforeEach(() => {
     iframeCount = 0;
@@ -108,7 +108,7 @@ describe('3p environment', () => {
 
     function installTimer(win) {
       progress = '';
-      clock = lolex.install(win);
+      clock = lolex.install({target: win});
       return clock;
     }
 
@@ -225,9 +225,11 @@ describe('3p environment', () => {
     expect(win.prompt()).to.equal('');
     expect(win.confirm()).to.be.false;
     // We only allow 3 calls to these functions.
-    expect(() => win.alert()).to.throw(/security error/);
-    expect(() => win.prompt()).to.throw(/security error/);
-    expect(() => win.confirm()).to.throw(/security error/);
+    allowConsoleError(() => {
+      expect(() => win.alert()).to.throw(/security error/);
+      expect(() => win.prompt()).to.throw(/security error/);
+      expect(() => win.confirm()).to.throw(/security error/);
+    });
   }
 
   function waitForMutationObserver(iframe) {

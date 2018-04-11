@@ -702,6 +702,7 @@ function printConfigHelp(command) {
   }
 }
 
+
 /**
  * Parse the --extensions or the --noextensions flag and
  * prints a helpful message that lets the developer know how to build

@@ -159,6 +159,14 @@ export class Resources {
     /** @const @private {!Pass} */
     this.pass_ = new Pass(this.win, () => this.doPass());
 
+    this.scrollingTries_ = 0;
+    this.scrollPass_ = new Pass(this.win, () => {
+      // Scroll by increments of 200
+      let top = this.viewport_.getScrollTop() + 200;
+      top -= (top % 200);
+      this.viewport_.setScrollTop(top);
+    });
+
     /** @const @private {!Pass} */
     this.remeasurePass_ = new Pass(this.win, () => {
       this.relayoutAll_ = true;
@@ -1679,6 +1687,29 @@ export class Resources {
       // Still tasks in the queue, but we took too much time.
       // Schedule the next work pass.
       return timeout;
+    }
+
+    let anyResourcesLeft = false;
+    this.resources_.forEach(r => {
+      if (r.getState() < ResourceState.LAYOUT_SCHEDULED) {
+        anyResourcesLeft = true;
+      }
+      const box = r.getLayoutBox();
+      if (this.scrollingTries_ < 3) {
+        console.log(`DEBUG: ${r.debugid} x: ${box.x} y: ${box.y}`);
+      }
+    });
+    if (!anyResourcesLeft && this.viewer_.hasBeenVisible()) {
+      this.scrollingTries_++;
+    }
+    if (!this.viewer_.hasBeenVisible()) {
+      this.scrollPass_.cancel();
+    }
+    if (this.scrollingTries_ < 3) {
+      this.scrollPass_.schedule(400);
+    } else if (this.scrollingTries_ === 3) {
+      this.scrollingTries_++;
+      console.log('DEBUG: all resources done');
     }
 
     // No tasks left in the queue.

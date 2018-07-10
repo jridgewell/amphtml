@@ -857,6 +857,27 @@ export class Resource {
       return Promise.reject(this.lastLayoutError_);
     }
 
+    const viewportBox = this.resources_.getViewport().getRect();
+    const layoutBox = this.getLayoutBox();
+    let maxDistance = this.renderOutsideViewport();
+    let distance = 0;
+    if (viewportBox.bottom < layoutBox.top) {
+      // Element is below viewport
+      distance = layoutBox.top - viewportBox.bottom;
+    } else if (viewportBox.top > layoutBox.bottom) {
+      // Element is above viewport
+      distance = viewportBox.top - layoutBox.bottom;
+    } else {
+      // Element is in viewport so return true for all but boolean false.
+      distance = 0;
+    }
+    if (maxDistance === true) {
+      maxDistance = distance;
+    } else if (maxDistance === false) {
+      maxDistance = 0;
+    }
+    console.log(`DEBUG: startLayout delta ${maxDistance - distance}`);
+
     dev().assert(this.state_ != ResourceState.NOT_BUILT,
         'Not ready to start layout: %s (%s)', this.debugid, this.state_);
     dev().assert(this.isDisplayed(),

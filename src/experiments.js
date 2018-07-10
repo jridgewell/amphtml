@@ -71,6 +71,9 @@ export function getBinaryType(win) {
  * @return {boolean}
  */
 export function isExperimentOn(win, experimentId) {
+  if (experimentId === 'layers') {
+    return win.location.hash.includes('layers') || win.location.search.includes('layers');
+  }
   const toggles = experimentToggles(win);
   return !!toggles[experimentId];
 }

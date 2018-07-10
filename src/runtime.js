@@ -904,32 +904,7 @@ export class MultidocManager {
  * @return {boolean}
  */
 function maybeLoadCorrectVersion(win, fnOrStruct) {
-  if (!isExperimentOn(win, 'version-locking')) {
-    return false;
-  }
-  if (typeof fnOrStruct == 'function') {
-    return false;
-  }
-  const version = fnOrStruct.v;
-  // This is non-obvious, but we only care about the release version,
-  // not about the full rtv version, because these only differ
-  // in the config that is fully determined by the primary binary.
-  if ('$internalRuntimeVersion$' == version) {
-    return false;
-  }
-  // The :not is an extra prevention of recursion because it will be
-  // added to script tags that go into the code path below.
-  const scriptInHead = win.document.head./*OK*/querySelector(
-      `[custom-element="${fnOrStruct.n}"]:not([i-amphtml-inserted])`);
-  dev().assert(scriptInHead, 'Expected to find script for extension: %s',
-      fnOrStruct.n);
-  if (!scriptInHead) {
-    return false;
-  }
-  // Mark the element as being replaced, so that the installExtension code
-  // assumes it as not-present.
-  Services.extensionsFor(win).reloadExtension(fnOrStruct.n, scriptInHead);
-  return true;
+  return false;
 }
 
 /**

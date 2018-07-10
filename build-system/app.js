@@ -30,6 +30,7 @@ const multer = require('multer');
 const path = require('path');
 const request = require('request');
 const pc = process;
+pc.env.SERVE_MODE = 'compiled';
 
 app.use(bodyParser.json());
 app.use('/amp4test', require('./amp4test'));
@@ -322,6 +323,10 @@ app.use('/share-tracking/get-outgoing-fragment', (req, res) => {
 // Fetches an AMP document from the AMP proxy and replaces JS
 // URLs, so that they point to localhost.
 function proxyToAmpProxy(req, res, mode) {
+  if (req.query['amp_js_v_layers']) {
+    req.url = req.url.replace('amp_js_v_layers', 'amp_js_v');
+    req.query['amp_js_v'] = req.query['amp_js_v_layers'];
+  }
   const url = 'https://cdn.ampproject.org/'
       + (req.query['amp_js_v'] ? 'v' : 'c')
       + req.url;

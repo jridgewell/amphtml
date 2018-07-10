@@ -33,7 +33,7 @@ const {
   SERVE_PROCESS_ID: gulpProcess,
 } = process.env;
 
-const useHttps = process.env.SERVE_USEHTTPS == 'true';
+const useHttps = true;
 const quiet = process.env.SERVE_QUIET == 'true';
 const sendCachingHeaders = process.env.SERVE_CACHING_HEADERS == 'true';
 const noCachingExtensions = process.env.SERVE_EXTENSIONS_WITHOUT_CACHING ==

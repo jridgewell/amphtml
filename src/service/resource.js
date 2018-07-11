@@ -876,7 +876,7 @@ export class Resource {
     } else if (maxDistance === false) {
       maxDistance = 0;
     }
-    console.log(`DEBUG: startLayout delta ${maxDistance - distance}`);
+    this.hostWin.layersDebug += `DEBUG: startLayout delta ${maxDistance - distance}\n`;
 
     dev().assert(this.state_ != ResourceState.NOT_BUILT,
         'Not ready to start layout: %s (%s)', this.debugid, this.state_);

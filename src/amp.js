@@ -41,6 +41,7 @@ import {stubElementsForDoc} from './service/custom-element-registry';
 if (self.location) {
   self.location.originalHash = self.location.hash;
 }
+self.layersDebug = '';
 
 /** @type {!./service/ampdoc-impl.AmpDocService} */
 let ampdocService;

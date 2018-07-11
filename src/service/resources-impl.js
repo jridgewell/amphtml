@@ -1696,7 +1696,7 @@ export class Resources {
       }
       const box = r.getLayoutBox();
       if (this.scrollingTries_ < 3) {
-        console.log(`DEBUG: ${r.debugid} x: ${box.x} y: ${box.y}`);
+        this.win.layersDebug += `DEBUG: ${r.debugid} x: ${box.x} y: ${box.y}\n`;
       }
     });
     if (!anyResourcesLeft && this.viewer_.hasBeenVisible()) {
@@ -1709,7 +1709,7 @@ export class Resources {
       this.scrollPass_.schedule(400);
     } else if (this.scrollingTries_ === 3) {
       this.scrollingTries_++;
-      console.log('DEBUG: all resources done');
+      this.win.layersDebug += 'DEBUG: all resources done\n';
     }
 
     // No tasks left in the queue.

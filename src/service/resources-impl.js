@@ -159,7 +159,6 @@ export class Resources {
     /** @const @private {!Pass} */
     this.pass_ = new Pass(this.win, () => this.doPass());
 
-    this.scrollingTries_ = 0;
     this.scrollPass_ = new Pass(this.win, () => {
       // Scroll by increments of 200
       let top = this.viewport_.getScrollTop() + 200;
@@ -1670,6 +1669,7 @@ export class Resources {
           task.promise.then(this.taskComplete_.bind(this, task, true),
               this.taskComplete_.bind(this, task, false))
               .catch(/** @type {function (*)} */ (reportError));
+          this.checkScrollPass_();
         } else {
           dev().fine(TAG_, 'cancelled', task.id);
           task.resource.layoutCanceled();
@@ -1687,29 +1687,6 @@ export class Resources {
       // Still tasks in the queue, but we took too much time.
       // Schedule the next work pass.
       return timeout;
-    }
-
-    let anyResourcesLeft = false;
-    this.resources_.forEach(r => {
-      if (r.getState() < ResourceState.LAYOUT_SCHEDULED) {
-        anyResourcesLeft = true;
-      }
-      const box = r.getLayoutBox();
-      if (this.scrollingTries_ < 3) {
-        this.win.layersDebug += `DEBUG: ${r.debugid} x: ${box.x} y: ${box.y}\n`;
-      }
-    });
-    if (!anyResourcesLeft && this.viewer_.hasBeenVisible()) {
-      this.scrollingTries_++;
-    }
-    if (!this.viewer_.hasBeenVisible()) {
-      this.scrollPass_.cancel();
-    }
-    if (this.scrollingTries_ < 3) {
-      this.scrollPass_.schedule(400);
-    } else if (this.scrollingTries_ === 3) {
-      this.scrollingTries_++;
-      this.win.layersDebug += 'DEBUG: all resources done\n';
     }
 
     // No tasks left in the queue.
@@ -1854,6 +1831,21 @@ export class Resources {
   reschedule_(task) {
     if (!this.queue_.getTaskById(task.id)) {
       this.queue_.enqueue(task);
+    }
+  }
+
+  checkScrollPass_() {
+    const pendingLayout = this.resources_.some(r =>
+      r.getState() < ResourceState.LAYOUT_SCHEDULED);
+    const pendingLayoutStart = this.resources_.some(r =>
+      r.getState() === ResourceState.LAYOUT_SCHEDULED && !r.layoutPromise_);
+
+    if (pendingLayoutStart) {
+      this.scrollPass_.cancel();
+    } else if (pendingLayout) {
+      this.scrollPass_.schedule(400);
+    } else if (!this.win.layersDebug.endsWith('done\n')) {
+      this.win.layersDebug += 'all resources done\n';
     }
   }
 

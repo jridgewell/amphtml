@@ -857,26 +857,52 @@ export class Resource {
       return Promise.reject(this.lastLayoutError_);
     }
 
+    const offsetTop = function offsetTop(el) {
+      let top = 0;
+      while (el) {
+        top += el.offsetTop;
+        el = el.offsetParent;
+      }
+      return top;
+    };
+
     const viewportBox = this.resources_.getViewport().getRect();
-    const layoutBox = this.getLayoutBox();
-    let maxDistance = this.renderOutsideViewport();
-    let distance = 0;
-    if (viewportBox.bottom < layoutBox.top) {
-      // Element is below viewport
-      distance = layoutBox.top - viewportBox.bottom;
-    } else if (viewportBox.top > layoutBox.bottom) {
-      // Element is above viewport
-      distance = viewportBox.top - layoutBox.bottom;
-    } else {
-      // Element is in viewport so return true for all but boolean false.
-      distance = 0;
-    }
+    const layoutBox = this.element.getBoundingClientRect();
+    let maxDistance = this.element.renderOutsideViewport();
     if (maxDistance === true) {
-      maxDistance = distance;
+      maxDistance = Infinity;
     } else if (maxDistance === false) {
       maxDistance = 0;
+    } else {
+      maxDistance *= viewportBox.height;
     }
-    this.hostWin.layersDebug += `DEBUG: startLayout delta ${maxDistance - distance}\n`;
+
+    let initialDistance = offsetTop(this.element);
+    if (viewportBox.height < initialDistance) {
+      // Element is below viewport
+      initialDistance = initialDistance - viewportBox.height;
+    } else if (viewportBox.top > initialDistance) {
+      throw new Error("shouldn't happen");
+    } else {
+      initialDistance = 0;
+    }
+    if (maxDistance > initialDistance) {
+      maxDistance = initialDistance;
+    }
+
+    let distance = 0;
+    if (viewportBox.height < layoutBox.top) {
+      // Element is below viewport
+      distance = Math.round(layoutBox.top) - viewportBox.height;
+    } else if (0 > layoutBox.bottom) {
+      // Element is above viewport
+      distance = -Math.round(layoutBox.bottom);
+    } else {
+      distance = 0;
+    }
+
+    const latency = maxDistance - distance;
+    this.hostWin.layersDebug += `${this.element.tagName} scrollTop: ${this.resources_.getViewport().getScrollTop()} delta: ${latency}\n`;
 
     dev().assert(this.state_ != ResourceState.NOT_BUILT,
         'Not ready to start layout: %s (%s)', this.debugid, this.state_);

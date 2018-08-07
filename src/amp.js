@@ -42,6 +42,7 @@ if (self.location) {
   self.location.originalHash = self.location.hash;
 }
 self.layersDebug = '';
+document.scrollingElement.scrollTop = 0;
 
 /** @type {!./service/ampdoc-impl.AmpDocService} */
 let ampdocService;

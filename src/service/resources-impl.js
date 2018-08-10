@@ -91,6 +91,7 @@ export class Resources {
     /** @private {boolean} */
     this.isRuntimeOn_ = this.viewer_.isRuntimeOn();
 
+    this.start_ = Date.now();
     /**
      * Used primarily for testing to allow build phase to proceed.
      * @const @private {boolean}
@@ -1641,8 +1642,8 @@ export class Resources {
     let task = this.queue_.peek(this.boundTaskScorer_, state);
     while (task) {
       timeout = this.calcTaskTimeout_(task);
-      dev().fine(TAG_, 'peek from queue:', task.id,
-          'sched at', task.scheduleTime,
+      console.info('DEBUG:', 'peek from queue:', task.id,
+          'sched at', task.scheduleTime - this.start_,
           'score', this.boundTaskScorer_(task, state),
           'timeout', timeout);
       if (timeout > 16) {
@@ -1664,14 +1665,14 @@ export class Resources {
             task.resource, task.forceOutsideViewport)) {
           task.promise = task.callback();
           task.startTime = now;
-          dev().fine(TAG_, 'exec:', task.id, 'at', task.startTime);
+          console.info('DEBUG:', 'exec:', task.id, 'at', task.startTime - this.start_);
           this.exec_.enqueue(task);
           task.promise.then(this.taskComplete_.bind(this, task, true),
               this.taskComplete_.bind(this, task, false))
               .catch(/** @type {function (*)} */ (reportError));
           this.checkScrollPass_();
         } else {
-          dev().fine(TAG_, 'cancelled', task.id);
+          console.info('DEBUG:', 'cancelled', task.id);
           task.resource.layoutCanceled();
         }
       }
@@ -1693,6 +1694,7 @@ export class Resources {
     // Schedule the next idle pass.
     let nextPassDelay = (now - this.exec_.getLastDequeueTime()) * 2;
     nextPassDelay = Math.max(Math.min(30000, nextPassDelay), 5000);
+    this.checkScrollPass_();
     return nextPassDelay;
   }
 
@@ -1839,13 +1841,15 @@ export class Resources {
       r.getState() < ResourceState.LAYOUT_SCHEDULED);
     const pendingLayoutStart = this.resources_.some(r =>
       r.getState() === ResourceState.LAYOUT_SCHEDULED && !r.layoutPromise_);
+    const any = this.resources_.length > 0;
 
-    if (pendingLayoutStart) {
+    if (!any || pendingLayoutStart) {
       this.scrollPass_.cancel();
     } else if (pendingLayout) {
-      this.scrollPass_.schedule(400);
+      this.scrollPass_.schedule(5000);
     } else if (!this.win.layersDebug.endsWith('done\n')) {
       this.win.layersDebug += 'all resources done\n';
+      console.log(`DEBUG:\n${this.win.layersDebug}`);
     }
   }
 

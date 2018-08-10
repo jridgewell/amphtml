@@ -882,7 +882,7 @@ export class Resource {
       // Element is below viewport
       initialDistance = initialDistance - viewportBox.height;
     } else if (viewportBox.top > initialDistance) {
-      throw new Error("shouldn't happen");
+      // throw new Error("shouldn't happen");
     } else {
       initialDistance = 0;
     }
@@ -902,7 +902,15 @@ export class Resource {
     }
 
     const latency = maxDistance - distance;
-    this.hostWin.layersDebug += `${this.element.tagName} scrollTop: ${this.resources_.getViewport().getScrollTop()} delta: ${latency}\n`;
+    this.hostWin.layersDebug += `${this.element.tagName} scrollTop: ${this.resources_.getViewport().getScrollTop()}`;
+    if (latency > 0) {
+      this.hostWin.layersDebug += ` undereager: ${latency}`;
+    } else if (latency < 0) {
+      this.hostWin.layersDebug += ` overeager: ${-latency}`;
+    } else {
+      this.hostWin.layersDebug += ' perfect';
+    }
+    this.hostWin.layersDebug += '\n';
 
     dev().assert(this.state_ != ResourceState.NOT_BUILT,
         'Not ready to start layout: %s (%s)', this.debugid, this.state_);

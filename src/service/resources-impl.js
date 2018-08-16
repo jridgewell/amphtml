@@ -160,11 +160,21 @@ export class Resources {
     /** @const @private {!Pass} */
     this.pass_ = new Pass(this.win, () => this.doPass());
 
+    let done = false;
     this.scrollPass_ = new Pass(this.win, () => {
       // Scroll by increments of 200
+      if (done) {
+        return;
+      }
       let top = this.viewport_.getScrollTop() + 200;
       top -= (top % 200);
       this.viewport_.setScrollTop(top);
+
+      if (this.viewport_.getScrollTop() < top) {
+        done = true;
+        this.win.layersDebug += 'all resources done\n';
+        console.log(`DEBUG:\n${this.win.layersDebug}`);
+      }
     });
 
     /** @const @private {!Pass} */
@@ -1164,6 +1174,8 @@ export class Resources {
     const firstPassAfterDocumentReady =
         (this.documentReady_ && this.firstPassAfterDocumentReady_);
     if (firstPassAfterDocumentReady) {
+      history.scrollRestoration = 'manual';
+      this.viewport_.setScrollTop(0);
       this.firstPassAfterDocumentReady_ = false;
       const doc = this.win.document;
       const documentInfo = Services.documentInfoForDoc(this.ampdoc);
@@ -1642,10 +1654,10 @@ export class Resources {
     let task = this.queue_.peek(this.boundTaskScorer_, state);
     while (task) {
       timeout = this.calcTaskTimeout_(task);
-      console.info('DEBUG:', 'peek from queue:', task.id,
-          'sched at', task.scheduleTime - this.start_,
-          'score', this.boundTaskScorer_(task, state),
-          'timeout', timeout);
+      // console.info('DEBUG:', 'peek from queue:', task.id,
+          // 'sched at', task.scheduleTime - this.start_,
+          // 'score', this.boundTaskScorer_(task, state),
+          // 'timeout', timeout);
       if (timeout > 16) {
         break;
       }
@@ -1665,14 +1677,14 @@ export class Resources {
             task.resource, task.forceOutsideViewport)) {
           task.promise = task.callback();
           task.startTime = now;
-          console.info('DEBUG:', 'exec:', task.id, 'at', task.startTime - this.start_);
+          // console.info('DEBUG:', 'exec:', task.id, 'at', task.startTime - this.start_);
           this.exec_.enqueue(task);
           task.promise.then(this.taskComplete_.bind(this, task, true),
               this.taskComplete_.bind(this, task, false))
               .catch(/** @type {function (*)} */ (reportError));
           this.checkScrollPass_();
         } else {
-          console.info('DEBUG:', 'cancelled', task.id);
+          // console.info('DEBUG:', 'cancelled', task.id);
           task.resource.layoutCanceled();
         }
       }
@@ -1681,8 +1693,8 @@ export class Resources {
       timeout = -1;
     }
 
-    dev().fine(TAG_, 'queue size:', this.queue_.getSize());
-    dev().fine(TAG_, 'exec size:', this.exec_.getSize());
+    // console.info('DEBUG:', 'queue size:', this.queue_.getSize());
+    // console.info('DEBUG:', 'exec size:', this.exec_.getSize());
 
     if (timeout >= 0) {
       // Still tasks in the queue, but we took too much time.
@@ -1841,15 +1853,13 @@ export class Resources {
       r.getState() < ResourceState.LAYOUT_SCHEDULED);
     const pendingLayoutStart = this.resources_.some(r =>
       r.getState() === ResourceState.LAYOUT_SCHEDULED && !r.layoutPromise_);
-    const any = this.resources_.length > 0;
+    const any = this.resources_.some(r =>
+      r.getState() >= ResourceState.LAYOUT_SCHEDULED);
 
     if (!any || pendingLayoutStart) {
       this.scrollPass_.cancel();
     } else if (pendingLayout) {
       this.scrollPass_.schedule(5000);
-    } else if (!this.win.layersDebug.endsWith('done\n')) {
-      this.win.layersDebug += 'all resources done\n';
-      console.log(`DEBUG:\n${this.win.layersDebug}`);
     }
   }
 

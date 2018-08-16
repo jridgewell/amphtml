@@ -1063,7 +1063,21 @@ function createBaseCustomElementClass(win) {
         this.getLayoutDelayMeter_().startLayout();
       }
 
-      const promise = tryResolve(() => this.implementation_.layoutCallback());
+      let promise = new Promise(res => {
+        const random = Math.random() * 200 - 125;
+        setTimeout(res, 500 + random);
+      });
+
+      if (this.tagName !== 'AMP-IMG') {
+        promise = promise.then(() => {
+          return this.implementation_.measureElement(() => {
+            return this.getBoundingClientRect().height + 100;
+          });
+        }).then(height => {
+          return this.implementation_.attemptChangeHeight(height);
+        });
+      }
+
       this.preconnect(/* onLayout */true);
       this.classList.add('i-amphtml-layout');
 

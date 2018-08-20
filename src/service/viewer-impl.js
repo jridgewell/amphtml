@@ -679,7 +679,7 @@ export class Viewer {
    * @return {boolean}
    */
   isVisible() {
-    return this.getVisibilityState() == VisibilityState.VISIBLE;
+    return this.hasBeenVisible_ || this.getVisibilityState() == VisibilityState.VISIBLE;
   }
 
   /**

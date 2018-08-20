@@ -77,6 +77,7 @@ export class DocumentState {
    * @return {boolean}
    */
   isHidden() {
+    return false;
     if (!this.hiddenProp_) {
       return false;
     }
@@ -89,6 +90,7 @@ export class DocumentState {
    * @return {string}
    */
   getVisibilityState() {
+    return 'visible';
     if (!this.visibilityStateProp_) {
       return this.isHidden() ? 'hidden' : 'visible';
     }
@@ -105,7 +107,7 @@ export class DocumentState {
 
   /** @private */
   onVisibilityChanged_() {
-    this.visibilityObservable_.fire();
+    // this.visibilityObservable_.fire();
   }
 
   /**

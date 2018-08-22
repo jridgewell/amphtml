@@ -30,7 +30,7 @@ const multer = require('multer');
 const path = require('path');
 const request = require('request');
 const pc = process;
-pc.env.SERVE_MODE = 'compiled';
+pc.env.SERVE_MODE = 'default';
 
 app.use(bodyParser.json());
 app.use('/amp4test', require('./amp4test'));

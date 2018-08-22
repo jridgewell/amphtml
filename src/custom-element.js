@@ -1074,7 +1074,7 @@ function createBaseCustomElementClass(win) {
             return this.getBoundingClientRect().height + 100;
           });
         }).then(height => {
-          return this.implementation_.attemptChangeHeight(height);
+          return this.implementation_.attemptChangeHeight(height).catch(() => {});
         });
       }
 

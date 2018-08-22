@@ -160,10 +160,10 @@ export class Resources {
     /** @const @private {!Pass} */
     this.pass_ = new Pass(this.win, () => this.doPass());
 
-    let done = false;
+    this.done_ = false;
     this.scrollPass_ = new Pass(this.win, () => {
       // Scroll by increments of 200
-      if (done) {
+      if (this.done_) {
         return;
       }
       let top = this.viewport_.getScrollTop() + 200;
@@ -171,7 +171,7 @@ export class Resources {
       this.viewport_.setScrollTop(top);
 
       if (this.viewport_.getScrollTop() < top) {
-        done = true;
+        this.done_ = true;
         this.win.layersDebug += 'all resources done\n';
         console.log(`DEBUG:\n${this.win.layersDebug}`);
       }
@@ -1855,11 +1855,17 @@ export class Resources {
       r.getState() === ResourceState.LAYOUT_SCHEDULED && !r.layoutPromise_);
     const any = this.resources_.some(r =>
       r.getState() >= ResourceState.LAYOUT_SCHEDULED);
+    const all = this.resources_.every(r =>
+      r.getState() > ResourceState.LAYOUT_SCHEDULED);
 
     if (!any || pendingLayoutStart) {
       this.scrollPass_.cancel();
     } else if (pendingLayout) {
       this.scrollPass_.schedule(5000);
+    } else if (!this.done_ && all) {
+      this.done_ = true;
+      this.win.layersDebug += 'all resources done\n';
+      console.log(`DEBUG:\n${this.win.layersDebug}`);
     }
   }
 

@@ -396,7 +396,7 @@ export class AmpUserNotification extends AMP.BaseElement {
 
   /** @override */
   show() {
-    setStyle(this.element, 'display', '');
+    this.element.toggleLayoutDisplay(true);
     this.element.classList.add('amp-active');
     this.getViewport().addToFixedLayer(this.element);
     return this.dialogPromise_;

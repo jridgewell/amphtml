@@ -175,6 +175,19 @@ export function assertDoesNotContainDisplay(styles) {
 }
 
 
+/**
+ * Initializes the display property of an element. DO NOT CALL THIS TO
+ * ARBITRARILY SET DISPLAY.
+ *
+ * @param {!Element} el
+ * @param {string} init
+ */
+export function initializeDisplayTo(el, init) {
+  const {style} = el;
+  dev().assert(!style.display, 'Cannot use initializeDisplayTo to arbitrarily' +
+    ' set display style of %s.', el.tagName);
+  style.display = init;
+}
 
 /**
  * Shows or hides the specified element.

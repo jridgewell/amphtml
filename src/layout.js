@@ -334,7 +334,7 @@ export function applyStaticLayout(element) {
       element.sizerElement =
           element.querySelector('i-amphtml-sizer') || undefined;
     } else if (layout == Layout.NODISPLAY) {
-      applyNoDisplayLayout(element);
+      element.setAttribute('hidden', '');
     }
     return layout;
   }
@@ -432,7 +432,7 @@ export function applyStaticLayout(element) {
   if (layout == Layout.NODISPLAY) {
     // CSS defines layout=nodisplay automatically with `display:none`. Thus
     // no additional styling is needed.
-    applyNoDisplayLayout(element);
+    element.setAttribute('hidden', '');
   } else if (layout == Layout.FIXED) {
     setStyles(element, {
       width: dev().assertString(width),
@@ -485,16 +485,4 @@ export function applyStaticLayout(element) {
     setStyle(element, 'height', 0);
   }
   return layout;
-}
-
-
-/**
- * @param {!Element} element
- */
-function applyNoDisplayLayout(element) {
-  // TODO(dvoytenko, #9353): once `toggleLayoutDisplay` API has been deployed
-  // everywhere, switch all relevant elements to this API. In the meantime,
-  // simply unblock display toggling via `style="display: ..."`.
-  setStyle(element, 'display', 'none');
-  element.classList.add('i-amphtml-display');
 }

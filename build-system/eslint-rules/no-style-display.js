@@ -40,6 +40,13 @@ module.exports = function(context) {
           message: 'property argument (the second argument) to setStyle must be a string literal',
         });
       }
+
+      if (arg.value === 'display') {
+        context.report({
+          node: arg,
+          message: 'Cannot set display style via setStyle, use toggle helper in src/style.js instead.',
+        });
+      }
     },
 
     [setStylesCall]: function(node) {
@@ -75,6 +82,13 @@ module.exports = function(context) {
           });
           continue;
         }
+
+        if (prop.value === 'display' || prop.name === 'display') {
+          context.report({
+            node: prop,
+            message: `Cannot set display style via ${callName}, use toggle helper in src/style.js instead.`,
+          });
+        }
       }
     },
 
@@ -102,6 +116,13 @@ module.exports = function(context) {
             message: 'Style names must be string literals',
           });
           continue;
+        }
+
+        if (el.value === 'display') {
+          context.report({
+            node: el,
+            message: 'Cannot reset display style via resetStyle, use toggle helper in src/style.js instead.',
+          });
         }
       }
     },

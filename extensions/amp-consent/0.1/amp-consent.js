@@ -39,7 +39,7 @@ import {dict, map} from '../../../src/utils/object';
 import {getData} from '../../../src/event-helper';
 import {getServicePromiseForDoc} from '../../../src/service';
 import {isEnumValue} from '../../../src/types';
-import {setImportantStyles, toggle} from '../../../src/style';
+import {toggle} from '../../../src/style';
 import {tryParseJson} from '../../../src/json';
 
 const CONSENT_STATE_MANAGER = 'consentStateManager';
@@ -138,8 +138,10 @@ export class AmpConsent extends AMP.BaseElement {
 
     const children = this.getRealChildren();
     for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      toggle(child, false);
       // <amp-consent> will manualy schedule layout for its children.
-      this.setAsOwner(children[i]);
+      this.setAsOwner(child);
     }
 
     const consentPolicyManagerPromise =
@@ -277,7 +279,7 @@ export class AmpConsent extends AMP.BaseElement {
       // Display the current instance
       this.currentDisplayInstance_ = instanceId;
       const uiElement = this.consentUI_[this.currentDisplayInstance_];
-      setImportantStyles(uiElement, {display: 'block'});
+      toggle(uiElement, true);
       // scheduleLayout is required everytime because some AMP element may
       // get un laid out after toggle display (#unlayoutOnPause)
       // for example <amp-iframe>
@@ -304,10 +306,7 @@ export class AmpConsent extends AMP.BaseElement {
         dev().error(TAG,
             `${this.currentDisplayInstance_} no consent ui to hide`);
       }
-      // Cannot use #toggle() because Safari bug with version older than 10.3
-      // element.style['display] = 'none' cannot overwrite style set with
-      // !important.
-      setImportantStyles(dev().assertElement(uiToHide), {display: 'none'});
+      toggle(dev().assertElement(uiToHide), false);
     });
     const displayInstance = /** @type {string} */ (
       this.currentDisplayInstance_);
@@ -673,8 +672,7 @@ export class AmpConsent extends AMP.BaseElement {
         classList.add('amp-active');
         classList.remove('amp-hidden');
         this.getViewport().addToFixedLayer(this.element);
-        setImportantStyles(dev().assertElement(this.postPromptUI_),
-            {display: 'block'});
+        toggle(dev().assertElement(this.postPromptUI_), true);
         // Will need to scheduleLayout for postPromptUI
         // upon request for using AMP component.
       });
@@ -690,11 +688,7 @@ export class AmpConsent extends AMP.BaseElement {
           classList.remove('amp-active');
         }
         this.getViewport().removeFromFixedLayer(this.element);
-        // Cannot use #toggle() because Safari bug with version older than 10.3
-        // element.style['display] = 'none' cannot overwrite style set with
-        // !important.
-        setImportantStyles(dev().assertElement(this.postPromptUI_),
-            {display: 'none'});
+        toggle(dev().assertElement(this.postPromptUI_), false);
       });
     });
   }

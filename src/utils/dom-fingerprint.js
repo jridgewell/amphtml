@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {stringHash32} from '../string';
+import {djb2a} from './hash';
 
 
 /**
@@ -76,7 +76,7 @@ export class DomFingerprint {
    * @return {string} The ad unit hash key string.
    */
   static generate(element) {
-    return stringHash32(domFingerprintPlain(element));
+    return djb2a(domFingerprintPlain(element));
   }
 }
 

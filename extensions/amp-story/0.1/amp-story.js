@@ -96,7 +96,7 @@ import {getSourceOrigin, parseUrlDeprecated} from '../../../src/url';
 import {isExperimentOn, toggleExperiment} from '../../../src/experiments';
 import {registerServiceBuilder} from '../../../src/service';
 import {renderSimpleTemplate} from './simple-template';
-import {stringHash32} from '../../../src/string';
+import {djb2a} from '../../../src/utils/hash';
 import {upgradeBackgroundAudio} from './audio';
 import LocalizedStringsDefault from './_locales/default';
 import LocalizedStringsEn from './_locales/en';
@@ -695,7 +695,7 @@ export class AmpStory extends AMP.BaseElement {
    * @private
    */
   hashOrigin_(domain) {
-    return stringHash32(domain.toLowerCase());
+    return djb2a(domain.toLowerCase());
   }
 
 

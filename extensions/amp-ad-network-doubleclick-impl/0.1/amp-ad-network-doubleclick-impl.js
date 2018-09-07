@@ -88,7 +88,7 @@ import {
 import {parseQueryString} from '../../../src/url';
 import {randomlySelectUnsetExperiments} from '../../../src/experiments';
 import {setStyles} from '../../../src/style';
-import {stringHash32} from '../../../src/string';
+import {djb2a} from '../../../src/utils/hash';
 import {tryParseJson} from '../../../src/json';
 
 /** @type {string} */
@@ -905,7 +905,7 @@ export class AmpAdNetworkDoubleclickImpl extends AmpA4A {
     const slot = element.getAttribute('data-slot') || '';
     const multiSize = element.getAttribute('data-multi-size') || '';
     const string = `${slot}:${size}:${multiSize}:${domFingerprint}`;
-    return stringHash32(string);
+    return djb2a(string);
   }
 
   /**

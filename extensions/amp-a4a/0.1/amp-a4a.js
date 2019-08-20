@@ -636,6 +636,13 @@ export class AmpA4A extends AMP.BaseElement {
       .whenFirstVisible()
       .then(() => {
         checkStillCurrent();
+        console.log(
+          'ad',
+          this.getResource().debugid,
+          'delayAdRequestEnabled:',
+          performance.now() - self.__AMP_START
+        );
+
         // See if experiment that delays request until slot is within
         // renderOutsideViewport. Within render outside viewport will not
         // resolve if already within viewport thus the check for already
@@ -651,6 +658,12 @@ export class AmpA4A extends AMP.BaseElement {
       /** @return {!Promise<Array<Promise>>} */
       .then(() => {
         checkStillCurrent();
+        console.log(
+          'ad',
+          this.getResource().debugid,
+          'getConsentPolicy:',
+          performance.now() - self.__AMP_START
+        );
         const consentPolicyId = super.getConsentPolicy();
 
         if (consentPolicyId) {
@@ -683,6 +696,13 @@ export class AmpA4A extends AMP.BaseElement {
         const consentState = consentResponse[0];
         const consentString = consentResponse[1];
 
+        console.log(
+          'ad',
+          this.getResource().debugid,
+          'getAdUrl:',
+          performance.now() - self.__AMP_START
+        );
+
         return /** @type {!Promise<?string>} */ (this.getAdUrl(
           consentState,
           this.tryExecuteRealTimeConfig_(consentState, consentString)
@@ -693,6 +713,13 @@ export class AmpA4A extends AMP.BaseElement {
       .then(adUrl => {
         checkStillCurrent();
         this.adUrl_ = adUrl;
+
+        console.log(
+          'ad',
+          this.getResource().debugid,
+          'adUrl:',
+          performance.now() - self.__AMP_START
+        );
         // If we should skip the XHR, we will instead request and render
         // by simply writing a frame into the page using
         // renderViaIframeGet

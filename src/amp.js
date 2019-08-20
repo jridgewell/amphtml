@@ -61,6 +61,7 @@ import {stubElementsForDoc} from './service/custom-element-registry';
  * @type {boolean|undefined}
  */
 const shouldMainBootstrapRun = !self.IS_AMP_ALT;
+self.__AMP_START = performance.now();
 
 if (shouldMainBootstrapRun) {
   // Store the originalHash as early as possible. Trying to debug:

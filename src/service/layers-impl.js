@@ -17,7 +17,6 @@
 import {Services} from '../services';
 import {computedStyle} from '../style';
 import {dev, devAssert} from '../log';
-import {getMode} from '../mode';
 import {isConnectedNode, rootNodeFor} from '../dom';
 import {isInFie} from '../iframe-helper';
 import {listen} from '../event-helper';
@@ -105,9 +104,8 @@ export class LayoutLayers {
   /**
    * @param {!./ampdoc-impl.AmpDoc} ampdoc
    * @param {!Element} scrollingElement
-   * @param {boolean} scrollingElementScrollsLikeViewport
    */
-  constructor(ampdoc, scrollingElement, scrollingElementScrollsLikeViewport) {
+  constructor(ampdoc, scrollingElement) {
     const {win} = ampdoc;
 
     /** @const @private {!Element} */
@@ -157,11 +155,7 @@ export class LayoutLayers {
     this.throttledCleanup_ = throttle(win, () => this.cleanup_(), 1000);
 
     // Declare scrollingElement as the one true scrolling layer.
-    const root = this.declareLayer_(
-      scrollingElement,
-      true,
-      scrollingElementScrollsLikeViewport
-    );
+    const root = this.declareLayer_(scrollingElement, true);
 
     /**
      * Stores the most recently scrolled layer.
@@ -254,9 +248,7 @@ export class LayoutLayers {
    * @return {!PositionDef}
    */
   getScrolledPosition(element, opt_ancestor) {
-    this.throttledCleanup_();
-    const layout = this.add(element);
-    const pos = layout.getScrolledPosition(opt_ancestor);
+    const pos = element.getBoundingClientRect();
     return positionLt(Math.round(pos.left), Math.round(pos.top));
   }
 
@@ -320,7 +312,7 @@ export class LayoutLayers {
    */
   declareLayer(element) {
     this.throttledCleanup_();
-    this.declareLayer_(element, false, false);
+    this.declareLayer_(element, false);
   }
 
   /**
@@ -346,13 +338,12 @@ export class LayoutLayers {
    *
    * @param {!Element} element
    * @param {boolean} isRootLayer
-   * @param {boolean} scrollsLikeViewport
    * @return {!LayoutElement}
    * @private
    */
-  declareLayer_(element, isRootLayer, scrollsLikeViewport) {
+  declareLayer_(element, isRootLayer) {
     const layout = this.add(element);
-    layout.declareLayer(isRootLayer, scrollsLikeViewport);
+    layout.declareLayer(isRootLayer);
     return layout;
   }
 
@@ -418,7 +409,7 @@ export class LayoutLayers {
     if (layer && layer.isLayer()) {
       layer.dirtyScrollMeasurements();
     } else {
-      layer = this.declareLayer_(scrolled, false, false);
+      layer = this.declareLayer_(scrolled, false);
     }
 
     this.activeLayer_ = layer;
@@ -562,16 +553,6 @@ export class LayoutElement {
      * @private {boolean}
      */
     this.isRootLayer_ = false;
-
-    /**
-     * Whether the layer scrolls like a viewport. Native scrolling elements
-     * have special scrolling inconsistencies. When you scroll one of these
-     * special scrollers, its relative top (returned by getBoundingClientRect)
-     * changes. This is different than regular overflow scrollers.
-     *
-     * @private {boolean}
-     */
-    this.scrollsLikeViewport_ = false;
 
     /**
      * Whether this layer needs to remeasure its scrollTop/Left position during
@@ -815,20 +796,13 @@ export class LayoutElement {
    * for child elements.
    *
    * @param {boolean} isRootLayer
-   * @param {boolean} scrollsLikeViewport
    */
-  declareLayer(isRootLayer, scrollsLikeViewport) {
-    devAssert(
-      !scrollsLikeViewport || isRootLayer,
-      'Only root layers may scroll like a viewport.'
-    );
-
+  declareLayer(isRootLayer) {
     if (this.isLayer_) {
       return;
     }
     this.isLayer_ = true;
     this.isRootLayer_ = isRootLayer;
-    this.scrollsLikeViewport_ = scrollsLikeViewport;
 
     // Ensure the coordinate system is remeasured
     this.needsRemeasure_ = true;
@@ -1081,44 +1055,6 @@ export class LayoutElement {
   }
 
   /**
-   * Returns the current scrolled position of the element relative to the layer
-   * represented by opt_ancestor (or opt_ancestor's parent layer, if it is not
-   * a layer itself). This takes into account the scrolled position of every
-   * layer in between.
-   *
-   * @param {Element=} opt_ancestor
-   * @return {!PositionDef}
-   */
-  getScrolledPosition(opt_ancestor) {
-    // Compensate for the fact that the loop below will subtract the current
-    // scroll position of this element. But, this element's scroll position
-    // doesn't affect its overall position, only its children.
-    // This is fine because the loop is guaranteed to roll at least once,
-    // zeroing the scroll.
-    let x = this.getScrollLeft();
-    let y = this.getScrollTop();
-
-    // Find the layer to stop measuring at. This is so that you can find the
-    // relative position of an element from some parent element, say the
-    // position of a slide inside a carousel, without any further measurements.
-    const stopAt = opt_ancestor
-      ? LayoutElement.getParentLayer(opt_ancestor)
-      : null;
-    for (let l = this; l && l !== stopAt; l = l.getParentLayer()) {
-      const position = l.getOffsetFromParent();
-      // Calculate the scrolled position. If the element has offset 200, and
-      // the parent is scrolled 150, then the scrolled position is just 50.
-      // Note that the scrolled position shouldn't take into account the scroll
-      // position of this LayoutElement, so we've already compensated in
-      // declaring x and y.
-      x += position.left - l.getScrollLeft();
-      y += position.top - l.getScrollTop();
-    }
-
-    return positionLt(x, y);
-  }
-
-  /**
    * Returns the absolute offset position of the element relative to the layer
    * represented by opt_ancestor (or opt_ancestor's parent layer, if it is not
    * a layer itself). This remains constant, regardless of the scrolled
@@ -1230,35 +1166,13 @@ export class LayoutElement {
     this.needsRemeasure_ = false;
     const element = this.element_;
 
-    // We need a relative box to measure our offset. Importantly, this box must
-    // be negatively offset by its scroll position, to account for the fact
-    // that getBoundingClientRect() will only return scrolled positions.
-    const parent = this.getParentLayer();
-    const relative = parent
-      ? parent.relativeScrolledPositionForChildren_(this)
-      : positionLt(0, 0);
-
     this.size_ = sizeWh(
       element./*OK*/ clientWidth,
       element./*OK*/ clientHeight
     );
 
-    let {left, top} = element./*OK*/ getBoundingClientRect();
-    // Viewport scroller layers are really screwed up. Their positions will
-    // **double** count their scroll position (left === -scrollLeft, top ===
-    // -scrollTop), which breaks with every other scroll box on the page.
-    if (this.scrollsLikeViewport_) {
-      left += this.getScrollLeft();
-      top += this.getScrollTop();
-    }
-    this.position_ = positionLt(left - relative.left, top - relative.top);
-
-    // In dev mode, we freeze the structs to prevent consumer from mutating it.
-    // Stateless FTW.
-    if ((getMode().localDev || getMode().test) && Object.freeze) {
-      Object.freeze(this.size_);
-      Object.freeze(this.position_);
-    }
+    const pos = element./*OK*/ getBoundingClientRect();
+    this.position_ = positionLt(pos.left, pos.top);
   }
 
   /**
@@ -1271,31 +1185,6 @@ export class LayoutElement {
       this.scrollLeft_ = this.element_./*OK*/ scrollLeft;
       this.scrollTop_ = this.element_./*OK*/ scrollTop;
     }
-  }
-
-  /**
-   * Creates a relative measurement box to measure the offset of children
-   * against. This negatively applies the current scroll position of the layer
-   * to the coordinates, since the bounding box measurement of the child will
-   * have positively applied that scroll position.
-   *
-   * @param {!LayoutElement} layout
-   * @return {!PositionDef}
-   * @private
-   */
-  relativeScrolledPositionForChildren_(layout) {
-    // If the child's layout element is in an another document, its scroll
-    // position is relative to the root of that document.
-    if (!sameDocument(this.element_, layout.element_)) {
-      return positionLt(0, 0);
-    }
-
-    const {ownerDocument} = this.element_;
-    const position = this.getScrolledPosition(ownerDocument.documentElement);
-    return positionLt(
-      position.left - this.getScrollLeft(),
-      position.top - this.getScrollTop()
-    );
   }
 
   /**
@@ -1355,22 +1244,13 @@ function isDestroyed(node) {
 /**
  * @param {!./ampdoc-impl.AmpDoc} ampdoc
  * @param {!Element} scrollingElement
- * @param {boolean} scrollingElementScrollsLikeViewport
  */
-export function installLayersServiceForDoc(
-  ampdoc,
-  scrollingElement,
-  scrollingElementScrollsLikeViewport
-) {
+export function installLayersServiceForDoc(ampdoc, scrollingElement) {
   registerServiceBuilderForDoc(
     ampdoc,
     'layers',
     function(ampdoc) {
-      return new LayoutLayers(
-        ampdoc,
-        scrollingElement,
-        scrollingElementScrollsLikeViewport
-      );
+      return new LayoutLayers(ampdoc, scrollingElement);
     },
     /* opt_instantiate */ true
   );

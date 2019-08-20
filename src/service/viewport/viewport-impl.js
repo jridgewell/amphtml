@@ -160,11 +160,7 @@ export class Viewport {
     /** @private @const {boolean} */
     this.useLayers_ = isExperimentOn(win, 'layers');
     if (this.useLayers_) {
-      installLayersServiceForDoc(
-        ampdoc,
-        this.binding_.getScrollingElement(),
-        this.binding_.getScrollingElementScrollsLikeViewport()
-      );
+      installLayersServiceForDoc(ampdoc, this.binding_.getScrollingElement());
     }
 
     /** @private @const {!FixedLayer} */

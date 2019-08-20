@@ -310,6 +310,8 @@ export class Resources {
    * @param {!./ampdoc-impl.AmpDoc} ampdoc
    */
   constructor(ampdoc) {
+    self.__AMP_START = performance.now();
+
     /** @const {!./ampdoc-impl.AmpDoc} */
     this.ampdoc = ampdoc;
 

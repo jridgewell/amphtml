@@ -90,7 +90,7 @@ describes.realWin('Layers', {amp: true}, env => {
 
         installDocService(win, true);
         const ampdoc = Services.ampdocServiceFor(win).getSingleDoc();
-        installLayersServiceForDoc(ampdoc, scrollingElement, impl === 'native');
+        installLayersServiceForDoc(ampdoc, scrollingElement);
       });
 
       function scroll(element, top, left) {

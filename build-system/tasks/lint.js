@@ -34,6 +34,7 @@ const {maybeUpdatePackages} = require('./update-packages');
 const isWatching = argv.watch || argv.w || false;
 const options = {
   fix: false,
+  format: 'codeframe',
   quiet: argv.quiet || false,
 };
 
@@ -71,7 +72,7 @@ function runLinter(stream, options) {
   return stream
     .pipe(eslint(options))
     .pipe(
-      eslint.formatEach('stylish', function(msg) {
+      eslint.formatEach('codeframe', function(msg) {
         logOnSameLine(msg.replace(`${rootDir}/`, '').trim() + '\n');
       })
     )

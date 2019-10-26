@@ -1,5 +1,6 @@
 {
   "rules": {
-    "local/no-global": 2
+    "local/no-global": 2,
+    "local/pure-modules": 2
   }
 }

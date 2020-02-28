@@ -301,7 +301,12 @@ function compile(
         'build/fake-module/',
         'build/fake-polyfills/',
       ],
-      entry_point: entryModuleFilenames,
+      entry_point: entryModuleFilenames.map(file => {
+        if (argv.single_pass) {
+          return file;
+        }
+        return `${SRC_TEMP_DIR}/${file}`;
+      }),
       module_resolution: 'NODE',
       package_json_entry_names: 'module,main',
       process_common_js_modules: true,

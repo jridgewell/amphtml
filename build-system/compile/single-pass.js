@@ -488,11 +488,13 @@ function transformPathsToTempDir(graph, config) {
           isForTesting: config.define.indexOf('FORTESTING=true') !== -1,
           isSinglePass: true,
         }),
-        retainLines: true,
+        compact: false,
         sourceMaps: true,
       });
-      fs.outputFileSync(`${graph.tmp}/${f}`, code);
-      fs.outputFileSync(`${graph.tmp}/${f}.map`, JSON.stringify(map));
+      const name = `${graph.tmp}/${f}`;
+      fs.outputFileSync(name, code);
+      map.sources[0] = path.resolve(f);
+      fs.outputFileSync(`${name}.map`, JSON.stringify(map));
     }
     process.stdout.write('.');
   });
@@ -770,9 +772,9 @@ function eliminateIntermediateBundles() {
       }
       const {code, map: babelMap} = babel.transformFileSync(path, {
         plugins: conf.eliminateIntermediateBundles(),
-        retainLines: true,
-        sourceMaps: true,
+        compact: false,
         inputSourceMap: false,
+        sourceMaps: true,
       });
       let remapped = resorcery(
         babelMap,

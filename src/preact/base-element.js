@@ -24,7 +24,7 @@ import {withAmpContext} from './context';
 /**
  * @typedef {{
  *   attr: string,
- *   type: (string|undefined),
+ *   type: number,
  *   default: *,
  * }}
  */
@@ -220,9 +220,9 @@ PreactBaseElement.passthrough = false;
 PreactBaseElement.props = {};
 
 /**
- * @protected {!Object<string, !ChildDef>|null}
+ * @protected {number}
  */
-PreactBaseElement.children = null;
+PreactBaseElement.children = 'test';
 
 /**
  * @param {typeof PreactBaseElement} Ctor

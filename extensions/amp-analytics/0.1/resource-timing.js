@@ -198,14 +198,14 @@ function groupSpecsByHost(resourceDefs) {
     const query = resourceDefs[name]['query'] || '';
     const pattern = {
       name,
-      pathPattern: new RegExp(path),
-      queryPattern: new RegExp(query),
+      pathPattern: new /*OK*/ RegExp(path),
+      queryPattern: new /*OK*/ RegExp(query),
     };
     if (byHost[host]) {
       byHost[host].resources.push(pattern);
     } else {
       byHost[host] = {
-        hostPattern: new RegExp(host),
+        hostPattern: new /*OK*/ RegExp(host),
         resources: [pattern],
       };
     }

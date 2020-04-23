@@ -129,7 +129,7 @@ export function twitter(global, data) {
    * @return {*} TODO(#23582): Specify return type
    */
   function stripPrefixCamelCase(input, prefix) {
-    const stripped = input.replace(new RegExp('^' + prefix), '');
+    const stripped = input.replace(new /*OK*/ RegExp('^' + prefix), '');
     return stripped.charAt(0).toLowerCase() + stripped.substr(1);
   }
 }

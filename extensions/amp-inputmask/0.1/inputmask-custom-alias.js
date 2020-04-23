@@ -58,7 +58,7 @@ export function getAliasDefinition() {
         const trimZeros = opts['trimZeros'] || 0;
 
         const processedValue = value
-          .replace(new RegExp(`^0{0,${trimZeros}}`), '')
+          .replace(new /*OK*/ RegExp(`^0{0,${trimZeros}}`), '')
           .replace(/[\s]/g, '');
 
         return removePrefix(processedValue, prefixes);

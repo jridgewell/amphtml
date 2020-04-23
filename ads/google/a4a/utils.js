@@ -808,7 +808,7 @@ export function maybeAppendErrorParameter(adUrl, parameterValue) {
   // that added, error parameter length will be less than truncation parameter
   // so adding will not cause length to exceed maximum.
   if (
-    new RegExp(
+    new /*OK*/ RegExp(
       `[?|&](${encodeURIComponent(TRUNCATION_PARAM.name)}=` +
         `${encodeURIComponent(String(TRUNCATION_PARAM.value))}|aet=[^&]*)$`
     ).test(adUrl)

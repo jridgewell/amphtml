@@ -176,7 +176,7 @@ export class AmpInstallServiceWorker extends AMP.BaseElement {
     shellUrl = removeFragment(shellUrl);
     let urlMatchExpr;
     try {
-      urlMatchExpr = new RegExp(urlMatch);
+      urlMatchExpr = new /*OK*/ RegExp(urlMatch);
     } catch (e) {
       throw user().createError(
         'Invalid "data-no-service-worker-fallback-url-match" expression',

@@ -55,7 +55,7 @@ function hasAttributeValues(htmlElement, configOpts) {
   const attrKeys = Object.keys(anchorAttr);
 
   return attrKeys.every((key) => {
-    const reg = new RegExp(anchorAttr[key]);
+    const reg = new /*OK*/ RegExp(anchorAttr[key]);
 
     return reg.test(htmlElement.getAttribute(key));
   });

@@ -524,5 +524,5 @@ function regexEscape(str) {
 export function isWildCardMatch(hostname, domain) {
   const escaped = regexEscape(domain);
   const regex = escaped.replace(/\*/g, '.*');
-  return new RegExp('^' + regex + '$').test(hostname);
+  return new /*OK*/ RegExp('^' + regex + '$').test(hostname);
 }

@@ -502,7 +502,7 @@ export function removeParamsFromSearch(urlSearch, paramName) {
   if (!urlSearch || urlSearch == '?') {
     return '';
   }
-  const paramRegex = new RegExp(`[?&]${paramName}=[^&]*`, 'g');
+  const paramRegex = new /*OK*/ RegExp(`[?&]${paramName}=[^&]*`, 'g');
   const search = urlSearch.replace(paramRegex, '').replace(/^[?&]/, '');
   return search ? '?' + search : '';
 }

@@ -55,7 +55,7 @@ export class AutocompleteBindingInline {
 
     const delimiter = this.trigger_.replace(/([()[{*+.$^\\|?])/g, '\\$1');
     const pattern = `((${delimiter}|^${delimiter})(\\w+)?)`;
-    this.regex_ = new RegExp(pattern, 'gm');
+    this.regex_ = new /*OK*/ RegExp(pattern, 'gm');
   }
 
   /**

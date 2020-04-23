@@ -134,7 +134,7 @@ export class FormValidator {
         input.validationMessage === CUSTOM_PATTERN_ERROR
       ) {
         const pattern = input.getAttribute('pattern');
-        const re = new RegExp(`^${pattern}$`, 'm');
+        const re = new /*OK*/ RegExp(`^${pattern}$`, 'm');
         const valid = re.test(input.value);
         input.setCustomValidity(valid ? '' : CUSTOM_PATTERN_ERROR);
       }

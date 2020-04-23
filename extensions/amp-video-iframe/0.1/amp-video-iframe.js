@@ -78,7 +78,7 @@ const ALLOWED_EVENTS = [
  * @private
  */
 const getAnalyticsEventTypePrefixRegex = once(
-  () => new RegExp(`^${ANALYTICS_EVENT_TYPE_PREFIX}`)
+  () => new /*OK*/ RegExp(`^${ANALYTICS_EVENT_TYPE_PREFIX}`)
 );
 
 /**

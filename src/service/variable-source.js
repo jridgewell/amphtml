@@ -326,7 +326,7 @@ export class VariableSource {
     // FOO_BAR(arg1,arg2)
     // FOO_BAR(arg1, arg2)
     const regexStr = '\\$?(' + all + ')';
-    return new RegExp(regexStr, 'g');
+    return new /*OK*/ RegExp(regexStr, 'g');
   }
 
   /**

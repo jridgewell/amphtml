@@ -74,7 +74,7 @@ export function extractUrlExperimentId(win, element) {
     (key) =>
       (arg =
         arg ||
-        ((match = new RegExp(`(?:^|,)${key}:(-?\\d+)`).exec(expParam)) &&
+        ((match = new /*OK*/ RegExp(`(?:^|,)${key}:(-?\\d+)`).exec(expParam)) &&
           match[1]))
   );
   return arg || null;

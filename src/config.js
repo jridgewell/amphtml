@@ -25,12 +25,12 @@ const env = self.AMP_CONFIG || {};
 
 const thirdPartyFrameRegex =
   (typeof env['thirdPartyFrameRegex'] == 'string'
-    ? new RegExp(env['thirdPartyFrameRegex'])
+    ? new /*OK*/ RegExp(env['thirdPartyFrameRegex'])
     : env['thirdPartyFrameRegex']) || /^d-\d+\.ampproject\.net$/;
 
 const cdnProxyRegex =
   (typeof env['cdnProxyRegex'] == 'string'
-    ? new RegExp(env['cdnProxyRegex'])
+    ? new /*OK*/ RegExp(env['cdnProxyRegex'])
     : env['cdnProxyRegex']) ||
   /^https:\/\/([a-zA-Z0-9_-]+\.)?cdn\.ampproject\.org$/;
 

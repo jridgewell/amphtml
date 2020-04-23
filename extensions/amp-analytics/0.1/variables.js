@@ -138,7 +138,7 @@ function replaceMacro(string, matchPattern, opt_newSubStr) {
   if (!opt_newSubStr) {
     opt_newSubStr = '';
   }
-  const regex = new RegExp(matchPattern, 'g');
+  const regex = new /*OK*/ RegExp(matchPattern, 'g');
   return string.replace(regex, opt_newSubStr);
 }
 
@@ -166,7 +166,7 @@ function matchMacro(string, matchPattern, opt_matchingGroupIndexStr) {
     }
   }
 
-  const regex = new RegExp(matchPattern);
+  const regex = new /*OK*/ RegExp(matchPattern);
   const matches = string.match(regex);
   return matches && matches[index] ? matches[index] : '';
 }

@@ -784,7 +784,7 @@ export class AmpStory extends AMP.BaseElement {
       this.switchTo_(maybePageId, NavigationDirection.NEXT);
       // Removes the page 'hash' parameter from the URL.
       let href = this.win.location.href.replace(
-        new RegExp(`page=${maybePageId}&?`),
+        new /*OK*/ RegExp(`page=${maybePageId}&?`),
         ''
       );
       if (endsWith(href, '#')) {

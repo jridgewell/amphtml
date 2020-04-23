@@ -31,7 +31,7 @@ const rules = [
   'Linux; U; Android',
 ];
 
-const webviewRegExp = new RegExp('(' + rules.join('|') + ')', 'ig');
+const webviewRegExp = new /*OK*/ RegExp('(' + rules.join('|') + ')', 'ig');
 
 const ampPixelURL = 'https://apester.go2cloud.org/aff_i';
 

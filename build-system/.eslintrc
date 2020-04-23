@@ -29,6 +29,7 @@
     "local/no-has-own-property-method": 0,
     "local/no-import-meta": 0,
     "local/no-module-exports": 0,
+    "local/no-regex-features": 0,
     "local/no-rest": 0,
     "local/no-spread": 0,
     "require-jsdoc": 0

@@ -142,7 +142,7 @@ export class BindValidator {
     // @see validator/engine/validator.ParsedTagSpec.validateAttributes()
     const {blacklistedValueRegex} = rules;
     if (value && blacklistedValueRegex) {
-      const re = new RegExp(blacklistedValueRegex, 'i');
+      const re = new /*OK*/ RegExp(blacklistedValueRegex, 'i');
       if (re.test(value)) {
         return false;
       }

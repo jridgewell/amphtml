@@ -705,12 +705,12 @@ describes.sandboxed('Viewer', {}, (env) => {
       });
     });
 
-    it('should post broadcast event but not fail w/o messaging', () => {
+    it('should post broadcast event but not fail w/o messaging', async () => {
       expectAsyncConsoleError(/No messaging channel/);
       const result = viewer.broadcast({type: 'type1'});
       expect(viewer.messageQueue_.length).to.equal(0);
       clock.tick(20001);
-      return expect(result).eventually.to.be.false;
+      expect(await result).to.be.false;
     });
 
     it('sendMessageAwaitResponse should wait for messaging channel', () => {
@@ -874,7 +874,7 @@ describes.sandboxed('Viewer', {}, (env) => {
         expect(delivererSpy).to.be.calledWith('event-a', {value: 4}, true);
       });
 
-      it('should return promise that resolves on response', () => {
+      it('should return promise that resolves on response', async () => {
         const response1 = viewer.sendMessageAwaitResponse(
           'event-a',
           {value: 1},
@@ -900,9 +900,9 @@ describes.sandboxed('Viewer', {}, (env) => {
           {value: 3},
           /* cancelUnsent */ true
         );
-        return expect(
-          Promise.all([response1, response2, response3])
-        ).to.eventually.deep.equal(['result-2', 'result-2', 'result-3']);
+        expect(
+          await Promise.all([response1, response2, response3])
+        ).to.deep.equal(['result-2', 'result-2', 'result-3']);
       });
     });
   });

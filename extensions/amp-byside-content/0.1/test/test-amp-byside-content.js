@@ -85,26 +85,22 @@ describes.realWin(
     });
 
     it('requires data-label', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getElement({
             'data-webcare-id': 'D6604AE5D0',
           })
-        ).to.eventually.be.rejectedWith(
-          /The data-label attribute is required for/
-        );
+        ).to.asyncThrow(/The data-label attribute is required for/);
       });
     });
 
     it('requires data-webcare-id', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getElement({
             'data-label': 'placeholder-label',
           })
-        ).to.eventually.be.rejectedWith(
-          /The data-webcare-id attribute is required for/
-        );
+        ).to.asyncThrow(/The data-webcare-id attribute is required for/);
       });
     });
 

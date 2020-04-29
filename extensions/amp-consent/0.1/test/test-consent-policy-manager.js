@@ -561,16 +561,14 @@ describes.realWin(
         manager.setLegacyConsentInstanceId('ABC');
       });
 
-      it('should return sharedData', function* () {
+      it('should return sharedData', async function* () {
         manager.registerConsentPolicyInstance('default', {
           'waitFor': {
             'ABC': undefined,
           },
         });
         yield macroTask();
-        return expect(
-          manager.getMergedSharedData('default')
-        ).to.eventually.deep.equal({
+        expect(await manager.getMergedSharedData('default')).to.deep.equal({
           'shared': 'test',
         });
       });
@@ -592,7 +590,7 @@ describes.realWin(
         });
         await macroTask();
         // Set above in getConsentInstanceGdprApplies mock
-        await expect(manager.getGdprApplies()).to.eventually.be.false;
+        await expect(await manager.getGdprApplies()).to.be.false;
       });
     });
   }

@@ -93,22 +93,20 @@ describes.realWin(
       });
     });
 
-    it('requires data-account', () => {
+    it('requires data-account', async () => {
       expectAsyncConsoleError(/The data-account attribute is required for/, 1);
-      return expect(getPowrPlayer({})).to.eventually.be.rejectedWith(
+      await expect(() => getPowrPlayer({})).to.asyncThrow(
         /The data-account attribute is required for/
       );
     });
 
-    it('requires data-player', () => {
+    it('requires data-player', async () => {
       expectAsyncConsoleError(/The data-player attribute is required for/, 1);
-      return expect(
+      await expect(() =>
         getPowrPlayer({
           'data-account': '945',
         })
-      ).to.eventually.be.rejectedWith(
-        /The data-player attribute is required for/
-      );
+      ).to.asyncThrow(/The data-player attribute is required for/);
     });
 
     it('removes iframe after unlayoutCallback', () => {

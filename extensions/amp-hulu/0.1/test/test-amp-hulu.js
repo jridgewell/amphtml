@@ -66,8 +66,8 @@ describes.realWin(
     });
 
     it('requires data-eid', () => {
-      return allowConsoleError(() => {
-        return expect(getHulu('')).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => getHulu('')).to.asyncThrow(
           /The data-eid attribute is required for/
         );
       });

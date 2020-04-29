@@ -54,22 +54,20 @@ describes.realWin(
     });
 
     describe('test-requires-attributes', () => {
-      it('requires data-videoid', () => {
+      it('requires data-videoid', async () => {
         const error = /The data-videoid attribute is required for/;
         expectAsyncConsoleError(error);
-        return expect(getViqeo({viqeoId: null})).to.eventually.be.rejectedWith(
-          error
-        );
+        await expect(() => getViqeo({viqeoId: null})).to.asyncThrow(error);
       });
 
-      it('requires data-profileid', () => {
+      it('requires data-profileid', async () => {
         const error = /The data-profileid attribute is required for/;
         expectAsyncConsoleError(error);
-        return expect(
+        await expect(() =>
           getViqeo({
             viqeoProfileId: null,
           })
-        ).to.eventually.be.rejectedWith(error);
+        ).to.asyncThrow(error);
       });
     });
 

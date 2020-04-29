@@ -209,8 +209,8 @@ describes.realWin(
     });
     it('requires item attribute', () => {
       const src = createItemSrc().withUrl('');
-      allowConsoleError(() => {
-        expect(getIns(src)).to.be.rejectedWith(
+      allowConsoleError(async () => {
+        await expect(() => getIns(src)).to.asyncThrow(
           /The item attribute is required for/
         );
       });

@@ -98,28 +98,24 @@ describes.realWin(
     });
 
     it('requires data-partner', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getBridPlayer({
             'data-player': '4144',
             'data-video': '13663',
           })
-        ).to.eventually.be.rejectedWith(
-          /The data-partner attribute is required for/
-        );
+        ).to.asyncThrow(/The data-partner attribute is required for/);
       });
     });
 
     it('requires data-player', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getBridPlayer({
             'data-partner': '264',
             'data-video': '13663',
           })
-        ).to.eventually.be.rejectedWith(
-          /The data-player attribute is required for/
-        );
+        ).to.asyncThrow(/The data-player attribute is required for/);
       });
     });
 

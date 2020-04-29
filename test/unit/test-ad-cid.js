@@ -105,12 +105,12 @@ describes.realWin('ad-cid', {amp: true}, (env) => {
     return p;
   });
 
-  it('should return undefined on failed CID', () => {
+  it('should return undefined on failed CID', async () => {
     expectAsyncConsoleError(/nope/);
     config.clientIdScope = cidScope;
     env.sandbox.stub(cidService, 'get').callsFake(() => {
       return Promise.reject(new Error('nope'));
     });
-    return expect(getAdCid(adElement)).to.eventually.be.undefined;
+    expect(await getAdCid(adElement)).to.be.undefined;
   });
 });

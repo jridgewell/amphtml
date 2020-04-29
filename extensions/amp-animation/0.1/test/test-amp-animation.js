@@ -83,11 +83,11 @@ describes.sandboxed('AmpAnimation', {}, () => {
       });
 
       it('should fail without config', async () => {
-        await expect(createAnim({}, null)).to.be.eventually.be.rejected;
+        await await expect(() => createAnim({}, null)).to.asyncThrow();
       });
 
       it('should fail with malformed config', async () => {
-        await expect(createAnim({}, 'borked')).to.be.eventually.be.rejected;
+        await await expect(() => createAnim({}, 'borked')).to.asyncThrow();
       });
 
       it('should default trigger to none', function* () {

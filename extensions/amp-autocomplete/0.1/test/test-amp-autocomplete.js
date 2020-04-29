@@ -767,8 +767,8 @@ describes.realWin(
 
     it('should call keyDownHandler_() and fallthrough on any other key', () => {
       const event = {key: Keys.LEFT_ARROW};
-      return impl.layoutCallback().then(() => {
-        return expect(impl.keyDownHandler_(event)).to.be.fulfilled;
+      return impl.layoutCallback().then(async () => {
+        await impl.keyDownHandler_(event);
       });
     });
 

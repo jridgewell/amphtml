@@ -65,8 +65,8 @@ describes.realWin(
       });
     });
 
-    it('requires data-vineid', () => {
-      return expect(getVine('')).to.eventually.be.rejectedWith(
+    it('requires data-vineid', async () => {
+      await expect(() => getVine('')).to.asyncThrow(
         /The data-vineid attribute is required for/
       );
     });

@@ -204,11 +204,11 @@ describes.realWin(
       }
     });
 
-    it('should not load a video with http src', () => {
+    it('should not load a video with http src', async () => {
       // Both "preconnectCallback" and "propagateLayoutChildren_" will trigger
       // this error message.
       expectAsyncConsoleError(/start with/, 2);
-      return expect(
+      await expect(() =>
         getVideo({
           src: 'http://example.com/video.mp4',
           width: 160,
@@ -224,10 +224,10 @@ describes.realWin(
           env.sandbox.stub(v.implementation_, 'preconnectCallback');
           throw e;
         })
-      ).to.be.rejectedWith(/start with/);
+      ).to.asyncThrow(/start with/);
     });
 
-    it('should not load a video with http source children', () => {
+    it('should not load a video with http source children', async () => {
       expectAsyncConsoleError(/start with/);
       const sources = [];
       const mediatypes = ['video/ogg', 'video/mp4', 'video/webm'];
@@ -238,7 +238,7 @@ describes.realWin(
         source.setAttribute('type', mediatype);
         sources.push(source);
       }
-      return expect(
+      await expect(() =>
         getVideo(
           {
             src: 'video.mp4',
@@ -251,7 +251,7 @@ describes.realWin(
           },
           sources
         )
-      ).to.be.rejectedWith(/start with/);
+      ).to.asyncThrow(/start with/);
     });
 
     it('should set poster, controls, controlsList in prerender mode', async () => {

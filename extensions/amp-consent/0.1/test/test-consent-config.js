@@ -41,12 +41,10 @@ describes.realWin('ConsentConfig', {amp: 1}, (env) => {
   }
 
   describe('read consent config', () => {
-    it('read inline config', () => {
+    it('read inline config', async () => {
       appendConfigScriptElement(doc, element, defaultConfig);
       const consentConfig = new ConsentConfig(element);
-      return expect(
-        consentConfig.getConsentConfigPromise()
-      ).to.eventually.deep.equal(
+      expect(await consentConfig.getConsentConfigPromise()).to.deep.equal(
         dict({
           'consentInstanceId': 'ABC',
           'checkConsentHref': 'https://response1',
@@ -55,13 +53,11 @@ describes.realWin('ConsentConfig', {amp: 1}, (env) => {
       );
     });
 
-    it('read cmp config', () => {
+    it('read cmp config', async () => {
       appendConfigScriptElement(doc, element, dict({}));
       element.setAttribute('type', '_ping_');
       const consentConfig = new ConsentConfig(element);
-      return expect(
-        consentConfig.getConsentConfigPromise()
-      ).to.eventually.deep.equal(
+      expect(await consentConfig.getConsentConfigPromise()).to.deep.equal(
         dict({
           'consentInstanceId': '_ping_',
           'checkConsentHref': '/get-consent-v1',
@@ -259,9 +255,7 @@ describes.realWin('ConsentConfig', {amp: 1}, (env) => {
         );
 
         const consentConfig = new ConsentConfig(element);
-        return expect(
-          consentConfig.getConsentConfigPromise()
-        ).to.eventually.deep.equal({
+        expect(await consentConfig.getConsentConfigPromise()).to.deep.equal({
           'consentInstanceId': 'abc',
           'consentRequired': false,
           'checkConsentHref': '/override',
@@ -462,9 +456,9 @@ describes.realWin('ConsentConfig', {amp: 1}, (env) => {
         'geoOverride': {},
         'consentRequired': 'remote',
       });
-      await expect(
+      await await expect(() =>
         new ConsentConfig(element).getConsentConfigPromise()
-      ).to.be.rejectedWith(checkConsentHrefError);
+      ).to.asyncThrow(checkConsentHrefError);
 
       // Check invalid CMP
       scriptElement.textContent = JSON.stringify({

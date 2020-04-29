@@ -418,7 +418,7 @@ describes.realWin(
       });
     });
 
-    it('geo service should return null on bad config. ', () => {
+    it('geo service should return null on bad config. ', async () => {
       addConfigElement('script');
       addConfigElement('script');
       expect(() =>
@@ -427,7 +427,7 @@ describes.realWin(
         })
       ).to.throw();
 
-      return expect(Services.geoForDocOrNull(el)).to.eventually.equal(null);
+      expect(await Services.geoForDocOrNull(el)).to.equal(null);
     });
 
     it('geo should log an error if unpatched in production. ', () => {

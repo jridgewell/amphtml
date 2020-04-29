@@ -52,36 +52,36 @@ describes.fakeWin('OriginExperiments', {amp: true}, (env) => {
     win.document.head.appendChild(meta);
   }
 
-  it('should return false if no token is found', function* () {
+  it('should return false if no token is found', async function* () {
     const experiments = originExperiments.getExperiments();
-    expect(experiments).to.eventually.deep.equal([]);
+    expect(await experiments).to.deep.equal([]);
     yield experiments;
     expect(error).to.not.be.called;
   });
 
-  it('should return false if crypto is unavailable', function* () {
+  it('should return false if crypto is unavailable', async function* () {
     isPkcsAvailable.returns(false);
 
     const experiments = originExperiments.getExperiments();
-    expect(experiments).to.eventually.deep.equal([]);
+    expect(await experiments).to.deep.equal([]);
     expect(error).calledWithMatch(TAG, 'Crypto is unavailable');
   });
 
-  it('should return false for missing token', function* () {
+  it('should return false for missing token', async function* () {
     setupMetaTagWith('');
 
     const experiments = originExperiments.getExperiments();
-    expect(experiments).to.eventually.deep.equal([]);
+    expect(await experiments).to.deep.equal([]);
     yield experiments;
     expect(error).calledWithMatch(TAG, 'Missing content for experiment token');
   });
 
-  it('should return false if origin does not match', function* () {
+  it('should return false if origin does not match', async function* () {
     setupMetaTagWith(token);
     win.location.href = 'https://not-origin.com';
 
     const experiments = originExperiments.getExperiments();
-    expect(experiments).to.eventually.deep.equal([]);
+    expect(await experiments).to.deep.equal([]);
     yield experiments;
     expect(error).calledWithMatch(TAG, 'Failed to verify experiment token');
   });
@@ -89,12 +89,12 @@ describes.fakeWin('OriginExperiments', {amp: true}, (env) => {
   // TODO(amphtml, #25621): Cannot find atob / btoa on Safari on Sauce Labs.
   it.configure().skipSafari(
     'should return true for valid token with matching origin',
-    function* () {
+    async function* () {
       setupMetaTagWith(token);
       win.location.href = 'https://origin.com';
 
       const experiments = originExperiments.getExperiments();
-      expect(experiments).to.eventually.deep.equal(['foo']);
+      expect(await experiments).to.deep.equal(['foo']);
       yield experiments;
       expect(error).to.not.be.called;
     }
@@ -103,12 +103,12 @@ describes.fakeWin('OriginExperiments', {amp: true}, (env) => {
   // TODO(amphtml, #25621): Cannot find atob / btoa on Safari on Sauce Labs.
   it.configure().skipSafari(
     'should return false if experiment is not in config',
-    function* () {
+    async function* () {
       setupMetaTagWith(token);
       win.location.href = 'https://origin.com';
 
       const experiments = originExperiments.getExperiments();
-      expect(experiments).to.eventually.deep.equal([]);
+      expect(await experiments).to.deep.equal([]);
       yield experiments;
       expect(error).to.not.be.called;
     }
@@ -172,77 +172,75 @@ describes.fakeWin('TokenMaster', {amp: true}, (env) => {
         });
       });
 
-      it('should throw for an unknown token version number', () => {
+      it('should throw for an unknown token version number', async () => {
         const verify = tokenMaster.verifyToken(
           tokenWithBadVersion,
           'https://origin.com',
           publicKey
         );
-        return expect(verify).to.eventually.be.rejectedWith(
+        await expect(() => verify).to.asyncThrow(
           'Unrecognized token version: 42'
         );
       });
 
-      it('should throw if config length exceeds byte length', () => {
+      it('should throw if config length exceeds byte length', async () => {
         const verify = tokenMaster.verifyToken(
           tokenWithBadConfigLength,
           'https://origin.com',
           publicKey
         );
-        return expect(verify).to.eventually.be.rejectedWith(
+        await expect(() => verify).to.asyncThrow(
           'Unexpected config length: 999'
         );
       });
 
-      it('should throw if signature cannot be verified', () => {
+      it('should throw if signature cannot be verified', async () => {
         const verify = tokenMaster.verifyToken(
           tokenWithBadSignature,
           'https://origin.com',
           publicKey
         );
-        return expect(verify).to.eventually.be.rejectedWith(
+        await expect(() => verify).to.asyncThrow(
           'Failed to verify token signature.'
         );
       });
 
-      it('should throw if approved origin is not current origin', () => {
+      it('should throw if approved origin is not current origin', async () => {
         const verify = tokenMaster.verifyToken(
           token,
           'https://not-origin.com',
           publicKey
         );
-        return expect(verify).to.eventually.be.rejectedWith(
-          /does not match window/
-        );
+        await expect(() => verify).to.asyncThrow(/does not match window/);
       });
 
-      it('should return false if trial has expired', () => {
+      it('should return false if trial has expired', async () => {
         const verify = tokenMaster.verifyToken(
           tokenWithExpiredExperiment,
           'https://origin.com',
           publicKey
         );
-        return expect(verify).to.eventually.be.rejectedWith(
+        await expect(() => verify).to.asyncThrow(
           'Experiment "expired" has expired.'
         );
       });
 
-      it('should return true for a well-formed, unexpired token', () => {
+      it('should return true for a well-formed, unexpired token', async () => {
         const verify = tokenMaster.verifyToken(
           token,
           'https://origin.com',
           publicKey
         );
-        return expect(verify).to.eventually.be.fulfilled;
+        await verify;
       });
 
-      it('should ignore trailing slash on location', () => {
+      it('should ignore trailing slash on location', async () => {
         const verify = tokenMaster.verifyToken(
           token,
           'https://origin.com/',
           publicKey
         );
-        return expect(verify).to.eventually.be.fulfilled;
+        await verify;
       });
     });
 });

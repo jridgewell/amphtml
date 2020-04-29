@@ -231,8 +231,8 @@ describes.realWin(
     });
 
     it('requires data-videoid or data-live-channelid', () => {
-      return allowConsoleError(() => {
-        return expect(getYt({})).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => getYt({})).to.asyncThrow(
           /Exactly one of data-videoid or data-live-channelid should/
         );
       });

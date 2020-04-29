@@ -361,17 +361,15 @@ describes.realWin('AnalyticsConfig', {amp: false}, (env) => {
       });
     });
 
-    it('fails for inline optout config', () => {
+    it('fails for inline optout config', async () => {
       const element = getAnalyticsTag({
         'requests': {'foo': 'https://example.test/bar'},
         'triggers': [{'on': 'visible', 'request': 'foo'}],
         'optout': 'foo.bar',
       });
-      return expect(
+      await expect(() =>
         new AnalyticsConfig(element).loadConfig()
-      ).to.be.rejectedWith(
-        /optout property is only available to vendor config/
-      );
+      ).to.asyncThrow(/optout property is only available to vendor config/);
     });
 
     it('succeeds for vendor iframePing config', () => {
@@ -399,16 +397,14 @@ describes.realWin('AnalyticsConfig', {amp: false}, (env) => {
       });
     });
 
-    it('fails for inlined iframePing config', () => {
+    it('fails for inlined iframePing config', async () => {
       const element = getAnalyticsTag({
         'element': {'foo': 'https://example.test/bar'},
         'triggers': [{'on': 'visible', 'iframePing': true}],
       });
-      return expect(
+      await expect(() =>
         new AnalyticsConfig(element).loadConfig()
-      ).to.be.rejectedWith(
-        /iframePing config is only available to vendor config/
-      );
+      ).to.asyncThrow(/iframePing config is only available to vendor config/);
     });
 
     it('succeeds for vendor iframe transport config', () => {

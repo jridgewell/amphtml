@@ -66,11 +66,11 @@ describe('invokeWebWorker', () => {
     workerReadyPromise = ampWorker.fetchPromiseForTesting();
   });
 
-  it('should check if Worker is supported', () => {
+  it('should check if Worker is supported', async () => {
     fakeWin.Worker = undefined;
-    return expect(
-      invokeWebWorker(fakeWin, 'foo')
-    ).to.eventually.be.rejectedWith('not supported');
+    await expect(() => invokeWebWorker(fakeWin, 'foo')).to.asyncThrow(
+      'not supported'
+    );
   });
 
   it('should send and receive a message', () => {

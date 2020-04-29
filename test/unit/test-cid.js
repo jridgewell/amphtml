@@ -344,9 +344,9 @@ describes.sandboxed('cid', {}, (env) => {
               `sha384(${expectedBaseCid}http://www.origin.come3)`
             );
           })
-          .then(() => {
+          .then(async () => {
             expect(viewerSendMessageStub).to.be.calledOnce;
-            return expect(cid.baseCid_).to.eventually.equal(expectedBaseCid);
+            expect(await cid.baseCid_).to.equal(expectedBaseCid);
           });
       });
 
@@ -415,11 +415,11 @@ describes.sandboxed('cid', {}, (env) => {
               `sha384(${expectedBaseCid}http://www.origin.come3)`
             );
           })
-          .then(() => {
+          .then(async () => {
             expect(viewerSendMessageStub).to.be.calledWith(
               env.sandbox.match.string
             );
-            return expect(cid.baseCid_).to.eventually.equal(expectedBaseCid);
+            expect(await cid.baseCid_).to.equal(expectedBaseCid);
           });
       });
 
@@ -547,8 +547,10 @@ describes.sandboxed('cid', {}, (env) => {
         return p;
       });
 
-      it('should fail on failed consent', () => {
-        return expect(cid.get({scope: 'abc'}, Promise.reject())).to.be.rejected;
+      it('should fail on failed consent', async () => {
+        await expect(() =>
+          cid.get({scope: 'abc'}, Promise.reject())
+        ).to.asyncThrow();
       });
 
       it('should fail on invalid scope', () => {
@@ -856,7 +858,7 @@ describes.realWin('cid', {amp: true}, (env) => {
     }
   );
 
-  it('get method should return CID when in Viewer ', () => {
+  it('get method should return CID when in Viewer ', async () => {
     env.sandbox
       .stub(cid.viewerCidApi_, 'isSupported')
       .returns(Promise.resolve(true));
@@ -874,7 +876,7 @@ describes.realWin('cid', {amp: true}, (env) => {
       .withArgs('cid')
       .returns(true);
     env.sandbox.stub(url, 'isProxyOrigin').returns(true);
-    return expect(cid.get({scope: 'foo'}, hasConsent)).to.eventually.equal(
+    expect(await cid.get({scope: 'foo'}, hasConsent)).to.equal(
       'cid-from-viewer'
     );
   });
@@ -1067,11 +1069,9 @@ describes.fakeWin('cid optout:', {amp: true}, (env) => {
       });
     });
 
-    it('should reject promise if storage set fails', () => {
+    it('should reject promise if storage set fails', async () => {
       storageSetStub.returns(Promise.reject('failed!'));
-      return expect(optOutOfCid(ampdoc)).to.eventually.be.rejectedWith(
-        'failed!'
-      );
+      await expect(() => optOutOfCid(ampdoc)).to.asyncThrow('failed!');
     });
   });
 

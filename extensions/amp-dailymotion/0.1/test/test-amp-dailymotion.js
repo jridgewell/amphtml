@@ -77,8 +77,8 @@ describes.realWin(
     });
 
     it('requires data-videoid', () => {
-      return allowConsoleError(() => {
-        return expect(getDailymotion('')).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => getDailymotion('')).to.asyncThrow(
           /The data-videoid attribute is required for/
         );
       });

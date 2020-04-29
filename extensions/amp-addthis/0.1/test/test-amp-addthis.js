@@ -131,40 +131,40 @@ describes.realWin(
     });
 
     it('fails when tag needs pub id', () => {
-      allowConsoleError(() => {
-        expect(getAT({widgetId})).to.be.rejectedWith(
+      allowConsoleError(async () => {
+        await expect(() => getAT({widgetId})).to.asyncThrow(
           /The pub id attribute is required for /
         );
       });
     });
 
     it('fails when tag needs widget id', () => {
-      allowConsoleError(() => {
-        expect(getAT({pubId})).to.be.rejectedWith(
+      allowConsoleError(async () => {
+        await expect(() => getAT({pubId})).to.asyncThrow(
           /Widget id or product code is required for /
         );
       });
     });
 
     it('fails when tag needs pub id and has empty product code', () => {
-      allowConsoleError(() => {
-        expect(getAT({widgetId})).to.be.rejectedWith(
+      allowConsoleError(async () => {
+        await expect(() => getAT({widgetId})).to.asyncThrow(
           /The pub id attribute is required for /
         );
       });
     });
 
     it('fails when tag has pubId but not widget id or product code', () => {
-      allowConsoleError(() => {
-        expect(getAT({pubId})).to.be.rejectedWith(
+      allowConsoleError(async () => {
+        await expect(() => getAT({pubId})).to.asyncThrow(
           /Widget id or product code is required for /
         );
       });
     });
 
     it('fails when tag has no pub id, widget id, or product code', () => {
-      allowConsoleError(() => {
-        expect(getAT({})).to.be.rejectedWith(
+      allowConsoleError(async () => {
+        await expect(() => getAT({})).to.asyncThrow(
           /Widget id or product code is required for /
         );
       });

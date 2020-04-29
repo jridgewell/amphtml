@@ -68,8 +68,8 @@ describes.realWin(
     });
 
     it('requires data-videoid', () => {
-      return allowConsoleError(() => {
-        return expect(getIzlesene('')).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => getIzlesene('')).to.asyncThrow(
           /The data-videoid attribute is required for/
         );
       });

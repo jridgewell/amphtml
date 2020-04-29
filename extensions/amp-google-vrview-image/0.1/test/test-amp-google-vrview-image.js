@@ -89,20 +89,18 @@ describes.realWin(
     });
 
     it('requires src', () => {
-      return allowConsoleError(() => {
-        return expect(getVrImage({})).to.eventually.be.rejectedWith(
-          /must be available/
-        );
+      return allowConsoleError(async () => {
+        await expect(() => getVrImage({})).to.asyncThrow(/must be available/);
       });
     });
 
     it('requires https src', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getVrImage({
             'src': 'http://example.com/image1',
           })
-        ).to.eventually.be.rejectedWith(/https/);
+        ).to.asyncThrow(/https/);
       });
     });
   }

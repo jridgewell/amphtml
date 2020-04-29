@@ -403,8 +403,8 @@ describes.fakeWin('LocalSubscriptionsPlatform', {amp: true}, (env) => {
 
     it('should build renderState', async () => {
       await expect(
-        localSubscriptionPlatform.createRenderState_(entitlement)
-      ).to.eventually.deep.equal({
+        await localSubscriptionPlatform.createRenderState_(entitlement)
+      ).to.deep.equal({
         'source': 'sample-source',
         'service': '',
         'granted': true,

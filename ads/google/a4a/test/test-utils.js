@@ -448,8 +448,8 @@ describe('Google A4A utils', () => {
             supports: () => true,
           },
         });
-        return fixture.addElement(elem).then(() => {
-          return expect(googleAdUrl(impl, '', 0, {}, [])).to.eventually.match(
+        return fixture.addElement(elem).then(async () => {
+          expect(await googleAdUrl(impl, '', 0, {}, [])).to.match(
             /[&?]bc=7[&$]/
           );
         });
@@ -475,8 +475,8 @@ describe('Google A4A utils', () => {
         createElementStub.withArgs('iframe').returns({
           sandbox: {},
         });
-        return fixture.addElement(elem).then(() => {
-          return expect(googleAdUrl(impl, '', 0, {}, [])).to.eventually.match(
+        return fixture.addElement(elem).then(async () => {
+          expect(await googleAdUrl(impl, '', 0, {}, [])).to.match(
             /[&?]bc=1[&$]/
           );
         });
@@ -505,10 +505,10 @@ describe('Google A4A utils', () => {
             supports: () => false,
           },
         });
-        return fixture.addElement(elem).then(() => {
-          return expect(
-            googleAdUrl(impl, '', 0, {}, [])
-          ).to.eventually.not.match(/[&?]bc=1[&$]/);
+        return fixture.addElement(elem).then(async () => {
+          expect(await googleAdUrl(impl, '', 0, {}, [])).to.not.match(
+            /[&?]bc=1[&$]/
+          );
         });
       });
     });
@@ -538,10 +538,10 @@ describe('Google A4A utils', () => {
           },
         });
         expectAsyncConsoleError(/Referrer timeout/, 1);
-        return fixture.addElement(elem).then(() => {
-          return expect(
-            googleAdUrl(impl, '', 0, {}, [])
-          ).to.eventually.not.match(/[&?]ref=[&$]/);
+        return fixture.addElement(elem).then(async () => {
+          expect(await googleAdUrl(impl, '', 0, {}, [])).to.not.match(
+            /[&?]ref=[&$]/
+          );
         });
       });
     });
@@ -837,7 +837,7 @@ describe('Google A4A utils', () => {
 
       it.configure()
         .skipFirefox()
-        .run('should not fetch if INSUFFICIENT consent', () => {
+        .run('should not fetch if INSUFFICIENT consent', async () => {
           env.sandbox
             .stub(Services, 'consentPolicyServiceForDocOrNull')
             .returns(
@@ -845,14 +845,14 @@ describe('Google A4A utils', () => {
                 whenPolicyResolved: () => CONSENT_POLICY_STATE.INSUFFICIENT,
               })
             );
-          return expect(
-            getIdentityToken(env.win, env.ampdoc, 'default')
-          ).to.eventually.jsonEqual({});
+          expect(
+            await getIdentityToken(env.win, env.ampdoc, 'default')
+          ).to.jsonEqual({});
         });
 
       it.configure()
         .skipFirefox()
-        .run('should not fetch if UNKNOWN consent', () => {
+        .run('should not fetch if UNKNOWN consent', async () => {
           env.sandbox
             .stub(Services, 'consentPolicyServiceForDocOrNull')
             .returns(
@@ -860,9 +860,9 @@ describe('Google A4A utils', () => {
                 whenPolicyResolved: () => CONSENT_POLICY_STATE.UNKNOWN,
               })
             );
-          return expect(
-            getIdentityToken(env.win, env.ampdoc, 'default')
-          ).to.eventually.jsonEqual({});
+          expect(
+            await getIdentityToken(env.win, env.ampdoc, 'default')
+          ).to.jsonEqual({});
         });
     }
   );

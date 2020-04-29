@@ -177,20 +177,20 @@ describes.realWin(
     });
 
     it('should require filter attribute', () => {
-      return allowConsoleError(() => {
-        return expect(getAutocomplete({})).to.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => getAutocomplete({})).to.asyncThrow(
           /requires "filter" attribute/
         );
       });
     });
 
     it('should require valid filter attribute', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getAutocomplete({
             'filter': 'invalid-option',
           })
-        ).to.be.rejectedWith('Unexpected filter: invalid-option');
+        ).to.asyncThrow('Unexpected filter: invalid-option');
       });
     });
 
@@ -212,18 +212,18 @@ describes.realWin(
       });
     });
 
-    it('should error with invalid JSON script', () => {
+    it('should error with invalid JSON script', async () => {
       expectAsyncConsoleError(
         'Unexpected token o in JSON at position 32 [object HTMLElement]'
       );
-      return expect(
+      await expect(() =>
         getAutocomplete(
           {
             'filter': 'substring',
           },
           '{ "items" : ["apple", "banana", orange] }'
         )
-      ).to.be.rejectedWith('Unexpected token o in JSON at position 32');
+      ).to.asyncThrow('Unexpected token o in JSON at position 32');
     });
 
     it('should accept empty JSON script', () => {
@@ -348,10 +348,10 @@ describes.realWin(
       });
     });
 
-    it('should not require a form ancestor', () => {
+    it('should not require a form ancestor', async () => {
       const autocomplete = setupAutocomplete({'filter': 'substring'});
       doc.body.appendChild(autocomplete);
-      return expect(autocomplete.build()).to.be.fulfilled;
+      await autocomplete.build();
     });
 
     it('should read the autocomplete attribute on the form as null', () => {

@@ -105,21 +105,19 @@ describes.realWin(
       expect(redditEmbed).not.to.be.undefined;
     });
 
-    it('requires data-src', () => {
-      return expect(getReddit('', 'post')).to.eventually.be.rejectedWith(
+    it('requires data-src', async () => {
+      await expect(() => getReddit('', 'post')).to.asyncThrow(
         /The data-src attribute is required for/
       );
     });
 
-    it('requires data-embedtype', () => {
-      return expect(
+    it('requires data-embedtype', async () => {
+      await expect(() =>
         getReddit(
           'https://www.reddit.com/r/me_irl/comments/52rmir/me_irl/?ref=share&amp;ref_source=embed',
           ''
         )
-      ).to.eventually.be.rejectedWith(
-        /The data-embedtype attribute is required for/
-      );
+      ).to.asyncThrow(/The data-embedtype attribute is required for/);
     });
   }
 );

@@ -60,13 +60,13 @@ describes.fakeWin('amp-analytics.VariableService', {amp: true}, (env) => {
       'c': 'https://www.google.com/a?b=1&c=2',
     };
 
-    function check(template, expected, vars, opt_freeze) {
+    async function check(template, expected, vars, opt_freeze) {
       const expansion = new ExpansionOptions(vars);
       if (opt_freeze) {
         expansion.freezeVar(opt_freeze);
       }
       const actual = variables.expandTemplate(template, expansion, fakeElement);
-      return expect(actual).to.eventually.equal(expected);
+      expect(await actual).to.equal(expected);
     }
 
     it('expands nested vars (encode once)', () => {
@@ -77,13 +77,13 @@ describes.fakeWin('amp-analytics.VariableService', {amp: true}, (env) => {
       );
     });
 
-    it('expands nested vars (no encode)', () => {
+    it('expands nested vars (no encode)', async () => {
       const actual = variables.expandTemplate(
         '${a}',
         new ExpansionOptions(vars, undefined, true),
         fakeElement
       );
-      expect(actual).to.eventually.equal('https://www.google.com/a?b=1&c=2');
+      expect(await actual).to.equal('https://www.google.com/a?b=1&c=2');
     });
 
     it('expands complicated string', () => {
@@ -244,7 +244,7 @@ describes.fakeWin('amp-analytics.VariableService', {amp: true}, (env) => {
         return check('${1}', '123%24%7B4%7D', recursiveVars);
       });
 
-      it('customize recursions to 5', () => {
+      it('customize recursions to 5', async () => {
         expectAsyncConsoleError(
           /Maximum depth reached while expanding variables/
         );
@@ -253,7 +253,7 @@ describes.fakeWin('amp-analytics.VariableService', {amp: true}, (env) => {
           new ExpansionOptions(recursiveVars, 5),
           fakeElement
         );
-        return expect(actual).to.eventually.equal('123412%24%7B3%7D');
+        expect(await actual).to.equal('123412%24%7B3%7D');
       });
     });
   });
@@ -276,13 +276,13 @@ describes.fakeWin('amp-analytics.VariableService', {amp: true}, (env) => {
       doc.body.appendChild(analyticsElement);
     });
 
-    function check(input, output, opt_bindings) {
+    async function check(input, output, opt_bindings) {
       const macros = Object.assign(
         variables.getMacros(analyticsElement),
         opt_bindings
       );
       const expanded = urlReplacementService.expandUrlAsync(input, macros);
-      return expect(expanded).to.eventually.equal(output);
+      expect(await expanded).to.equal(output);
     }
 
     it('handles consecutive macros in inner arguments', () => {

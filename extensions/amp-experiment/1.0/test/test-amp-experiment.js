@@ -104,13 +104,13 @@ describes.realWin(
       return stub;
     }
 
-    it('Rejects because experiment is not enabled', () => {
+    it('Rejects because experiment is not enabled', async () => {
       toggleExperiment(win, 'amp-experiment-1.0', false);
 
       expectAsyncConsoleError(/Experiment/);
       addConfigElement('script');
       doc.body.appendChild(el);
-      return expect(experiment.buildCallback()).to.eventually.be.rejectedWith(
+      await expect(() => experiment.buildCallback()).to.asyncThrow(
         /Experiment/
       );
     });
@@ -122,34 +122,32 @@ describes.realWin(
       }).to.not.throw();
     });
 
-    it('should throw if it has no child element', () => {
+    it('should throw if it has no child element', async () => {
       expectAsyncConsoleError(/should contain exactly one/);
-      return expect(experiment.buildCallback()).to.eventually.be.rejectedWith(
+      await expect(() => experiment.buildCallback()).to.asyncThrow(
         /should contain exactly one/
       );
     });
 
-    it('should throw if it has multiple child elements', () => {
+    it('should throw if it has multiple child elements', async () => {
       addConfigElement('script');
       addConfigElement('script');
       expectAsyncConsoleError(/should contain exactly one/);
-      return expect(experiment.buildCallback()).to.eventually.be.rejectedWith(
+      await expect(() => experiment.buildCallback()).to.asyncThrow(
         /should contain exactly one/
       );
     });
 
-    it('should throw if the child element is not a <script> element', () => {
+    it('should throw if the child element is not a <script> element', async () => {
       addConfigElement('a');
       expectAsyncConsoleError(/script/);
-      return expect(experiment.buildCallback()).to.eventually.be.rejectedWith(
-        /script/
-      );
+      await expect(() => experiment.buildCallback()).to.asyncThrow(/script/);
     });
 
-    it('should throw if the child script element is not json typed', () => {
+    it('should throw if the child script element is not json typed', async () => {
       addConfigElement('script', 'wrongtype');
       expectAsyncConsoleError(/application\/json/);
-      return expect(experiment.buildCallback()).to.eventually.be.rejectedWith(
+      await expect(() => experiment.buildCallback()).to.asyncThrow(
         /application\/json/
       );
     });

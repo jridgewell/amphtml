@@ -161,68 +161,68 @@ describe('trimEnd', () => {
 });
 
 describe('asyncStringReplace', () => {
-  it('should not replace with no match', () => {
+  it('should not replace with no match', async () => {
     const result = asyncStringReplace('the quick silver fox', /brown/, 'red');
-    return expect(result).to.eventually.equal('the quick silver fox');
+    expect(await result).to.equal('the quick silver fox');
   });
 
-  it('should replace with string as callback', () => {
+  it('should replace with string as callback', async () => {
     const result = asyncStringReplace('the quick brown fox', /brown/, 'red');
-    return expect(result).to.eventually.equal('the quick red fox');
+    expect(await result).to.equal('the quick red fox');
   });
 
   it('should use replacer with special pattern', async () => {
     await expect(
-      asyncStringReplace('the quick brown fox', /brown/, '$$')
-    ).to.eventually.equal('the quick $ fox');
+      await asyncStringReplace('the quick brown fox', /brown/, '$$')
+    ).to.equal('the quick $ fox');
     await expect(
-      asyncStringReplace('the quick brown fox', /brown/, 'purple $& grey')
-    ).to.eventually.equal('the quick purple brown grey fox');
+      await asyncStringReplace('the quick brown fox', /brown/, 'purple $& grey')
+    ).to.equal('the quick purple brown grey fox');
     await expect(
-      asyncStringReplace('the quick brown fox', /brown/, "sweet $'")
-    ).to.eventually.equal('the quick sweet  fox fox');
+      await asyncStringReplace('the quick brown fox', /brown/, "sweet $'")
+    ).to.equal('the quick sweet  fox fox');
     await expect(
-      asyncStringReplace('the quick brown fox', /brown/, '$`empathetic')
-    ).to.eventually.equal('the quick the quick empathetic fox');
+      await asyncStringReplace('the quick brown fox', /brown/, '$`empathetic')
+    ).to.equal('the quick the quick empathetic fox');
   });
 
-  it('should replace with sync function as callback', () => {
+  it('should replace with sync function as callback', async () => {
     const result = asyncStringReplace(
       'the quick brown fox',
       /brown/,
       () => 'red'
     );
-    return expect(result).to.eventually.equal('the quick red fox');
+    expect(await result).to.equal('the quick red fox');
   });
 
-  it('should replace with no capture groups', () => {
+  it('should replace with no capture groups', async () => {
     const result = asyncStringReplace('the quick brown fox', /brown/, () =>
       Promise.resolve('red')
     );
-    return expect(result).to.eventually.equal('the quick red fox');
+    expect(await result).to.equal('the quick red fox');
   });
 
-  it('should replace with one capture group', () => {
+  it('should replace with one capture group', async () => {
     const result = asyncStringReplace('item 798', /item (\d*)/, (match, p1) =>
       Promise.resolve(p1)
     );
-    return expect(result).to.eventually.equal('798');
+    expect(await result).to.equal('798');
   });
 
-  it('should replace with two capture groups', () => {
+  it('should replace with two capture groups', async () => {
     const result = asyncStringReplace(
       'John Smith',
       /(\w+)\s(\w+)/,
       (match, p1, p2) => Promise.resolve(`${p2}, ${p1}`)
     );
-    return expect(result).to.eventually.equal('Smith, John');
+    expect(await result).to.equal('Smith, John');
   });
 
-  it('should replace twice', () => {
+  it('should replace twice', async () => {
     const result = asyncStringReplace('John 123 Smith 456 III', /(\d+)/g, () =>
       Promise.resolve('**')
     );
-    return expect(result).to.eventually.equal('John ** Smith ** III');
+    expect(await result).to.equal('John ** Smith ** III');
   });
 });
 

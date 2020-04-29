@@ -717,64 +717,66 @@ describes.sandboxed('UrlReplacements', {}, (env) => {
       });
 
       // TODO(#16916): Make this test work with synchronous throws.
-      it.skip('should replace VARIANT', () => {
-        return expect(
-          expandUrlAsync(
+      it.skip('should replace VARIANT', async () => {
+        expect(
+          await expandUrlAsync(
             '?x1=VARIANT(x1)&x2=VARIANT(x2)&x3=VARIANT(x3)',
             /*opt_bindings*/ undefined,
             {withVariant: true}
           )
-        ).to.eventually.equal('?x1=v1&x2=none&x3=');
+        ).to.equal('?x1=v1&x2=none&x3=');
       });
 
       // TODO(#16916): Make this test work with synchronous throws.
       it.skip(
         'should replace VARIANT with empty string if ' +
           'amp-experiment is not configured ',
-        () => {
-          return expect(
-            expandUrlAsync('?x1=VARIANT(x1)&x2=VARIANT(x2)&x3=VARIANT(x3)')
-          ).to.eventually.equal('?x1=&x2=&x3=');
+        async () => {
+          expect(
+            await expandUrlAsync(
+              '?x1=VARIANT(x1)&x2=VARIANT(x2)&x3=VARIANT(x3)'
+            )
+          ).to.equal('?x1=&x2=&x3=');
         }
       );
 
-      it('should replace VARIANTS', () => {
-        return expect(
-          expandUrlAsync('?VARIANTS', /*opt_bindings*/ undefined, {
+      it('should replace VARIANTS', async () => {
+        expect(
+          await expandUrlAsync('?VARIANTS', /*opt_bindings*/ undefined, {
             withVariant: true,
           })
-        ).to.eventually.equal('?x1.v1!x2.none');
+        ).to.equal('?x1.v1!x2.none');
       });
 
       // TODO(#16916): Make this test work with synchronous throws.
       it.skip(
         'should replace VARIANTS with empty string if ' +
           'amp-experiment is not configured ',
-        () => {
-          return expect(expandUrlAsync('?VARIANTS')).to.eventually.equal('?');
+        async () => {
+          expect(await expandUrlAsync('?VARIANTS')).to.equal('?');
         }
       );
 
-      it('should replace SHARE_TRACKING_INCOMING and SHARE_TRACKING_OUTGOING', () => {
-        return expect(
-          expandUrlAsync(
+      it('should replace SHARE_TRACKING_INCOMING and SHARE_TRACKING_OUTGOING', async () => {
+        expect(
+          await expandUrlAsync(
             '?in=SHARE_TRACKING_INCOMING&out=SHARE_TRACKING_OUTGOING',
             /*opt_bindings*/ undefined,
             {withShareTracking: true}
           )
-        ).to.eventually.equal('?in=12345&out=54321');
+        ).to.equal('?in=12345&out=54321');
       });
 
       // TODO(#16916): Make this test work with synchronous throws.
       it.skip(
         'should replace SHARE_TRACKING_INCOMING and SHARE_TRACKING_OUTGOING' +
           ' with empty string if amp-share-tracking is not configured',
-        () => {
-          return expect(
-            expandUrlAsync(
+        async () => {
+          expect(
+            await expandUrlAsync(
               '?in=SHARE_TRACKING_INCOMING&out=SHARE_TRACKING_OUTGOING'
             )
-          ).to.eventually.equal('?in=&out=');
+          ).to.equal('?in=&out=');
         }
       );
 
@@ -790,10 +792,10 @@ describes.sandboxed('UrlReplacements', {}, (env) => {
         });
       });
 
-      it('should return correct ISO timestamp', () => {
+      it('should return correct ISO timestamp', async () => {
         const fakeTime = 1499979336612;
         env.sandbox.useFakeTimers(fakeTime);
-        return expect(expandUrlAsync('?tsf=TIMESTAMP_ISO')).to.eventually.equal(
+        expect(await expandUrlAsync('?tsf=TIMESTAMP_ISO')).to.equal(
           '?tsf=2017-07-13T20%3A55%3A36.612Z'
         );
       });
@@ -1149,30 +1151,28 @@ describes.sandboxed('UrlReplacements', {}, (env) => {
         });
 
       it('should replace new substitutions', () => {
-        return getReplacements().then((replacements) => {
+        return getReplacements().then(async (replacements) => {
           replacements.getVariableSource().set('ONE', () => 'a');
-          expect(replacements.expandUrlAsync('?a=ONE')).to.eventually.equal(
-            '?a=a'
-          );
+          expect(await replacements.expandUrlAsync('?a=ONE')).to.equal('?a=a');
           replacements.getVariableSource().set('ONE', () => 'b');
           replacements.getVariableSource().set('TWO', () => 'b');
-          return expect(
-            replacements.expandUrlAsync('?a=ONE&b=TWO')
-          ).to.eventually.equal('?a=b&b=b');
+          expect(await replacements.expandUrlAsync('?a=ONE&b=TWO')).to.equal(
+            '?a=b&b=b'
+          );
         });
       });
 
       // TODO(#16916): Make this test work with synchronous throws.
-      it.skip('should report errors & replace them with empty string (sync)', () => {
+      it.skip('should report errors & replace them with empty string (sync)', async () => {
         const clock = env.sandbox.useFakeTimers();
         const {documentElement} = window.document;
         const replacements = Services.urlReplacementsForDoc(documentElement);
         replacements.getVariableSource().set('ONE', () => {
           throw new Error('boom');
         });
-        const p = expect(
-          replacements.expandUrlAsync('?a=ONE')
-        ).to.eventually.equal('?a=');
+        const p = expect(await replacements.expandUrlAsync('?a=ONE')).to.equal(
+          '?a='
+        );
         allowConsoleError(() => {
           expect(() => {
             clock.tick(1);
@@ -1182,15 +1182,15 @@ describes.sandboxed('UrlReplacements', {}, (env) => {
       });
 
       // TODO(#16916): Make this test work with synchronous throws.
-      it.skip('should report errors & replace them with empty string (promise)', () => {
+      it.skip('should report errors & replace them with empty string (promise)', async () => {
         const clock = env.sandbox.useFakeTimers();
         const {documentElement} = window.document;
         const replacements = Services.urlReplacementsForDoc(documentElement);
         replacements.getVariableSource().set('ONE', () => {
           return Promise.reject(new Error('boom'));
         });
-        return expect(replacements.expandUrlAsync('?a=ONE'))
-          .to.eventually.equal('?a=')
+        expect(await replacements.expandUrlAsync('?a=ONE'))
+          .to.equal('?a=')
           .then(() => {
             allowConsoleError(() => {
               expect(() => {
@@ -1201,38 +1201,38 @@ describes.sandboxed('UrlReplacements', {}, (env) => {
       });
 
       it('should support positional arguments', () => {
-        return getReplacements().then((replacements) => {
+        return getReplacements().then(async (replacements) => {
           replacements.getVariableSource().set('FN', (one) => one);
-          return expect(
-            replacements.expandUrlAsync('?a=FN(xyz1)')
-          ).to.eventually.equal('?a=xyz1');
+          expect(await replacements.expandUrlAsync('?a=FN(xyz1)')).to.equal(
+            '?a=xyz1'
+          );
         });
       });
 
       it('should support multiple positional arguments', () => {
-        return getReplacements().then((replacements) => {
+        return getReplacements().then(async (replacements) => {
           replacements.getVariableSource().set('FN', (one, two) => {
             return one + '-' + two;
           });
-          return expect(
-            replacements.expandUrlAsync('?a=FN(xyz,abc)')
-          ).to.eventually.equal('?a=xyz-abc');
+          expect(await replacements.expandUrlAsync('?a=FN(xyz,abc)')).to.equal(
+            '?a=xyz-abc'
+          );
         });
       });
 
       it('should support multiple positional arguments with dots', () => {
-        return getReplacements().then((replacements) => {
+        return getReplacements().then(async (replacements) => {
           replacements.getVariableSource().set('FN', (one, two) => {
             return one + '-' + two;
           });
-          return expect(
-            replacements.expandUrlAsync('?a=FN(xy.z,ab.c)')
-          ).to.eventually.equal('?a=xy.z-ab.c');
+          expect(
+            await replacements.expandUrlAsync('?a=FN(xy.z,ab.c)')
+          ).to.equal('?a=xy.z-ab.c');
         });
       });
 
       it('should support promises as replacements', () => {
-        return getReplacements().then((replacements) => {
+        return getReplacements().then(async (replacements) => {
           replacements
             .getVariableSource()
             .set('P1', () => Promise.resolve('abc '));
@@ -1243,9 +1243,9 @@ describes.sandboxed('UrlReplacements', {}, (env) => {
             .getVariableSource()
             .set('P3', () => Promise.resolve('123'));
           replacements.getVariableSource().set('OTHER', () => 'foo');
-          return expect(
-            replacements.expandUrlAsync('?a=P1&b=P2&c=P3&d=OTHER')
-          ).to.eventually.equal('?a=abc%20&b=xyz&c=123&d=foo');
+          expect(
+            await replacements.expandUrlAsync('?a=P1&b=P2&c=P3&d=OTHER')
+          ).to.equal('?a=abc%20&b=xyz&c=123&d=foo');
         });
       });
 

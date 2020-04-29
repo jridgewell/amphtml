@@ -35,22 +35,22 @@ describes.realWin('viewerCidApi', {amp: true}, (env) => {
   });
 
   describe('isSupported', () => {
-    it('should return true if Viewer is trusted and has CID capability', () => {
+    it('should return true if Viewer is trusted and has CID capability', async () => {
       viewerMock.isTrustedViewer.returns(Promise.resolve(true));
       viewerMock.hasCapability.withArgs('cid').returns(true);
-      return expect(api.isSupported()).to.eventually.be.true;
+      expect(await api.isSupported()).to.be.true;
     });
 
-    it('should return false if Viewer has no CID capability', () => {
+    it('should return false if Viewer has no CID capability', async () => {
       viewerMock.isTrustedViewer.returns(new Promise(() => {}));
       viewerMock.hasCapability.withArgs('cid').returns(false);
-      return expect(api.isSupported()).to.eventually.be.false;
+      expect(await api.isSupported()).to.be.false;
     });
 
-    it('should return false if Viewer is not trusted', () => {
+    it('should return false if Viewer is not trusted', async () => {
       viewerMock.isTrustedViewer.returns(Promise.resolve(false));
       viewerMock.hasCapability.withArgs('cid').returns(true);
-      return expect(api.isSupported()).to.eventually.be.false;
+      expect(await api.isSupported()).to.be.false;
     });
   });
 
@@ -86,7 +86,7 @@ describes.realWin('viewerCidApi', {amp: true}, (env) => {
       return verifyClientIdApiInUse(false);
     });
 
-    it('should not use client ID API if scope not whitelisted', () => {
+    it('should not use client ID API if scope not whitelisted', async () => {
       viewerMock.sendMessageAwaitResponse
         .withArgs(
           'cid',
@@ -97,24 +97,24 @@ describes.realWin('viewerCidApi', {amp: true}, (env) => {
           })
         )
         .returns(Promise.resolve('client-id-from-viewer'));
-      return expect(
-        api.getScopedCid(undefined, 'NON_WHITELISTED_SCOPE')
-      ).to.eventually.equal('client-id-from-viewer');
+      expect(
+        await api.getScopedCid(undefined, 'NON_WHITELISTED_SCOPE')
+      ).to.equal('client-id-from-viewer');
     });
 
-    it('should return undefined if Viewer returns undefined', () => {
+    it('should return undefined if Viewer returns undefined', async () => {
       viewerMock.sendMessageAwaitResponse.returns(Promise.resolve());
-      return expect(api.getScopedCid('api-key', 'AMP_ECID_GOOGLE')).to
-        .eventually.be.undefined;
+      expect(await api.getScopedCid('api-key', 'AMP_ECID_GOOGLE')).to.be
+        .undefined;
     });
 
-    it('should reject if Viewer rejects', () => {
+    it('should reject if Viewer rejects', async () => {
       viewerMock.sendMessageAwaitResponse.returns(
         Promise.reject('Client API error')
       );
-      return expect(
+      await expect(() =>
         api.getScopedCid('api-key', 'AMP_ECID_GOOGLE')
-      ).to.eventually.be.rejectedWith(/Client API error/);
+      ).to.asyncThrow(/Client API error/);
     });
   });
 });

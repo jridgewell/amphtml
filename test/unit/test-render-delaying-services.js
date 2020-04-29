@@ -57,14 +57,14 @@ describe('waitForServices', () => {
     clock.uninstall();
   });
 
-  it('should resolve if no blocking services is presented', () => {
+  it('should resolve if no blocking services is presented', async () => {
     // <script custom-element="amp-experiment"> should not block
     addExtensionScript(win, 'amp-experiment');
     expect(hasRenderDelayingServices(win)).to.be.false;
-    return expect(waitForServices(win)).to.eventually.have.lengthOf(0);
+    expect(await waitForServices(win)).to.have.lengthOf(0);
   });
 
-  it('should timeout if some blocking services are missing', function* () {
+  it('should timeout if some blocking services are missing', async function* () {
     addExtensionScript(win, 'amp-dynamic-css-classes');
     win.document.body.appendChild(win.document.createElement('amp-experiment'));
     expect(hasRenderDelayingServices(win)).to.be.true;
@@ -79,10 +79,10 @@ describe('waitForServices', () => {
     // to resolve
     yield macroTask();
     clock.tick(3000);
-    return expect(promise).to.eventually.be.rejectedWith('variant');
+    await expect(() => promise).to.asyncThrow('variant');
   });
 
-  it('should resolve when all extensions are ready', () => {
+  it('should resolve when all extensions are ready', async () => {
     addExtensionScript(win, 'amp-dynamic-css-classes');
     win.document.body.appendChild(win.document.createElement('amp-experiment'));
     expect(hasRenderDelayingServices(win)).to.be.true;
@@ -92,10 +92,10 @@ describe('waitForServices', () => {
     dynamicCssResolve();
     variantResolve(); // this unblocks 'amp-experiment'
 
-    return expect(promise).to.eventually.have.lengthOf(2);
+    expect(await promise).to.have.lengthOf(2);
   });
 
-  it('should resolve if no service.whenReady', () => {
+  it('should resolve if no service.whenReady', async () => {
     addExtensionScript(win, 'amp-dynamic-css-classes');
     expect(hasRenderDelayingServices(win)).to.be.true;
     addExtensionScript(win, 'non-blocking-extension');
@@ -103,7 +103,7 @@ describe('waitForServices', () => {
     const promise = waitForServices(win);
     dynamicCssResolve();
 
-    return expect(promise).to.eventually.have.lengthOf(1);
+    expect(await promise).to.have.lengthOf(1);
   });
 
   it('should wait to resolve for service.whenReady', () => {

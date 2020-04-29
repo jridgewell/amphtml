@@ -77,7 +77,7 @@ describe('batchFetchJsonFor', () => {
     it(
       'should throw user error if expanding non-whitelisted vars with ' +
         'urlReplacement == OPT_IN',
-      () => {
+      async () => {
         const el = element('https://data.com?x=FOO&y=BAR');
 
         urlReplacements.expandUrlAsync
@@ -89,11 +89,11 @@ describe('batchFetchJsonFor', () => {
 
         const optIn = UrlReplacementPolicy.OPT_IN;
         const rejectError = /Please add data-amp-replace="BAR" to the <AMP-LIST> element./;
-        return expect(
+        await expect(() =>
           batchFetchJsonFor(ampdoc, el, {
             urlReplacement: optIn,
           })
-        ).to.eventually.be.rejectedWith(rejectError);
+        ).to.asyncThrow(rejectError);
       }
     );
 

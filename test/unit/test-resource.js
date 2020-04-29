@@ -433,23 +433,23 @@ describes.realWin('Resource', {amp: true}, (env) => {
   });
 
   describe('getPageLayoutBoxAsync', () => {
-    it('should return layout box when the resource has NOT been measured', () => {
+    it('should return layout box when the resource has NOT been measured', async () => {
       env.sandbox.stub(element, 'isUpgraded').returns(true);
       env.sandbox
         .stub(element, 'getBoundingClientRect')
         .returns(layoutRectLtwh(0, 0, 10, 10));
-      return expect(resource.getPageLayoutBoxAsync()).to.eventually.eql(
+      expect(await resource.getPageLayoutBoxAsync()).to.eql(
         layoutRectLtwh(0, 0, 10, 10)
       );
     });
 
-    it('should return layout box when the resource has been measured', () => {
+    it('should return layout box when the resource has been measured', async () => {
       env.sandbox.stub(element, 'isUpgraded').returns(true);
       env.sandbox
         .stub(element, 'getBoundingClientRect')
         .returns(layoutRectLtwh(0, 0, 10, 10));
       resource.measure();
-      return expect(resource.getPageLayoutBoxAsync()).to.eventually.eql(
+      expect(await resource.getPageLayoutBoxAsync()).to.eql(
         layoutRectLtwh(0, 0, 10, 10)
       );
     });

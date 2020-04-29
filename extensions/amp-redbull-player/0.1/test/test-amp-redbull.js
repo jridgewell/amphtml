@@ -63,8 +63,8 @@ describes.realWin(
       );
     });
 
-    it('fails without videoId', () => {
-      return expect(getRedBullElement(null)).to.eventually.be.rejectedWith(
+    it('fails without videoId', async () => {
+      await expect(() => getRedBullElement(null)).to.asyncThrow(
         /The data-param-videoid attribute is required/
       );
     });

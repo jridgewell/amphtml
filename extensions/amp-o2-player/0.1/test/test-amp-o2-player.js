@@ -74,28 +74,28 @@ describes.realWin(
     });
 
     it('requires data-pid', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getO2player({
             'data-bcid': '50d595ec0364e95588c77bd2',
           })
-        ).to.eventually.be.rejectedWith(/data-pid attribute is required for/);
+        ).to.asyncThrow(/data-pid attribute is required for/);
       });
     });
 
     it('requires data-bcid', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getO2player({
             'data-pid': '573acb47e4b0564ec2e10011',
           })
-        ).to.eventually.be.rejectedWith(/data-bcid attribute is required for/);
+        ).to.asyncThrow(/data-bcid attribute is required for/);
       });
     });
 
     it('requires data-pid && data-bcid', () => {
-      return allowConsoleError(() => {
-        return expect(getO2player({})).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => getO2player({})).to.asyncThrow(
           /data-pid attribute is required for/
         );
       });

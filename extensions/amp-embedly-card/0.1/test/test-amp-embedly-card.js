@@ -59,10 +59,11 @@ describes.realWin(
     });
 
     it('throws when data-url is not given', () => {
-      allowConsoleError(() =>
-        expect(createEmbedlyCard('')).to.be.rejectedWith(
-          /The data-url attribute is required for/
-        )
+      allowConsoleError(
+        async () =>
+          await expect(() => createEmbedlyCard('')).to.asyncThrow(
+            /The data-url attribute is required for/
+          )
       );
     });
 

@@ -108,38 +108,34 @@ describes.realWin(
       });
     });
 
-    it('fails without an embed code', () => {
-      return expect(
+    it('fails without an embed code', async () => {
+      await expect(() =>
         getOoyalaElement(
           null,
           '6440813504804d76ba35c8c787a4b33c',
           '5zb2wxOlZcNCe_HVT3a6cawW298X'
         )
-      ).to.eventually.be.rejectedWith(
-        /The data-embedcode attribute is required/
-      );
+      ).to.asyncThrow(/The data-embedcode attribute is required/);
     });
 
-    it('fails without a player ID', () => {
-      return expect(
+    it('fails without a player ID', async () => {
+      await expect(() =>
         getOoyalaElement(
           'Vxc2k0MDE6Y_C7J5podo3UDxlFxGaZrQ',
           null,
           '5zb2wxOlZcNCe_HVT3a6cawW298X'
         )
-      ).to.eventually.be.rejectedWith(
-        /The data-playerid attribute is required/
-      );
+      ).to.asyncThrow(/The data-playerid attribute is required/);
     });
 
-    it('fails without a p-code', () => {
-      return expect(
+    it('fails without a p-code', async () => {
+      await expect(() =>
         getOoyalaElement(
           'Vxc2k0MDE6Y_C7J5podo3UDxlFxGaZrQ',
           '6440813504804d76ba35c8c787a4b33c',
           null
         )
-      ).to.eventually.be.rejectedWith(/The data-pcode attribute is required/);
+      ).to.asyncThrow(/The data-pcode attribute is required/);
     });
   }
 );

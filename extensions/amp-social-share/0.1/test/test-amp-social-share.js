@@ -87,8 +87,8 @@ describes.realWin(
       const share = doc.createElement('amp-social-share');
       share.setAttribute('type', 'unknown-provider');
       doc.body.appendChild(share);
-      return allowConsoleError(() => {
-        return expect(loaded(share)).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => loaded(share)).to.asyncThrow(
           /data-share-endpoint attribute is required/
         );
       });
@@ -97,8 +97,8 @@ describes.realWin(
     it('errors if type is missing', () => {
       const share = doc.createElement('amp-social-share');
       doc.body.appendChild(share);
-      return allowConsoleError(() => {
-        return expect(loaded(share)).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => loaded(share)).to.asyncThrow(
           /type attribute is required/
         );
       });
@@ -108,8 +108,8 @@ describes.realWin(
       const share = doc.createElement('amp-social-share');
       share.setAttribute('type', 'hello world');
       doc.body.appendChild(share);
-      return allowConsoleError(() => {
-        return expect(loaded(share)).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => loaded(share)).to.asyncThrow(
           /Space characters are not allowed in type attribute value/
         );
       });

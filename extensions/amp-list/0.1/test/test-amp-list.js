@@ -421,16 +421,16 @@ describes.repeated(
             });
           });
 
-          it('should fail to load b/c data array is absent', () => {
+          it('should fail to load b/c data array is absent', async () => {
             expectAsyncConsoleError(/Response must contain an array/, 1);
             listMock.expects('fetch_').returns(Promise.resolve({})).once();
             listMock.expects('toggleLoading').withExactArgs(false).once();
-            return expect(list.layoutCallback()).to.eventually.be.rejectedWith(
+            await expect(() => list.layoutCallback()).to.asyncThrow(
               /Response must contain an array/
             );
           });
 
-          it('should fail to load b/c data single-item object is absent', () => {
+          it('should fail to load b/c data single-item object is absent', async () => {
             expectAsyncConsoleError(
               /Response must contain an array or object/,
               1
@@ -438,7 +438,7 @@ describes.repeated(
             element.setAttribute('single-item', 'true');
             listMock.expects('fetch_').returns(Promise.resolve()).once();
             listMock.expects('toggleLoading').withExactArgs(false).once();
-            return expect(list.layoutCallback()).to.eventually.be.rejectedWith(
+            await expect(() => list.layoutCallback()).to.asyncThrow(
               /Response must contain an array or object/
             );
           });
@@ -685,40 +685,36 @@ describes.repeated(
               env.sandbox.stub(ssrTemplateHelper, 'isEnabled').returns(true);
             });
 
-            it('should error if proxied fetch fails', () => {
+            it('should error if proxied fetch fails', async () => {
               env.sandbox
                 .stub(ssrTemplateHelper, 'ssr')
                 .returns(Promise.reject());
 
               listMock.expects('toggleLoading').withExactArgs(false).once();
 
-              return expect(
-                list.layoutCallback()
-              ).to.eventually.be.rejectedWith(
+              await expect(() => list.layoutCallback()).to.asyncThrow(
                 /Error proxying amp-list templates/
               );
             });
 
-            it('should error if proxied fetch returns invalid data', () => {
+            it('should error if proxied fetch returns invalid data', async () => {
               expectAsyncConsoleError(/received no response/, 1);
               env.sandbox
                 .stub(ssrTemplateHelper, 'ssr')
                 .returns(Promise.resolve(undefined));
               listMock.expects('toggleLoading').withExactArgs(false).once();
-              return expect(
-                list.layoutCallback()
-              ).to.eventually.be.rejectedWith(/received no response/);
+              await expect(() => list.layoutCallback()).to.asyncThrow(
+                /received no response/
+              );
             });
 
-            it('should error if proxied fetch returns non-2xx status (error) in the response', () => {
+            it('should error if proxied fetch returns non-2xx status (error) in the response', async () => {
               expectAsyncConsoleError(/received no response/, 1);
               env.sandbox
                 .stub(ssrTemplateHelper, 'ssr')
                 .returns(Promise.resolve({init: {status: 400}}));
               listMock.expects('toggleLoading').withExactArgs(false).once();
-              return expect(
-                list.layoutCallback()
-              ).to.eventually.be.rejectedWith(
+              await expect(() => list.layoutCallback()).to.asyncThrow(
                 /Error proxying amp-list templates with status/
               );
             });
@@ -785,7 +781,7 @@ describes.repeated(
               );
             });
 
-            it('"amp-state:" uri should skip rendering and emit an error', () => {
+            it('"amp-state:" uri should skip rendering and emit an error', async () => {
               toggleExperiment(win, 'amp-list-init-from-state', true);
 
               const ampStateEl = doc.createElement('amp-state');
@@ -800,7 +796,7 @@ describes.repeated(
 
               const errorMsg = /cannot be used in SSR mode/;
               expectAsyncConsoleError(errorMsg);
-              expect(list.layoutCallback()).eventually.rejectedWith(errorMsg);
+              await expect(() => list.layoutCallback()).to.asyncThrow(errorMsg);
             });
 
             it('Bound [src] should skip rendering and emit an error', async () => {
@@ -1217,7 +1213,7 @@ describes.repeated(
             it('should throw an error if used without the experiment enabled', async () => {
               const errorMsg = /Invalid value: amp-state:okapis/;
               expectAsyncConsoleError(errorMsg);
-              expect(list.layoutCallback()).to.eventually.throw(errorMsg);
+              expect(await list.layoutCallback()).to.throw(errorMsg);
             });
 
             it('should throw error if there is no associated amp-state el', async () => {
@@ -1226,7 +1222,7 @@ describes.repeated(
 
               const errorMsg = /element with id 'okapis' was not found/;
               expectAsyncConsoleError(errorMsg);
-              expect(list.layoutCallback()).to.eventually.throw(errorMsg);
+              expect(await list.layoutCallback()).to.throw(errorMsg);
             });
 
             it('should log an error if amp-bind was not included', async () => {
@@ -1242,7 +1238,7 @@ describes.repeated(
 
               const errorMsg = /bind to be installed/;
               expectAsyncConsoleError(errorMsg);
-              expect(list.layoutCallback()).eventually.rejectedWith(errorMsg);
+              await expect(() => list.layoutCallback()).to.asyncThrow(errorMsg);
             });
 
             it('should render a list using local data', async () => {

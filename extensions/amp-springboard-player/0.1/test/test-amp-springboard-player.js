@@ -82,8 +82,8 @@ describes.realWin(
       });
     });
 
-    it('requires data-site-id', () => {
-      return expect(
+    it('requires data-site-id', async () => {
+      await expect(() =>
         getSpringboardPlayer({
           'data-mode': 'video',
           'data-content-id': '1578473',
@@ -91,13 +91,11 @@ describes.realWin(
           'data-domain': 'test.com',
           'data-items': '10',
         })
-      ).to.eventually.be.rejectedWith(
-        /The data-site-id attribute is required for/
-      );
+      ).to.asyncThrow(/The data-site-id attribute is required for/);
     });
 
-    it('requires data-mode', () => {
-      return expect(
+    it('requires data-mode', async () => {
+      await expect(() =>
         getSpringboardPlayer({
           'data-site-id': '261',
           'data-content-id': '1578473',
@@ -105,13 +103,11 @@ describes.realWin(
           'data-domain': 'test.com',
           'data-items': '10',
         })
-      ).to.eventually.be.rejectedWith(
-        /The data-mode attribute is required for/
-      );
+      ).to.asyncThrow(/The data-mode attribute is required for/);
     });
 
-    it('requires data-content-id', () => {
-      return expect(
+    it('requires data-content-id', async () => {
+      await expect(() =>
         getSpringboardPlayer({
           'data-mode': 'video',
           'data-site-id': '261',
@@ -119,13 +115,11 @@ describes.realWin(
           'data-domain': 'test.com',
           'data-items': '10',
         })
-      ).to.eventually.be.rejectedWith(
-        /The data-content-id attribute is required for/
-      );
+      ).to.asyncThrow(/The data-content-id attribute is required for/);
     });
 
-    it('requires data-player-id', () => {
-      return expect(
+    it('requires data-player-id', async () => {
+      await expect(() =>
         getSpringboardPlayer({
           'data-mode': 'video',
           'data-site-id': '261',
@@ -133,13 +127,11 @@ describes.realWin(
           'data-domain': 'test.com',
           'data-items': '10',
         })
-      ).to.eventually.be.rejectedWith(
-        /The data-player-id attribute is required for/
-      );
+      ).to.asyncThrow(/The data-player-id attribute is required for/);
     });
 
-    it('requires data-domain', () => {
-      return expect(
+    it('requires data-domain', async () => {
+      await expect(() =>
         getSpringboardPlayer({
           'data-mode': 'video',
           'data-site-id': '261',
@@ -147,9 +139,7 @@ describes.realWin(
           'data-player-id': 'test401',
           'data-items': '10',
         })
-      ).to.eventually.be.rejectedWith(
-        /The data-domain attribute is required for/
-      );
+      ).to.asyncThrow(/The data-domain attribute is required for/);
     });
 
     describe('createPlaceholderCallback', () => {

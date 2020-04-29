@@ -96,10 +96,11 @@ describes.realWin(
       });
 
       it('requires data-mediaid', () =>
-        allowConsoleError(() =>
-          expect(getMowPlayer({})).to.eventually.be.rejectedWith(
-            /The data-mediaid attribute is required for/
-          )
+        allowConsoleError(
+          async () =>
+            await expect(() => getMowPlayer({})).to.asyncThrow(
+              /The data-mediaid attribute is required for/
+            )
         ));
 
       it('should send events from mowplayer to the amp element', () => {

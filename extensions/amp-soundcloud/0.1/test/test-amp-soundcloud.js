@@ -123,8 +123,8 @@ describes.realWin(
       });
     });
 
-    it('renders data-trackid', () => {
-      expect(getSCPlayer('')).to.be.rejectedWith(
+    it('renders data-trackid', async () => {
+      await expect(() => getSCPlayer('')).to.asyncThrow(
         /The data-trackid attribute is required for/
       );
     });

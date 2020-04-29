@@ -1271,8 +1271,8 @@ describes.realWin(
               multiple: true,
             },
           });
-          return allowConsoleError(() => {
-            return expect(ampSelector.build()).to.eventually.be.rejectedWith(
+          return allowConsoleError(async () => {
+            await expect(() => ampSelector.build()).to.asyncThrow(
               /not supported for multiple selection amp-selector​​​/
             );
           });

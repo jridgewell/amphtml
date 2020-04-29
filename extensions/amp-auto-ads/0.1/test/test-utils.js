@@ -44,8 +44,8 @@ describes.realWin('amp-auto-ads utils', {amp: true}, (env) => {
         });
     });
 
-    it('should measure the element', () => {
-      return expect(getElementLayoutBox(element)).to.eventually.eql(BOX);
+    it('should measure the element', async () => {
+      expect(await getElementLayoutBox(element)).to.eql(BOX);
     });
 
     it('should only measure once for resource backed element', () => {

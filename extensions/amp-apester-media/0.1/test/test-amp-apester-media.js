@@ -204,8 +204,8 @@ describes.realWin(
     });
 
     it('requires media-id or channel-token', () => {
-      allowConsoleError(() => {
-        expect(getApester()).to.be.rejectedWith(
+      allowConsoleError(async () => {
+        await expect(() => getApester()).to.asyncThrow(
           /The media-id attribute is required for/
         );
       });

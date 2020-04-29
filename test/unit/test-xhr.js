@@ -335,21 +335,22 @@ describe
             getResponseHeader: () => '',
           };
 
-          it('should resolve if success', () => {
+          it('should resolve if success', async () => {
             mockXhr.status = 200;
-            return expect(
+            await expect(() =>
               assertSuccess(createResponseInstance('', mockXhr)).then(
                 (response) => {
                   expect(response.status).to.equal(200);
                 }
               )
-            ).to.not.be.rejected;
+            ).not.to.asyncThrow();
           });
 
-          it('should reject if error', () => {
+          it('should reject if error', async () => {
             mockXhr.status = 500;
-            return expect(assertSuccess(createResponseInstance('', mockXhr))).to
-              .be.rejected;
+            await expect(() =>
+              assertSuccess(createResponseInstance('', mockXhr))
+            ).to.asyncThrow();
           });
 
           it('should include response in error', () => {
@@ -362,14 +363,12 @@ describe
             );
           });
 
-          it('should not resolve after rejecting promise', () => {
+          it('should not resolve after rejecting promise', async () => {
             mockXhr.status = 500;
             mockXhr.responseText = '{"a": "hello"}';
             mockXhr.headers['Content-Type'] = 'application/json';
             mockXhr.getResponseHeader = () => 'application/json';
-            return expect(
-              assertSuccess(createResponseInstance('{"a": 2}', mockXhr))
-            ).to.not.be.fulfilled;
+            await assertSuccess(createResponseInstance('{"a": 2}', mockXhr));
           });
         });
 
@@ -937,37 +936,34 @@ describe
           );
       });
 
-      it('should be rejected when response undefined', () => {
+      it('should be rejected when response undefined', async () => {
         expectAsyncConsoleError(/Object expected/);
         sendMessageStub.returns(Promise.resolve());
         const xhr = xhrServiceForTesting(interceptionEnabledWin);
 
-        return expect(
+        await expect(() =>
           xhr.fetch('https://www.some-url.org/some-resource/')
-        ).to.eventually.be.rejectedWith(Error, 'Object expected: undefined');
+        ).to.asyncThrow(Error, 'Object expected: undefined');
       });
 
-      it('should be rejected when response null', () => {
+      it('should be rejected when response null', async () => {
         expectAsyncConsoleError(/Object expected/);
         sendMessageStub.returns(Promise.resolve(null));
         const xhr = xhrServiceForTesting(interceptionEnabledWin);
 
-        return expect(
+        await expect(() =>
           xhr.fetch('https://www.some-url.org/some-resource/')
-        ).to.eventually.be.rejectedWith(Error, 'Object expected: null');
+        ).to.asyncThrow(Error, 'Object expected: null');
       });
 
-      it('should be rejected when response is string', () => {
+      it('should be rejected when response is string', async () => {
         expectAsyncConsoleError(/Object expected/);
         sendMessageStub.returns(Promise.resolve('response text'));
         const xhr = xhrServiceForTesting(interceptionEnabledWin);
 
-        return expect(
+        await expect(() =>
           xhr.fetch('https://www.some-url.org/some-resource/')
-        ).to.eventually.be.rejectedWith(
-          Error,
-          'Object expected: response text'
-        );
+        ).to.asyncThrow(Error, 'Object expected: response text');
       });
 
       describe('when native Response type is available', () => {
@@ -991,7 +987,7 @@ describe
 
           return xhr
             .fetch('https://www.some-url.org/some-resource/')
-            .then((response) => {
+            .then(async (response) => {
               expect(response.headers.get('a')).to.equal('2');
               expect(response.headers.get('b')).to.equal('false');
               expect(response).to.have.property('ok').that.is.true;
@@ -999,10 +995,8 @@ describe
               expect(response)
                 .to.have.property('statusText')
                 .that.equals('Magic status');
-              return expect(response.text()).to.eventually.equal(
-                '{"content":32}'
-              );
-              return expect(response.json()).to.eventually.deep.equal({
+              expect(await response.text()).to.equal('{"content":32}');
+              expect(await response.json()).to.deep.equal({
                 content: 32,
               });
             });
@@ -1030,12 +1024,12 @@ describe
 
           return xhr
             .fetch('https://www.some-url.org/some-resource/')
-            .then((response) => {
+            .then(async (response) => {
               expect(response.headers.get('a')).to.equal('2');
               expect(response.headers.get('b')).to.equal('false');
               expect(response).to.have.property('ok').that.is.true;
               expect(response).to.have.property('status').that.equals(242);
-              return expect(response.json()).to.eventually.deep.equal({
+              expect(await response.json()).to.deep.equal({
                 content: 32,
               });
             });
@@ -1047,12 +1041,12 @@ describe
 
           return xhr
             .fetch('https://www.some-url.org/some-resource/', {ampCors: false})
-            .then((response) => {
+            .then(async (response) => {
               expect(response.headers.get('a')).to.be.null;
               expect(response.headers.has('a')).to.be.false;
               expect(response).to.have.property('ok').that.is.true;
               expect(response).to.have.property('status').that.equals(200);
-              return expect(response.text()).to.eventually.be.empty;
+              expect(await response.text()).to.be.empty;
             });
         });
 
@@ -1075,8 +1069,8 @@ describe
 
           return xhr
             .fetch('https://www.some-url.org/some-resource/', {ampCors: false})
-            .then((response) => {
-              return expect(response.text()).to.eventually.equal('32');
+            .then(async (response) => {
+              expect(await response.text()).to.equal('32');
             });
         });
 

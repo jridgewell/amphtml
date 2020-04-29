@@ -247,12 +247,12 @@ describes.realWin(
     });
 
     describe('remote config', () => {
-      it('errors when no config specified', () => {
+      it('errors when no config specified', async () => {
         const error =
           'amp-next-page should contain a <script> child, a URL specified in ' +
           '[src], or a [type]';
         expectAsyncConsoleError(error);
-        return expect(nextPage.buildCallback()).to.be.rejectedWith(error);
+        await expect(() => nextPage.buildCallback()).to.asyncThrow(error);
       });
 
       it('fetches remote config when specified in src', function* () {
@@ -291,25 +291,25 @@ describes.realWin(
     });
 
     describe('AdSense config', () => {
-      it('errors without client', () => {
+      it('errors without client', async () => {
         const error =
           'amp-next-page AdSense client should be of the format ' +
           "'ca-pub-123456'";
         expectAsyncConsoleError(error);
         element.setAttribute('type', 'adsense');
         element.setAttribute('data-slot', '12345');
-        return expect(nextPage.buildCallback()).to.be.rejectedWith(error);
+        await expect(() => nextPage.buildCallback()).to.asyncThrow(error);
       });
 
-      it('errors without slot', () => {
+      it('errors without slot', async () => {
         const error = 'amp-next-page AdSense slot should be a number';
         expectAsyncConsoleError(error);
         element.setAttribute('type', 'adsense');
         element.setAttribute('data-client', 'ca-pub-12345');
-        return expect(nextPage.buildCallback()).to.be.rejectedWith(error);
+        await expect(() => nextPage.buildCallback()).to.asyncThrow(error);
       });
 
-      it('errors for invalid client format', () => {
+      it('errors for invalid client format', async () => {
         const error =
           'amp-next-page AdSense client should be of the format ' +
           "'ca-pub-123456'";
@@ -317,16 +317,16 @@ describes.realWin(
         element.setAttribute('type', 'adsense');
         element.setAttribute('data-client', 'doggos');
         element.setAttribute('data-slot', '12345');
-        return expect(nextPage.buildCallback()).to.be.rejectedWith(error);
+        await expect(() => nextPage.buildCallback()).to.asyncThrow(error);
       });
 
-      it('errors for invalid slot format', () => {
+      it('errors for invalid slot format', async () => {
         const error = 'amp-next-page AdSense slot should be a number';
         expectAsyncConsoleError(error);
         element.setAttribute('type', 'adsense');
         element.setAttribute('data-client', 'ca-pub-12345');
         element.setAttribute('data-slot', 'doggos');
-        return expect(nextPage.buildCallback()).to.be.rejectedWith(error);
+        await expect(() => nextPage.buildCallback()).to.asyncThrow(error);
       });
     });
 

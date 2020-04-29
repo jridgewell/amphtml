@@ -117,8 +117,8 @@ describes.realWin(
     }
 
     it('requires data-gfyid', () => {
-      return allowConsoleError(() => {
-        return expect(getGfycat('')).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => getGfycat('')).to.asyncThrow(
           /The data-gfyid attribute is required for/
         );
       });

@@ -64,8 +64,8 @@ describes.realWin(
       });
     });
 
-    it('Rejects because data-gistid is missing', () => {
-      expect(getIns('')).to.be.rejectedWith(
+    it('Rejects because data-gistid is missing', async () => {
+      await expect(() => getIns('')).to.asyncThrow(
         /The data-gistid attribute is required for/
       );
     });

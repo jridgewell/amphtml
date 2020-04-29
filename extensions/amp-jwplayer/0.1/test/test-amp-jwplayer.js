@@ -106,26 +106,24 @@ describes.realWin(
       );
     });
     it('fails if no media is specified', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getjwplayer({
             'data-player-id': 'sDZEo0ea',
           })
-        ).to.eventually.be.rejectedWith(
+        ).to.asyncThrow(
           /Either the data-media-id or the data-playlist-id attributes must be/
         );
       });
     });
 
     it('fails if no player is specified', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getjwplayer({
             'data-media-id': 'Wferorsv',
           })
-        ).to.eventually.be.rejectedWith(
-          /The data-player-id attribute is required for/
-        );
+        ).to.asyncThrow(/The data-player-id attribute is required for/);
       });
     });
 

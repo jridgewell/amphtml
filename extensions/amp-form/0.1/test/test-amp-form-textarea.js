@@ -55,7 +55,7 @@ describes.realWin(
     });
 
     describe('getHasOverflow', () => {
-      it('should detect if an element has overflow', () => {
+      it('should detect if an element has overflow', async () => {
         const textarea = doc.createElement('textarea');
         textarea.setAttribute('autoexpand', '');
         textarea.setAttribute('rows', '1');
@@ -63,10 +63,10 @@ describes.realWin(
         textarea.innerHTML = 'big text'.repeat(30);
         doc.body.appendChild(textarea);
 
-        return expect(getHasOverflow(textarea)).to.eventually.be.true;
+        expect(await getHasOverflow(textarea)).to.be.true;
       });
 
-      it('should detect if an element does not have overflow', () => {
+      it('should detect if an element does not have overflow', async () => {
         const textarea = doc.createElement('textarea');
         textarea.setAttribute('autoexpand', '');
         textarea.setAttribute('rows', '1');
@@ -74,7 +74,7 @@ describes.realWin(
         textarea.innerHTML = 'small text';
         doc.body.appendChild(textarea);
 
-        return expect(getHasOverflow(textarea)).to.eventually.be.false;
+        expect(await getHasOverflow(textarea)).to.be.false;
       });
     });
 

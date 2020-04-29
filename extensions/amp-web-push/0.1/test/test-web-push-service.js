@@ -68,7 +68,7 @@ describes.realWin(
       expect(webPush.environmentSupportsWebPush()).to.eq(false);
     });
 
-    it('an unsupported environment should prevent initializing', () => {
+    it('an unsupported environment should prevent initializing', async () => {
       // Cause push to not be supported on this environment
       env.sandbox.defineProperty(env.win, 'PushManager', {
         enumerable: false,
@@ -76,7 +76,7 @@ describes.realWin(
         value: undefined,
       });
       // Should not error out
-      return expect(webPush.start()).to.eventually.be.rejectedWith(
+      await expect(() => webPush.start()).to.asyncThrow(
         /Web push is not supported/
       );
     });

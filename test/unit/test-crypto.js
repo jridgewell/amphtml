@@ -71,31 +71,29 @@ describes.realWin('crypto-impl', {}, (env) => {
           });
         });
 
-        it('should hash "abc" in sha384Base64', () => {
+        it('should hash "abc" in sha384Base64', async () => {
           if (expectedError) {
             expectAsyncConsoleError(expectedError);
           }
-          return expect(crypto.sha384Base64('abc')).to.eventually.equal(
+          expect(await crypto.sha384Base64('abc')).to.equal(
             'ywB1P0WjXou1oD1pmsZQBycsMqsO3tFjGotgWkP_W-2AhgcroefMI1i67KE0yCWn'
           );
         });
 
-        it('should hash "foobar" in sha384Base64', () => {
+        it('should hash "foobar" in sha384Base64', async () => {
           if (expectedError) {
             expectAsyncConsoleError(expectedError);
           }
-          return expect(crypto.sha384Base64('foobar')).to.eventually.equal(
+          expect(await crypto.sha384Base64('foobar')).to.equal(
             'PJww2fZl501RXIQpYNSkUcg6ASX9Pec5LXs3IxrxDHLqWK7fzfiaV2W_kCr5Ps8G'
           );
         });
 
-        it('should hash [1,2,3] in sha384', () => {
+        it('should hash [1,2,3] in sha384', async () => {
           if (expectedError) {
             expectAsyncConsoleError(expectedError);
           }
-          return expect(
-            crypto.sha384Base64(uint8Array([1, 2, 3]))
-          ).to.eventually.equal(
+          expect(await crypto.sha384Base64(uint8Array([1, 2, 3]))).to.equal(
             'hiKdxtL_vqxzgHRBVKpwApHAZDUqDb3H' +
               'e57T8sjh2sTcMlhn053f8dJim3o5PUf2'
           );

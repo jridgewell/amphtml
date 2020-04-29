@@ -75,14 +75,12 @@ describes.realWin(
     });
 
     it('fails if no playerId is specified', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getConnatixPlayer({
             'data-media-id': '527207df-2007-43c4-b87a-f90814bafd2e',
           })
-        ).to.eventually.be.rejectedWith(
-          /The data-player-id attribute is required for/
-        );
+        ).to.asyncThrow(/The data-player-id attribute is required for/);
       });
     });
 

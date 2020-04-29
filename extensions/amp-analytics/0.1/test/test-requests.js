@@ -619,9 +619,9 @@ describes.realWin('Requests', {amp: 1}, (env) => {
         expansionOptions,
         element
       );
-      return replacePromise.then((replace) => {
+      return replacePromise.then(async (replace) => {
         expect(replace).to.equal('test e1=TESTE1&e2=teste2 foo');
-        expect(appendPromise).to.eventually.equal('test foo');
+        expect(await appendPromise).to.equal('test foo');
       });
     });
   });

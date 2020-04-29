@@ -185,8 +185,8 @@ describes.realWin(
     });
 
     it('requires data-shortcode', () => {
-      allowConsoleError(() => {
-        expect(getIns('')).to.be.rejectedWith(
+      allowConsoleError(async () => {
+        await expect(() => getIns('')).to.asyncThrow(
           /The data-shortcode attribute is required for/
         );
       });

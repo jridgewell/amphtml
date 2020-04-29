@@ -91,7 +91,7 @@ describes.realWin('Platform store', {}, (env) => {
       })
     );
     expect(platformStore.getEntitlementPromiseFor('service2')).to.equal(p);
-    await expect(p).to.eventually.equal(ent);
+    await expect(await p).to.equal(ent);
   });
 
   it('should call onChange callbacks on every resolve', () => {
@@ -565,9 +565,7 @@ describes.realWin('Platform store', {}, (env) => {
         })
       );
 
-      await expect(
-        platformStore.getScoreFactorStates()
-      ).to.eventually.deep.equal({
+      await expect(await platformStore.getScoreFactorStates()).to.deep.equal({
         local: {
           isReadyToPay: 0,
           supportsViewer: 0,

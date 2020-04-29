@@ -72,14 +72,12 @@ describes.realWin(
     });
 
     it('fails if no content is specified', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getDelightPlayer({
             'data-content-id': '',
           })
-        ).to.eventually.be.rejectedWith(
-          /The data-content-id attribute is required/
-        );
+        ).to.asyncThrow(/The data-content-id attribute is required/);
       });
     });
 

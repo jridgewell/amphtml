@@ -234,14 +234,14 @@ describes.realWin('BaseElement', {amp: true}, (env) => {
       event2Promise = timer.timeoutPromise(TIMEOUT, event2Promise);
     });
 
-    it('forwards single event', () => {
+    it('forwards single event', async () => {
       element.forwardEvents('event1', target);
       target.dispatchEvent(event1);
       target.dispatchEvent(event2);
 
-      return Promise.all([
+      Promise.all([
         event1Promise,
-        expect(event2Promise).to.eventually.be.rejectedWith(/timeout/),
+        await expect(() => event2Promise).to.asyncThrow(/timeout/),
       ]);
     });
 

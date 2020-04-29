@@ -54,8 +54,8 @@ describes.realWin(
       });
     });
 
-    it('requires data-media-hashed-id', () => {
-      return expect(getWistiaEmbed('')).to.eventually.be.rejectedWith(
+    it('requires data-media-hashed-id', async () => {
+      await expect(() => getWistiaEmbed('')).to.asyncThrow(
         /The data-media-hashed-id attribute is required for/
       );
     });

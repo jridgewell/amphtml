@@ -63,43 +63,43 @@ describes.sandboxed('fetch', {}, (env) => {
       });
     });
 
-    it('should not allow PUT method', () => {
+    it('should not allow PUT method', async () => {
       expectAsyncConsoleError(methodErrorRegex);
       mockOkResponse();
-      return expect(
+      await expect(() =>
         fetchPolyfill('/post', {
           method: 'PUT',
           body: {
             hello: 'world',
           },
         })
-      ).to.be.rejectedWith(methodErrorRegex);
+      ).to.asyncThrow(methodErrorRegex);
     });
 
-    it('should not allow PATCH method', () => {
+    it('should not allow PATCH method', async () => {
       expectAsyncConsoleError(methodErrorRegex);
       mockOkResponse();
-      return expect(
+      await expect(() =>
         fetchPolyfill('/post', {
           method: 'PATCH',
           body: {
             hello: 'world',
           },
         })
-      ).to.be.rejectedWith(methodErrorRegex);
+      ).to.asyncThrow(methodErrorRegex);
     });
 
-    it('should not allow DELETE method', () => {
+    it('should not allow DELETE method', async () => {
       expectAsyncConsoleError(methodErrorRegex);
       mockOkResponse();
-      return expect(
+      await expect(() =>
         fetchPolyfill('/post', {
           method: 'DELETE',
           body: {
             hello: 'world',
           },
         })
-      ).to.be.rejectedWith(methodErrorRegex);
+      ).to.asyncThrow(methodErrorRegex);
     });
 
     it('should allow FormData as body', () => {

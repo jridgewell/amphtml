@@ -65,10 +65,10 @@ describes.realWin(
         const ampRecaptchaInputConfig = {...ampRecaptchaInputAttributes};
         delete ampRecaptchaInputConfig['name'];
 
-        return allowConsoleError(() => {
-          return expect(
+        return allowConsoleError(async () => {
+          await expect(() =>
             getRecaptchaInput(ampRecaptchaInputConfig)
-          ).to.eventually.be.rejectedWith(/The name attribute is required for/);
+          ).to.asyncThrow(/The name attribute is required for/);
         });
       });
 
@@ -76,12 +76,10 @@ describes.realWin(
         const ampRecaptchaInputConfig = {...ampRecaptchaInputAttributes};
         delete ampRecaptchaInputConfig['data-sitekey'];
 
-        return allowConsoleError(() => {
-          return expect(
+        return allowConsoleError(async () => {
+          await expect(() =>
             getRecaptchaInput(ampRecaptchaInputConfig)
-          ).to.eventually.be.rejectedWith(
-            /The data-sitekey attribute is required for/
-          );
+          ).to.asyncThrow(/The data-sitekey attribute is required for/);
         });
       });
 
@@ -89,12 +87,10 @@ describes.realWin(
         const ampRecaptchaInputConfig = {...ampRecaptchaInputAttributes};
         delete ampRecaptchaInputConfig['data-action'];
 
-        return allowConsoleError(() => {
-          return expect(
+        return allowConsoleError(async () => {
+          await expect(() =>
             getRecaptchaInput(ampRecaptchaInputConfig)
-          ).to.eventually.be.rejectedWith(
-            /The data-action attribute is required for/
-          );
+          ).to.asyncThrow(/The data-action attribute is required for/);
         });
       });
 

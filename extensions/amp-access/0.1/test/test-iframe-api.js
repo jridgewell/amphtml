@@ -47,7 +47,7 @@ describes.fakeWin(
       expect(iframeApi.messenger_.targetOrCallback_).to.equal(win.parent);
     });
 
-    it('should connect and initialize', () => {
+    it('should connect and initialize', async () => {
       const config = {'property': 'A'};
       messengerMock.expects('connect').once();
       messengerMock.expects('sendCommand').withExactArgs('connect').once();
@@ -62,7 +62,7 @@ describes.fakeWin(
         'protocol': 'protocol1',
         'config': config,
       });
-      return expect(promise).to.eventually.equal(1);
+      expect(await promise).to.equal(1);
     });
 
     it('should authorize', () => {

@@ -106,16 +106,14 @@ describes.realWin('Ad loader', {amp: true}, (env) => {
       });
 
       describe('#upgradeCallback', () => {
-        it('fails upgrade on unregistered type', () => {
+        it('fails upgrade on unregistered type', async () => {
           ampAdElement.setAttribute('type', 'zort');
-          return expect(ampAd.upgradeCallback()).to.eventually.be.rejected;
+          await expect(() => ampAd.upgradeCallback()).to.asyncThrow();
         });
 
-        it('falls back to 3p for registered, non-A4A type', () => {
+        it('falls back to 3p for registered, non-A4A type', async () => {
           ampAd = new AmpAd(ampAdElement);
-          return expect(ampAd.upgradeCallback()).to.eventually.be.instanceof(
-            AmpAd3PImpl
-          );
+          expect(await ampAd.upgradeCallback()).to.be.instanceof(AmpAd3PImpl);
         });
       });
 
@@ -140,7 +138,7 @@ describes.realWin('Ad loader', {amp: true}, (env) => {
         });
       });
 
-      it('falls back to Delayed Fetch if remote.html is used', () => {
+      it('falls back to Delayed Fetch if remote.html is used', async () => {
         const meta = doc.createElement('meta');
         meta.setAttribute('name', 'amp-3p-iframe-src');
         meta.setAttribute('content', 'https://example.test/remote.html');
@@ -150,7 +148,7 @@ describes.realWin('Ad loader', {amp: true}, (env) => {
         };
         ampAdElement.setAttribute('type', 'zort');
         const upgraded = new AmpAd(ampAdElement).upgradeCallback();
-        return expect(upgraded).to.eventually.be.instanceof(AmpAd3PImpl);
+        expect(await upgraded).to.be.instanceof(AmpAd3PImpl);
       });
 
       it('uses Fast Fetch if just RTC is used', () => {

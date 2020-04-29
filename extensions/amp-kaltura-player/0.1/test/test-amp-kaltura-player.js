@@ -81,14 +81,12 @@ describes.realWin(
     });
 
     it('requires data-account', () => {
-      return allowConsoleError(() => {
-        return expect(
+      return allowConsoleError(async () => {
+        await expect(() =>
           getKaltura({}).then((kp) => {
             kp.build();
           })
-        ).to.eventually.be.rejectedWith(
-          /The data-partner attribute is required for/
-        );
+        ).to.asyncThrow(/The data-partner attribute is required for/);
       });
     });
 

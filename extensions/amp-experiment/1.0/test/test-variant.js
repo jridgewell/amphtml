@@ -265,9 +265,9 @@ describes.sandboxed('allocateVariant', {}, (env) => {
     }).to.not.throw();
   });
 
-  it('should work in non-sticky mode', () => {
-    return expect(
-      allocateVariant(ampdoc, fakeViewer, 'name', {
+  it('should work in non-sticky mode', async () => {
+    expect(
+      await allocateVariant(ampdoc, fakeViewer, 'name', {
         sticky: false,
         variants: {
           '-Variant_1': {
@@ -280,12 +280,12 @@ describes.sandboxed('allocateVariant', {}, (env) => {
           },
         },
       })
-    ).to.eventually.equal('-Variant_2');
+    ).to.equal('-Variant_2');
   });
 
-  it('should allocate variant in name order', () => {
-    return expect(
-      allocateVariant(ampdoc, fakeViewer, 'name', {
+  it('should allocate variant in name order', async () => {
+    expect(
+      await allocateVariant(ampdoc, fakeViewer, 'name', {
         sticky: false,
         variants: {
           '-Variant_2': {
@@ -298,12 +298,12 @@ describes.sandboxed('allocateVariant', {}, (env) => {
           },
         },
       })
-    ).to.eventually.equal('-Variant_2');
+    ).to.equal('-Variant_2');
   });
 
-  it("can have no variant allocated if variants don't add up to 100", () => {
-    return expect(
-      allocateVariant(ampdoc, fakeViewer, 'name', {
+  it("can have no variant allocated if variants don't add up to 100", async () => {
+    expect(
+      await allocateVariant(ampdoc, fakeViewer, 'name', {
         sticky: false,
         variants: {
           '-Variant_1': {
@@ -320,13 +320,13 @@ describes.sandboxed('allocateVariant', {}, (env) => {
           },
         },
       })
-    ).to.eventually.equal(null);
+    ).to.equal(null);
   });
 
-  it('allow variant override from URL fragment', () => {
+  it('allow variant override from URL fragment', async () => {
     getParamStub.withArgs('amp-x-Name').returns('-Variant_1');
-    return expect(
-      allocateVariant(ampdoc, fakeViewer, 'Name', {
+    expect(
+      await allocateVariant(ampdoc, fakeViewer, 'Name', {
         sticky: false,
         variants: {
           '-Variant_1': {
@@ -339,13 +339,13 @@ describes.sandboxed('allocateVariant', {}, (env) => {
           },
         },
       })
-    ).to.eventually.equal('-Variant_1');
+    ).to.equal('-Variant_1');
   });
 
-  it('variant override should ignore non-existed variant name', () => {
+  it('variant override should ignore non-existed variant name', async () => {
     getParamStub.withArgs('amp-x-name').returns('-Variant_3');
-    return expect(
-      allocateVariant(ampdoc, fakeViewer, 'name', {
+    expect(
+      await allocateVariant(ampdoc, fakeViewer, 'name', {
         sticky: false,
         variants: {
           '-Variant_1': {
@@ -358,10 +358,10 @@ describes.sandboxed('allocateVariant', {}, (env) => {
           },
         },
       })
-    ).to.eventually.equal('-Variant_2');
+    ).to.equal('-Variant_2');
   });
 
-  it('should work in sticky mode with default CID scope', () => {
+  it('should work in sticky mode with default CID scope', async () => {
     getCidStub
       .withArgs({
         scope: 'amp-experiment',
@@ -369,8 +369,8 @@ describes.sandboxed('allocateVariant', {}, (env) => {
       })
       .returns(Promise.resolve('123abc'));
     uniformStub.withArgs('name:123abc').returns(Promise.resolve(0.4));
-    return expect(
-      allocateVariant(ampdoc, fakeViewer, 'name', {
+    expect(
+      await allocateVariant(ampdoc, fakeViewer, 'name', {
         variants: {
           '-Variant_1': {
             weight: 50,
@@ -382,10 +382,10 @@ describes.sandboxed('allocateVariant', {}, (env) => {
           },
         },
       })
-    ).to.eventually.equal('-Variant_1');
+    ).to.equal('-Variant_1');
   });
 
-  it('should work in sticky mode with custom CID scope', () => {
+  it('should work in sticky mode with custom CID scope', async () => {
     getCidStub
       .withArgs({
         scope: 'custom-scope',
@@ -393,8 +393,8 @@ describes.sandboxed('allocateVariant', {}, (env) => {
       })
       .returns(Promise.resolve('123abc'));
     uniformStub.withArgs('name:123abc').returns(Promise.resolve(0.4));
-    return expect(
-      allocateVariant(ampdoc, fakeViewer, 'name', {
+    expect(
+      await allocateVariant(ampdoc, fakeViewer, 'name', {
         cidScope: 'custom-scope',
         variants: {
           '-Variant_1': {
@@ -407,10 +407,10 @@ describes.sandboxed('allocateVariant', {}, (env) => {
           },
         },
       })
-    ).to.eventually.equal('-Variant_1');
+    ).to.equal('-Variant_1');
   });
 
-  it('should work in sticky mode with custom group', () => {
+  it('should work in sticky mode with custom group', async () => {
     getCidStub
       .withArgs({
         scope: 'amp-experiment',
@@ -418,8 +418,8 @@ describes.sandboxed('allocateVariant', {}, (env) => {
       })
       .returns(Promise.resolve('123abc'));
     uniformStub.withArgs('custom-group:123abc').returns(Promise.resolve(0.4));
-    return expect(
-      allocateVariant(ampdoc, fakeViewer, 'name', {
+    expect(
+      await allocateVariant(ampdoc, fakeViewer, 'name', {
         group: 'custom-group',
         variants: {
           '-Variant_1': {
@@ -432,10 +432,10 @@ describes.sandboxed('allocateVariant', {}, (env) => {
           },
         },
       })
-    ).to.eventually.equal('-Variant_1');
+    ).to.equal('-Variant_1');
   });
 
-  it('should have variant allocated if consent is given', () => {
+  it('should have variant allocated if consent is given', async () => {
     getNotificationStub.withArgs('notif-1').returns(
       Promise.resolve({
         isDismissed: () => {
@@ -451,8 +451,8 @@ describes.sandboxed('allocateVariant', {}, (env) => {
       })
       .returns(Promise.resolve('123abc'));
     uniformStub.withArgs('name:123abc').returns(Promise.resolve(0.4));
-    return expect(
-      allocateVariant(ampdoc, fakeViewer, 'name', {
+    expect(
+      await allocateVariant(ampdoc, fakeViewer, 'name', {
         consentNotificationId: 'notif-1',
         variants: {
           '-Variant_1': {
@@ -465,13 +465,13 @@ describes.sandboxed('allocateVariant', {}, (env) => {
           },
         },
       })
-    ).to.eventually.equal('-Variant_1');
+    ).to.equal('-Variant_1');
   });
 
-  it('should have no variant allocated if notification not found', () => {
+  it('should have no variant allocated if notification not found', async () => {
     getNotificationStub.withArgs('notif-1').returns(Promise.resolve(null));
 
-    return expect(
+    await expect(() =>
       allocateVariant(ampdoc, fakeViewer, 'name', {
         consentNotificationId: 'notif-1',
         variants: {
@@ -485,10 +485,10 @@ describes.sandboxed('allocateVariant', {}, (env) => {
           },
         },
       })
-    ).to.eventually.be.rejectedWith('Notification not found: notif-1');
+    ).to.asyncThrow('Notification not found: notif-1');
   });
 
-  it('should have no variant allocated if consent is missing', () => {
+  it('should have no variant allocated if consent is missing', async () => {
     getNotificationStub.withArgs('notif-1').returns(
       Promise.resolve({
         isDismissed: () => {
@@ -499,8 +499,8 @@ describes.sandboxed('allocateVariant', {}, (env) => {
 
     getCidStub.returns(Promise.resolve('123abc'));
     uniformStub.returns(Promise.resolve(0.4));
-    return expect(
-      allocateVariant(ampdoc, fakeViewer, 'name', {
+    expect(
+      await allocateVariant(ampdoc, fakeViewer, 'name', {
         consentNotificationId: 'notif-1',
         variants: {
           '-Variant_1': {
@@ -513,6 +513,6 @@ describes.sandboxed('allocateVariant', {}, (env) => {
           },
         },
       })
-    ).to.eventually.equal(null);
+    ).to.equal(null);
   });
 });

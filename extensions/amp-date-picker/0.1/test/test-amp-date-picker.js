@@ -323,8 +323,8 @@ describes.realWin(
 
             const {layoutCallback} = createDatePicker({}, form);
 
-            allowConsoleError(() => {
-              expect(layoutCallback()).to.be.rejectedWith(
+            allowConsoleError(async () => {
+              await expect(() => layoutCallback()).to.asyncThrow(
                 'another #date input exists'
               );
             });
@@ -420,8 +420,8 @@ describes.realWin(
 
             const {layoutCallback} = createDatePicker({type: 'range'}, form);
 
-            allowConsoleError(() => {
-              expect(layoutCallback()).to.be.rejectedWith(
+            allowConsoleError(async () => {
+              await expect(() => layoutCallback()).to.asyncThrow(
                 'another #start-date input exists'
               );
             });

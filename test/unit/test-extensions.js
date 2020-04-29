@@ -134,7 +134,7 @@ describes.sandboxed('Extensions', {}, () => {
       );
     });
 
-    it('should fail registration with promise', () => {
+    it('should fail registration with promise', async () => {
       const promise = extensions.waitForExtension(win, 'amp-ext');
       expect(() => {
         extensions.registerExtension(
@@ -154,7 +154,7 @@ describes.sandboxed('Extensions', {}, () => {
       expect(holder.resolve).to.exist;
       expect(holder.reject).to.exist;
       expect(holder.promise).to.exist;
-      expect(promise).to.eventually.equal(holder.promise);
+      expect(await promise).to.equal(holder.promise);
 
       return extensions.waitForExtension(win, 'amp-ext').then(
         () => {

@@ -762,27 +762,23 @@ describes.realWin(
       it.skip(
         'getNotificaiton should return notification object after ' +
           'registration',
-        () => {
+        async () => {
           const element = getUserNotification();
           const notification = new AmpUserNotification(element);
           service.registerUserNotification('n1', notification);
-          return Promise.all([
-            expect(service.getNotification('n1')).to.eventually.equal(
-              notification
-            ),
-            expect(service.getNotification('n2')).to.eventually.equal(
-              undefined
-            ),
+          Promise.all([
+            expect(await service.getNotification('n1')).to.equal(notification),
+            expect(await service.getNotification('n2')).to.equal(undefined),
           ]);
         }
       );
 
-      it.skip('should be able to get AmpUserNotification object by ID', () => {
+      it.skip('should be able to get AmpUserNotification object by ID', async () => {
         const element = getUserNotification();
         const userNotification = new AmpUserNotification(element);
         userNotification.dialogResolve_();
         service.registerUserNotification('n1', userNotification);
-        return expect(service.get('n1')).to.eventually.equal(userNotification);
+        expect(await service.get('n1')).to.equal(userNotification);
       });
 
       it('should queue up multiple amp-user-notification elements', function* () {

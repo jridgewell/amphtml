@@ -397,31 +397,31 @@ describes.realWin('AmpdocAnalyticsRoot', {amp: 1}, (env) => {
       it('should ignore special selectors', async () => {
         child.classList.add('myClass');
         expectAsyncConsoleError(/Element ":host" not found/, 1);
-        await expect(
+        await await expect(() =>
           root.getAmpElements(body, [':host'], null)
-        ).to.be.rejectedWith(/Element ":host" not found​​​/);
+        ).to.asyncThrow(/Element ":host" not found​​​/);
       });
 
       it('should handle missing selector for AMP search', async () => {
         expectAsyncConsoleError(/Element "#unknown" not found/, 1);
-        await expect(
+        await await expect(() =>
           root.getAmpElements(body, ['#unknown'], null)
-        ).to.be.rejectedWith(/Element "#unknown" not found​​​/);
+        ).to.asyncThrow(/Element "#unknown" not found​​​/);
       });
 
       it('should handle invalid selector', async () => {
         expectAsyncConsoleError(/Invalid query selector 12345/, 1);
-        await expect(
+        await await expect(() =>
           root.getAmpElements(body, [12345], null)
-        ).to.be.rejectedWith(/Invalid query selector 12345​​​/);
+        ).to.asyncThrow(/Invalid query selector 12345​​​/);
       });
 
       it('should fail if the found element is not AMP for AMP search', async () => {
         expectAsyncConsoleError(/required to be an AMP element/, 1);
         child.classList.remove('i-amphtml-element');
-        await expect(
+        await await expect(() =>
           root.getAmpElements(body, ['#child'], null)
-        ).to.be.rejectedWith(/required to be an AMP element/);
+        ).to.asyncThrow(/required to be an AMP element/);
       });
 
       it('should fail if selection method is found', async () => {
@@ -765,17 +765,17 @@ describes.realWin(
 
       it('should handle missing selector for AMP search', async () => {
         expectAsyncConsoleError(/Element "#unknown" not found/, 1);
-        await expect(
+        await await expect(() =>
           root.getAmpElements(body, ['#unknown'], null)
-        ).to.be.rejectedWith(/Element "#unknown" not found​​​/);
+        ).to.asyncThrow(/Element "#unknown" not found​​​/);
       });
 
       it('should fail if the found element is not AMP for AMP search', async () => {
         expectAsyncConsoleError(/required to be an AMP element/, 1);
         child.classList.remove('i-amphtml-element');
-        await expect(
+        await await expect(() =>
           root.getAmpElements(body, ['#child'], null)
-        ).to.be.rejectedWith(/required to be an AMP element/);
+        ).to.asyncThrow(/required to be an AMP element/);
       });
     });
 

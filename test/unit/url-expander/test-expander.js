@@ -43,51 +43,51 @@ describes.realWin(
         DEFGHIJKLMNOP: () => 'thirteen',
       };
 
-      it('should handle empty', () => {
+      it('should handle empty', async () => {
         const url = 'http://www.google.com/?test=FAKE(__ga)';
-        return expect(
-          new Expander(variableSource, mockBindings).expand(url)
-        ).to.eventually.equal(url);
+        expect(
+          await new Expander(variableSource, mockBindings).expand(url)
+        ).to.equal(url);
       });
 
-      it('should return single item', () => {
+      it('should return single item', async () => {
         const url = 'http://www.google.com/?test=RANDOM';
         const expected = 'http://www.google.com/?test=0.1234';
-        return expect(
-          new Expander(variableSource, mockBindings).expand(url)
-        ).to.eventually.equal(expected);
+        expect(
+          await new Expander(variableSource, mockBindings).expand(url)
+        ).to.equal(expected);
       });
 
-      it('should sort basic case', () => {
+      it('should sort basic case', async () => {
         const url = 'http://www.google.com/?test=ABCD&BAR&foo=RANDOM';
         const expected = 'http://www.google.com/?test=four&BAR&foo=0.1234';
-        return expect(
-          new Expander(variableSource, mockBindings).expand(url)
-        ).to.eventually.equal(expected);
+        expect(
+          await new Expander(variableSource, mockBindings).expand(url)
+        ).to.equal(expected);
       });
 
-      it('will always prefer the first match in overlap', () => {
+      it('will always prefer the first match in overlap', async () => {
         const url = 'http://www.google.com/?test=ABCDEFGHIJKLMNOPQRS';
         const expected = 'http://www.google.com/?test=tenKLMNOPQRS';
-        return expect(
-          new Expander(variableSource, mockBindings).expand(url)
-        ).to.eventually.equal(expected);
+        expect(
+          await new Expander(variableSource, mockBindings).expand(url)
+        ).to.equal(expected);
       });
 
-      it('will prefer longer match if same start index', () => {
+      it('will prefer longer match if same start index', async () => {
         const url = 'http://www.google.com/?test=ABCD';
         const expected = 'http://www.google.com/?test=four';
-        return expect(
-          new Expander(variableSource, mockBindings).expand(url)
-        ).to.eventually.equal(expected);
+        expect(
+          await new Expander(variableSource, mockBindings).expand(url)
+        ).to.equal(expected);
       });
 
-      it('should handle keywords next to each other', () => {
+      it('should handle keywords next to each other', async () => {
         const url = 'http://www.google.com/?test=ABCDRANDOM';
         const expected = 'http://www.google.com/?test=four0.1234';
-        return expect(
-          new Expander(variableSource, mockBindings).expand(url)
-        ).to.eventually.equal(expected);
+        expect(
+          await new Expander(variableSource, mockBindings).expand(url)
+        ).to.equal(expected);
       });
     });
 
@@ -107,31 +107,31 @@ describes.realWin(
         return new Expander(variableSource, mockBindings);
       }
 
-      it('should not replace unwhitelisted RANDOM', () => {
+      it('should not replace unwhitelisted RANDOM', async () => {
         const expander = createExpanderWithWhitelist(
           'ABC,ABCD,CANONICAL',
           mockBindings
         );
         const url = 'http://www.google.com/?test=RANDOM';
         const expected = 'http://www.google.com/?test=RANDOM';
-        return expect(expander.expand(url)).to.eventually.equal(expected);
+        expect(await expander.expand(url)).to.equal(expected);
       });
 
-      it('should replace whitelisted ABCD', () => {
+      it('should replace whitelisted ABCD', async () => {
         const expander = createExpanderWithWhitelist(
           'ABC,ABCD,CANONICAL',
           mockBindings
         );
         const url = 'http://www.google.com/?test=ABCD';
         const expected = 'http://www.google.com/?test=four';
-        return expect(expander.expand(url)).to.eventually.equal(expected);
+        expect(await expander.expand(url)).to.equal(expected);
       });
 
-      it('should not replace anything with empty whitelist', () => {
+      it('should not replace anything with empty whitelist', async () => {
         const expander = createExpanderWithWhitelist('', mockBindings);
         const url = 'http://www.google.com/?test=ABCD';
         const expected = 'http://www.google.com/?test=ABCD';
-        return expect(expander.expand(url)).to.eventually.equal(expected);
+        expect(await expander.expand(url)).to.equal(expected);
       });
     });
 
@@ -265,31 +265,31 @@ describes.realWin(
       describe('called asyncronously', () => {
         sharedTestCases.forEach((test) => {
           const {description, input, output} = test;
-          it(description, () =>
+          it(description, async () =>
             expect(
-              new Expander(variableSource, mockBindings).expand(input)
-            ).to.eventually.equal(output)
+              await new Expander(variableSource, mockBindings).expand(input)
+            ).to.equal(output)
           );
         });
 
         describe('unique cases', () => {
-          it('should handle real urls', () => {
+          it('should handle real urls', async () => {
             const url =
               'http://www.amp.google.com/?client=CLIENT_ID(__ga)&canon=CANONICAL_URL&random=RANDOM';
             const expected =
               'http://www.amp.google.com/?client=amp-GA12345&canon=www.google.com&random=123456';
-            return expect(
-              new Expander(variableSource, mockBindings).expand(url)
-            ).to.eventually.equal(expected);
+            expect(
+              await new Expander(variableSource, mockBindings).expand(url)
+            ).to.equal(expected);
           });
 
-          it('should handle tokens with parenthesis next to each other', () => {
+          it('should handle tokens with parenthesis next to each other', async () => {
             const url =
               'http://www.google.com/?test=RANDOMCLIENT_ID(__ga)UPPERCASE(foo)';
             const expected = 'http://www.google.com/?test=123456amp-GA12345FOO';
-            return expect(
-              new Expander(variableSource, mockBindings).expand(url)
-            ).to.eventually.equal(expected);
+            expect(
+              await new Expander(variableSource, mockBindings).expand(url)
+            ).to.equal(expected);
           });
         });
       });
@@ -497,18 +497,18 @@ describes.realWin(
       });
 
       describe('opt_whiteList', () => {
-        it('should only resolve values in the whitelist', () => {
+        it('should only resolve values in the whitelist', async () => {
           const url = 'UPPERCASE(foo)RANDOMLOWERCASE(BAR)';
           const whitelist = {RANDOM: true};
-          return expect(
-            new Expander(
+          expect(
+            await new Expander(
               variableSource,
               mockBindings,
               /* opt_collectVars */ undefined,
               /* opt_sync */ false,
               /* opt_whiteList */ whitelist
             ).expand(url)
-          ).to.eventually.equal('UPPERCASE(foo)123456LOWERCASE(BAR)');
+          ).to.equal('UPPERCASE(foo)123456LOWERCASE(BAR)');
         });
       });
     });

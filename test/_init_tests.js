@@ -492,8 +492,6 @@ afterEach(function () {
   cancelTimersForTesting();
 });
 
-chai.use(require('chai-as-promised')); // eslint-disable-line 
-
 chai.Assertion.addMethod('attribute', function (attr) {
   const obj = this._obj;
   const tagName = obj.tagName.toLowerCase();
@@ -585,4 +583,31 @@ chai.Assertion.addMethod('jsonEqual', function (compare) {
     a,
     b
   );
+});
+
+chai.Assertion.addMethod('asyncThrow', async function () {
+  const fn = this._obj;
+  let threw = false;
+  let err;
+  try {
+    await fn();
+  } catch (e) {
+    threw = true;
+    err = e;
+  } finally {
+    let base = expect(() => {
+      if (threw) {
+        throw err;
+      }
+    }).to;
+    if (chai.util.flag(this, 'negate')) {
+      base = base.not;
+    }
+    const method = base.throw;
+
+    // This is a fancy of way of calling apply, without doing
+    // method.apply(base, arguments). This is necessary because base and method
+    // are proxy wrapper, and do weird things.
+    Function.prototype.apply.call(method, base, arguments);
+  }
 });

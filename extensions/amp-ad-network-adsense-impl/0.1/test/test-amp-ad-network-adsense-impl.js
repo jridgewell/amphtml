@@ -732,11 +732,9 @@ describes.realWin(
             expect(url).to.match(/(\?|&)cr_col=cols(&|$)/);
           });
         });
-        it('sets appropriate is_amp for canonical', () => {
+        it('sets appropriate is_amp for canonical', async () => {
           env.sandbox.stub(impl, 'isXhrAllowed').returns(false);
-          return expect(impl.getAdUrl()).to.eventually.match(
-            /(\?|&)is_amp=5(&|$)/
-          );
+          expect(await impl.getAdUrl()).to.match(/(\?|&)is_amp=5(&|$)/);
         });
       });
 
@@ -828,17 +826,15 @@ describes.realWin(
         });
       });
 
-      it('includes adsense package code when present', () => {
+      it('includes adsense package code when present', async () => {
         element.setAttribute('data-package', 'package_code');
-        return expect(impl.getAdUrl()).to.eventually.match(
-          /pwprc=package_code(&|$)/
-        );
+        expect(await impl.getAdUrl()).to.match(/pwprc=package_code(&|$)/);
       });
 
-      it('should return empty string if unknown consentState', () =>
+      it('should return empty string if unknown consentState', async () =>
         expect(
-          impl.getAdUrl({consentState: CONSENT_POLICY_STATE.UNKNOWN})
-        ).to.eventually.equal(''));
+          await impl.getAdUrl({consentState: CONSENT_POLICY_STATE.UNKNOWN})
+        ).to.equal(''));
 
       it('should include npa=1 if unknown consent & explicit npa', () => {
         impl.element.setAttribute('data-npa-on-unknown-consent', 'true');
@@ -1283,7 +1279,7 @@ describes.realWin(
     });
 
     describe('#checksumVerification', () => {
-      it('should call super if missing Algorithm header', () => {
+      it('should call super if missing Algorithm header', async () => {
         env.sandbox
           .stub(AmpA4A.prototype, 'maybeValidateAmpCreative')
           .returns(Promise.resolve('foo'));
@@ -1301,11 +1297,11 @@ describes.realWin(
           },
         };
         expect(
-          AmpAdNetworkAdsenseImpl.prototype.maybeValidateAmpCreative(
+          await AmpAdNetworkAdsenseImpl.prototype.maybeValidateAmpCreative(
             utf8Encode(creative),
             mockHeaders
           )
-        ).to.eventually.equal('foo');
+        ).to.equal('foo');
       });
 
       it('should properly validate checksum', () => {
@@ -1330,7 +1326,7 @@ describes.realWin(
           });
       });
 
-      it('should fail validation if invalid checksum', () => {
+      it('should fail validation if invalid checksum', async () => {
         const creative = '<html><body>This is some text</body></html>';
         const mockHeaders = {
           get: (key) => {
@@ -1345,11 +1341,11 @@ describes.realWin(
           },
         };
         expect(
-          AmpAdNetworkAdsenseImpl.prototype.maybeValidateAmpCreative(
+          await AmpAdNetworkAdsenseImpl.prototype.maybeValidateAmpCreative(
             utf8Encode(creative),
             mockHeaders
           )
-        ).to.eventually.not.be.ok;
+        ).to.not.be.ok;
       });
     });
 

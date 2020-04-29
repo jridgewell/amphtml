@@ -66,10 +66,10 @@ describe('impression', () => {
     toggleExperiment(window, 'alp', false);
   });
 
-  it('should do nothing if the experiment is off', () => {
+  it('should do nothing if the experiment is off', async () => {
     viewer.getParam.throws(new Error('Should not be called'));
     maybeTrackImpression(window);
-    return expect(getTrackImpressionPromise()).to.be.fulfilled;
+    await getTrackImpressionPromise();
   });
 
   it('should resolve if no click no replaceUrl', () => {
@@ -117,20 +117,20 @@ describe('impression', () => {
   });
 
   describe('clickUrl', () => {
-    it('should do nothing if there is no click arg', () => {
+    it('should do nothing if there is no click arg', async () => {
       toggleExperiment(window, 'alp', true);
       viewer.getParam.withArgs('click').returns('');
       maybeTrackImpression(window);
       expect(xhr.fetchJson).to.have.not.been.called;
-      return expect(getTrackImpressionPromise()).to.be.fulfilled;
+      await getTrackImpressionPromise();
     });
 
-    it('should do nothing if there is the click arg is http', () => {
+    it('should do nothing if there is the click arg is http', async () => {
       toggleExperiment(window, 'alp', true);
       viewer.getParam.withArgs('click').returns('http://www.example.com');
       maybeTrackImpression(window);
       expect(xhr.fetchJson).to.have.not.been.called;
-      return expect(getTrackImpressionPromise()).to.be.fulfilled;
+      await getTrackImpressionPromise();
     });
 
     it('should invoke click URL with experiment on', function* () {
@@ -282,14 +282,14 @@ describe('impression', () => {
   });
 
   describe('replaceUrl', () => {
-    it('do nothing if no init replaceUrl param', function* () {
+    it('do nothing if no init replaceUrl param', async function* () {
       toggleExperiment(window, 'alp', true);
       window.sandbox.spy(viewer, 'replaceUrl');
       viewer.hasCapability.withArgs('replaceUrl').returns(true);
       maybeTrackImpression(window);
       yield macroTask();
       expect(viewer.replaceUrl).to.have.not.been.called;
-      return expect(getTrackImpressionPromise()).to.be.fulfilled;
+      await getTrackImpressionPromise();
     });
 
     it('should use init replaceUrl parm if viewer has no capability', () => {

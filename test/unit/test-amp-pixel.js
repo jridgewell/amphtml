@@ -100,22 +100,22 @@ describes.realWin('amp-pixel', {amp: true}, (env) => {
     });
   });
 
-  it('should disallow http URLs', () => {
+  it('should disallow http URLs', async () => {
     expectAsyncConsoleError(urlErrorRegex);
     const url = 'http://pubads.g.doubleclick.net/activity;dc_iu=1/abc;ord=2';
-    return expect(trigger(url)).to.eventually.be.rejectedWith(urlErrorRegex);
+    await expect(() => trigger(url)).to.asyncThrow(urlErrorRegex);
   });
 
-  it('should disallow relative URLs', () => {
+  it('should disallow relative URLs', async () => {
     expectAsyncConsoleError(urlErrorRegex);
     const url = '/activity;dc_iu=1/abc;ord=2';
-    return expect(trigger(url)).to.eventually.be.rejectedWith(urlErrorRegex);
+    await expect(() => trigger(url)).to.asyncThrow(urlErrorRegex);
   });
 
-  it('should disallow fake-protocol URLs', () => {
+  it('should disallow fake-protocol URLs', async () => {
     expectAsyncConsoleError(urlErrorRegex);
     const url = 'https/activity;dc_iu=1/abc;ord=2';
-    return expect(trigger(url)).to.eventually.be.rejectedWith(urlErrorRegex);
+    await expect(() => trigger(url)).to.asyncThrow(urlErrorRegex);
   });
 
   it('should replace URL parameters', () => {

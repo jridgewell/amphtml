@@ -213,13 +213,13 @@ describes.realWin(
       delete IFRAME_TRANSPORTS[TEST_3P_VENDOR];
     });
 
-    it('should reject non-JSON children', () => {
+    it('should reject non-JSON children', async () => {
       const el = win.document.createElement('amp-ad-exit');
       el.appendChild(win.document.createElement('p'));
       win.document.body.appendChild(el);
       let promise;
       allowConsoleError(() => (promise = el.build()));
-      return expect(promise).to.be.rejectedWith(/application\/json/);
+      await expect(() => promise).to.asyncThrow(/application\/json/);
     });
 
     it('should do nothing for missing targets', () => {
@@ -744,12 +744,12 @@ describes.realWin(
       );
     });
 
-    it('should reject unrecognized 3P Analytics vendors', () => {
+    it('should reject unrecognized 3P Analytics vendors', async () => {
       const unkVendor = JSON.parse(JSON.stringify(EXIT_CONFIG));
       unkVendor.targets.variableFrom3pAnalytics.vars._foo.vendorAnalyticsSource =
         'nonexistent_vendor';
 
-      expect(makeElementWithConfig(unkVendor)).to.eventually.be.rejectedWith(
+      await expect(() => makeElementWithConfig(unkVendor)).to.asyncThrow(
         /Unknown vendor/
       );
     });

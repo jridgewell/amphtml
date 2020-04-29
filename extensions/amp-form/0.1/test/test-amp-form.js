@@ -1041,10 +1041,11 @@ describes.repeated(
               target: form,
               preventDefault: env.sandbox.spy(),
             };
-            return ampForm.handleSubmitEvent_(event).then(() => {
+            return ampForm.handleSubmitEvent_(event).then(async () => {
               const findTemplateStub = ampForm.templates_.findAndRenderTemplate;
-              expect(ampForm.xhrSubmitPromiseForTesting()).to.eventually.be
-                .rejected;
+              await expect(() =>
+                ampForm.xhrSubmitPromiseForTesting()
+              ).to.asyncThrow();
               return ampForm.xhrSubmitPromiseForTesting().catch(() => {
                 expect(mutateElementStub).to.have.been.calledOnce;
                 expect(findTemplateStub).to.be.called;

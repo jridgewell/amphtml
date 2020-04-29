@@ -481,7 +481,7 @@ describes.realWin('DoubleClick Fast Fetch RTC', {amp: true}, (env) => {
       });
     });
 
-    it('should respect timeout for referrer', () => {
+    it('should respect timeout for referrer', async () => {
       element = createElementWithAttributes(env.win.document, 'amp-ad', {
         type: 'doubleclick',
       });
@@ -495,7 +495,7 @@ describes.realWin('DoubleClick Fast Fetch RTC', {amp: true}, (env) => {
       const viewer = Services.viewerForDoc(impl.getAmpDoc());
       env.sandbox.stub(viewer, 'getReferrerUrl').returns(new Promise(() => {}));
       const customMacros = impl.getCustomRealTimeConfigMacros_();
-      return expect(customMacros.REFERRER(0)).to.eventually.be.undefined;
+      expect(await customMacros.REFERRER(0)).to.be.undefined;
     });
 
     it('should handle TGT macro when targeting not set', () => {

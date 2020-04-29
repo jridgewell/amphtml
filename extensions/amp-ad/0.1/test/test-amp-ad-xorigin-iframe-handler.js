@@ -202,7 +202,7 @@ describe('amp-ad-xorigin-iframe-handler', () => {
         return expectPostMessage(iframe.contentWindow, window, {
           sentinel: 'amp3ptest' + testIndex,
           type: 'bootstrap-loaded',
-        }).then(() => {
+        }).then(async () => {
           const clock = window.sandbox.useFakeTimers();
           clock.tick(0);
           const timeoutPromise = Services.timerFor(window).timeoutPromise(
@@ -210,9 +210,7 @@ describe('amp-ad-xorigin-iframe-handler', () => {
             initPromise
           );
           clock.tick(2001);
-          return expect(timeoutPromise).to.eventually.be.rejectedWith(
-            /timeout/
-          );
+          await expect(() => timeoutPromise).to.asyncThrow(/timeout/);
         });
       });
 

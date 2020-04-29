@@ -619,7 +619,7 @@ describes.realWin('CustomElement', {amp: true}, (env) => {
         return element.whenBuilt();
       });
 
-      it('should not build on consent insufficient', () => {
+      it('should not build on consent insufficient', async () => {
         const element = new ElementClass();
         env.sandbox
           .stub(Services, 'consentPolicyServiceForDocOrNull')
@@ -636,7 +636,7 @@ describes.realWin('CustomElement', {amp: true}, (env) => {
 
         clock.tick(1);
         container.appendChild(element);
-        return expect(element.whenBuilt()).to.eventually.be.rejectedWith(
+        await expect(() => element.whenBuilt()).to.asyncThrow(
           /BLOCK_BY_CONSENT/
         );
       });
@@ -668,7 +668,7 @@ describes.realWin('CustomElement', {amp: true}, (env) => {
         );
       });
 
-      it('should anticipate build errors', () => {
+      it('should anticipate build errors', async () => {
         expectAsyncConsoleError(/intentional/, 2);
         const element = new ElementClass();
         env.sandbox
@@ -680,9 +680,7 @@ describes.realWin('CustomElement', {amp: true}, (env) => {
         expect(element.isBuilt()).to.be.false;
         expect(element).to.have.class('i-amphtml-notbuilt');
         expect(element).to.have.class('amp-notbuilt');
-        return expect(element.whenBuilt()).to.eventually.be.rejectedWith(
-          /intentional/
-        );
+        await expect(() => element.whenBuilt()).to.asyncThrow(/intentional/);
       });
 
       it('Element - build creates a placeholder if one does not exist', () => {

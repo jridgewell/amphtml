@@ -1207,21 +1207,21 @@ describes.fakeWin('AmpSubscriptions', {amp: true}, (env) => {
     it('should resolve authdata from local service', async () => {
       platformStore.resolveEntitlement('local', entitlement);
       await expect(
-        subscriptionService.getAuthdataField('data.test')
-      ).to.eventually.equal('a1');
+        await subscriptionService.getAuthdataField('data.test')
+      ).to.equal('a1');
     });
 
     it('should resolve authdata for a standard field', async () => {
       platformStore.resolveEntitlement('local', entitlement);
       await expect(
-        subscriptionService.getAuthdataField('grantReason')
-      ).to.eventually.equal('SUBSCRIBER');
+        await subscriptionService.getAuthdataField('grantReason')
+      ).to.equal('SUBSCRIBER');
     });
 
     it('should resolve authdata for an unknown value', async () => {
       platformStore.resolveEntitlement('local', entitlement);
-      await expect(subscriptionService.getAuthdataField('data.other')).to
-        .eventually.be.undefined;
+      await expect(await subscriptionService.getAuthdataField('data.other')).to
+        .be.undefined;
     });
 
     it('should resolve authdata on free pages', async () => {
@@ -1233,11 +1233,11 @@ describes.fakeWin('AmpSubscriptions', {amp: true}, (env) => {
       subscriptionService.start();
 
       await expect(
-        subscriptionService.getAuthdataField('grantReason')
-      ).to.eventually.equal(GrantReason.UNLOCKED);
+        await subscriptionService.getAuthdataField('grantReason')
+      ).to.equal(GrantReason.UNLOCKED);
       await expect(
-        subscriptionService.getAuthdataField('data.userAccount')
-      ).to.eventually.equal(undefined);
+        await subscriptionService.getAuthdataField('data.userAccount')
+      ).to.equal(undefined);
     });
   });
 });

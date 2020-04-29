@@ -72,8 +72,8 @@ describes.realWin(
     it('requires data-embedtype', () => {
       const params = {...POST_PARAMS};
       delete params['embedtype'];
-      return allowConsoleError(() => {
-        return expect(createAmpVkElement(params)).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => createAmpVkElement(params)).to.asyncThrow(
           /The data-embedtype attribute is required for/
         );
       });
@@ -95,8 +95,8 @@ describes.realWin(
     it('post::requires data-hash', () => {
       const params = {...POST_PARAMS};
       delete params['hash'];
-      return allowConsoleError(() => {
-        return expect(createAmpVkElement(params)).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => createAmpVkElement(params)).to.asyncThrow(
           /The data-hash attribute is required for/
         );
       });
@@ -105,8 +105,8 @@ describes.realWin(
     it('post::requires data-owner-id', () => {
       const params = {...POST_PARAMS};
       delete params['owner-id'];
-      return allowConsoleError(() => {
-        return expect(createAmpVkElement(params)).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => createAmpVkElement(params)).to.asyncThrow(
           /The data-owner-id attribute is required for/
         );
       });
@@ -115,8 +115,8 @@ describes.realWin(
     it('post::requires data-post-id', () => {
       const params = {...POST_PARAMS};
       delete params['post-id'];
-      return allowConsoleError(() => {
-        return expect(createAmpVkElement(params)).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => createAmpVkElement(params)).to.asyncThrow(
           /The data-post-id attribute is required for/
         );
       });
@@ -157,8 +157,8 @@ describes.realWin(
     it('poll::requires data-api-id', () => {
       const params = {...POLL_PARAMS};
       delete params['api-id'];
-      return allowConsoleError(() => {
-        return expect(createAmpVkElement(params)).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => createAmpVkElement(params)).to.asyncThrow(
           /The data-api-id attribute is required for/
         );
       });
@@ -167,8 +167,8 @@ describes.realWin(
     it('poll::requires data-poll-id', () => {
       const params = {...POLL_PARAMS};
       delete params['poll-id'];
-      return allowConsoleError(() => {
-        return expect(createAmpVkElement(params)).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => createAmpVkElement(params)).to.asyncThrow(
           /The data-poll-id attribute is required for/
         );
       });

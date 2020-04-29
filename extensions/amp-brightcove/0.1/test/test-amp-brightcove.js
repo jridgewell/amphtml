@@ -88,9 +88,9 @@ describes.realWin(
       });
     });
 
-    it('requires data-account', () => {
+    it('requires data-account', async () => {
       expectAsyncConsoleError(/The data-account attribute is required for/, 1);
-      return expect(getBrightcove({})).to.eventually.be.rejectedWith(
+      await expect(() => getBrightcove({})).to.asyncThrow(
         /The data-account attribute is required for/
       );
     });

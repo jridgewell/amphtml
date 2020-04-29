@@ -125,9 +125,9 @@ describes.fakeWin('ViewerSubscriptionPlatform', {amp: true}, (env) => {
         .stub(viewerPlatform, 'verifyAuthToken_')
         .callsFake(() => Promise.reject(new Error(reason)));
 
-      await expect(
-        viewerPlatform.getEntitlements()
-      ).to.eventually.be.rejectedWith(reason);
+      await await expect(() => viewerPlatform.getEntitlements()).to.asyncThrow(
+        reason
+      );
       expect(sendAuthTokenStub).to.be.calledWith(reason);
     });
 
@@ -139,9 +139,9 @@ describes.fakeWin('ViewerSubscriptionPlatform', {amp: true}, (env) => {
         .stub(viewerPlatform.viewer_, 'sendMessageAwaitResponse')
         .callsFake(() => Promise.resolve({error: {message: reason}}));
 
-      await expect(
-        viewerPlatform.getEntitlements()
-      ).to.eventually.be.rejectedWith(reason);
+      await await expect(() => viewerPlatform.getEntitlements()).to.asyncThrow(
+        reason
+      );
     });
 
     it('should throw error if entitlements request times out', async () => {
@@ -152,7 +152,7 @@ describes.fakeWin('ViewerSubscriptionPlatform', {amp: true}, (env) => {
 
       const entitlementsPromise = viewerPlatform.getEntitlements();
       clock.tick(ENTITLEMENTS_REQUEST_TIMEOUT + 1000);
-      await expect(entitlementsPromise).to.be.rejectedWith('timeout');
+      await await expect(() => entitlementsPromise).to.asyncThrow('timeout');
     });
 
     it('should use domain in cryptokeys param to get encrypted doc key', async () => {
@@ -208,9 +208,9 @@ describes.fakeWin('ViewerSubscriptionPlatform', {amp: true}, (env) => {
         'entitlements': [entitlementData],
       }));
 
-      await expect(
+      await await expect(() =>
         viewerPlatform.verifyAuthToken_('faketoken')
-      ).to.eventually.be.rejectedWith('Payload is expired​​​');
+      ).to.asyncThrow('Payload is expired​​​');
     });
 
     it('should reject promise for audience mismatch', async () => {
@@ -220,11 +220,9 @@ describes.fakeWin('ViewerSubscriptionPlatform', {amp: true}, (env) => {
         'entitlements': [entitlementData],
       }));
 
-      await expect(
+      await await expect(() =>
         viewerPlatform.verifyAuthToken_('faketoken')
-      ).to.eventually.be.rejectedWith(
-        /The mismatching "aud" field: random origin/
-      );
+      ).to.asyncThrow(/The mismatching "aud" field: random origin/);
     });
 
     it('should resolve promise with entitlement (single entitlement)', async () => {

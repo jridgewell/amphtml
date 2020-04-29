@@ -744,12 +744,12 @@ describes.realWin('amp-ad-network-doubleclick-impl', realWinConfig, (env) => {
       });
     });
 
-    it('handles Single Page Story Ad parameter', () => {
+    it('handles Single Page Story Ad parameter', async () => {
       const impl = new AmpAdNetworkDoubleclickImpl(element);
       impl.isSinglePageStoryAd_ = true;
       const urlPromise = impl.getAdUrl();
-      expect(urlPromise).to.eventually.match(/(\?|&)spsa=\d+x\d+(&|$)/);
-      expect(urlPromise).to.eventually.match(/(\?|&)sz=1x1(&|$)/);
+      expect(await urlPromise).to.match(/(\?|&)spsa=\d+x\d+(&|$)/);
+      expect(await urlPromise).to.match(/(\?|&)sz=1x1(&|$)/);
     });
 
     it('handles tagForChildDirectedTreatment', () => {
@@ -762,24 +762,24 @@ describes.realWin('amp-ad-network-doubleclick-impl', realWinConfig, (env) => {
 
     describe('data-force-safeframe', () => {
       const fsfRegexp = /(\?|&)fsf=1(&|$)/;
-      it('handles default', () =>
+      it('handles default', async () =>
         expect(
-          new AmpAdNetworkDoubleclickImpl(element).getAdUrl()
-        ).to.eventually.not.match(fsfRegexp));
+          await new AmpAdNetworkDoubleclickImpl(element).getAdUrl()
+        ).to.not.match(fsfRegexp));
 
-      it('case insensitive attribute name', () => {
+      it('case insensitive attribute name', async () => {
         element.setAttribute('data-FORCE-SafeFraMe', '1');
-        return expect(
-          new AmpAdNetworkDoubleclickImpl(element).getAdUrl()
-        ).to.eventually.match(fsfRegexp);
+        expect(
+          await new AmpAdNetworkDoubleclickImpl(element).getAdUrl()
+        ).to.match(fsfRegexp);
       });
 
       ['tRuE', 'true', 'TRUE', '1'].forEach((val) => {
-        it(`valid attribute: ${val}`, () => {
+        it(`valid attribute: ${val}`, async () => {
           element.setAttribute('data-force-safeframe', val);
-          return expect(
-            new AmpAdNetworkDoubleclickImpl(element).getAdUrl()
-          ).to.eventually.match(fsfRegexp);
+          expect(
+            await new AmpAdNetworkDoubleclickImpl(element).getAdUrl()
+          ).to.match(fsfRegexp);
         });
       });
 
@@ -795,11 +795,11 @@ describes.realWin('amp-ad-network-doubleclick-impl', realWinConfig, (env) => {
         'true ',
         ' true ',
       ].forEach((val) => {
-        it(`invalid attribute: ${val}`, () => {
+        it(`invalid attribute: ${val}`, async () => {
           element.setAttribute('data-force-safeframe', val);
-          return expect(
-            new AmpAdNetworkDoubleclickImpl(element).getAdUrl()
-          ).to.eventually.not.match(fsfRegexp);
+          expect(
+            await new AmpAdNetworkDoubleclickImpl(element).getAdUrl()
+          ).to.not.match(fsfRegexp);
         });
       });
     });
@@ -900,13 +900,13 @@ describes.realWin('amp-ad-network-doubleclick-impl', realWinConfig, (env) => {
         });
       });
     });
-    it('should have google_preview parameter', () => {
+    it('should have google_preview parameter', async () => {
       env.sandbox
         .stub(impl, 'getLocationQueryParameterValue')
         .withArgs('google_preview')
         .returns('abcdef');
       new AmpAd(element).upgradeCallback();
-      expect(impl.getAdUrl()).to.eventually.contain('&gct=abcdef');
+      expect(await impl.getAdUrl()).to.contain('&gct=abcdef');
     });
     it('should cache getLocationQueryParameterValue', () => {
       impl.win = {location: {search: '?foo=bar'}};
@@ -983,9 +983,9 @@ describes.realWin('amp-ad-network-doubleclick-impl', realWinConfig, (env) => {
     it('should return empty string if unknown consentState', () =>
       impl
         .getAdUrl({consentState: CONSENT_POLICY_STATE.UNKNOWN})
-        .then((url) => {
+        .then(async (url) => {
           expect(url).equal('');
-          return expect(impl.getAdUrlDeferred.promise).to.eventually.equal('');
+          expect(await impl.getAdUrlDeferred.promise).to.equal('');
         }));
 
     it('should include npa=1 if unknown consent & explicit npa', () => {
@@ -1835,7 +1835,7 @@ describes.realWin(
     });
 
     describe('#checksumVerification', () => {
-      it('should call super if missing Algorithm header', () => {
+      it('should call super if missing Algorithm header', async () => {
         env.sandbox
           .stub(AmpA4A.prototype, 'maybeValidateAmpCreative')
           .returns(Promise.resolve('foo'));
@@ -1853,11 +1853,11 @@ describes.realWin(
           },
         };
         expect(
-          AmpAdNetworkDoubleclickImpl.prototype.maybeValidateAmpCreative(
+          await AmpAdNetworkDoubleclickImpl.prototype.maybeValidateAmpCreative(
             bytesUtils.utf8Encode(creative),
             mockHeaders
           )
-        ).to.eventually.equal('foo');
+        ).to.equal('foo');
       });
 
       it('should properly validate checksum', () => {
@@ -1885,7 +1885,7 @@ describes.realWin(
           });
       });
 
-      it('should fail validation if invalid checksum', () => {
+      it('should fail validation if invalid checksum', async () => {
         const creative = '<html><body>This is some text</body></html>';
         const mockHeaders = {
           get: (key) => {
@@ -1900,11 +1900,11 @@ describes.realWin(
           },
         };
         expect(
-          AmpAdNetworkDoubleclickImpl.prototype.maybeValidateAmpCreative(
+          await AmpAdNetworkDoubleclickImpl.prototype.maybeValidateAmpCreative(
             bytesUtils.utf8Encode(creative),
             mockHeaders
           )
-        ).to.eventually.not.be.ok;
+        ).to.not.be.ok;
       });
     });
 

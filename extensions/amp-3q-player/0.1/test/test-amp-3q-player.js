@@ -67,8 +67,8 @@ describes.realWin(
     });
 
     it('requires data-id', () => {
-      return allowConsoleError(() => {
-        return expect(get3QElement('')).to.eventually.be.rejectedWith(
+      return allowConsoleError(async () => {
+        await expect(() => get3QElement('')).to.asyncThrow(
           /The data-id attribute is required/
         );
       });

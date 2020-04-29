@@ -60,8 +60,8 @@ describes.realWin(
       expect(iframe.className).to.match(/i-amphtml-fill-content/);
     });
 
-    it('requires data-videoid', () => {
-      return expect(getVimeo('')).to.eventually.be.rejectedWith(
+    it('requires data-videoid', async () => {
+      await expect(() => getVimeo('')).to.asyncThrow(
         /The data-videoid attribute is required for/
       );
     });

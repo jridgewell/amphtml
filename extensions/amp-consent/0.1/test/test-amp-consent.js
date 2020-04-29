@@ -416,10 +416,10 @@ describes.realWin(
             await ampConsent.buildCallback();
             await macroTask();
             await expect(
-              ampConsent
+              await ampConsent
                 .getConsentStateManagerForTesting()
                 .getConsentInstanceGdprApplies()
-            ).to.eventually.be.true;
+            ).to.be.true;
           });
 
           it('never defaults to inline config when checkConsentHref is not defined', async () => {
@@ -431,10 +431,10 @@ describes.realWin(
             await ampConsent.buildCallback();
             await macroTask();
             await expect(
-              ampConsent
+              await ampConsent
                 .getConsentStateManagerForTesting()
                 .getConsentInstanceGdprApplies()
-            ).to.eventually.be.null;
+            ).to.be.null;
           });
         });
 

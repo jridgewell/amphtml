@@ -369,37 +369,37 @@ describe('service', () => {
       expect(p).to.not.be.null;
     });
 
-    it('should reject service promise - reject before get', () => {
+    it('should reject service promise - reject before get', async () => {
       rejectServicePromiseForDoc(ampdoc, 'a', {code: 1});
       const p = getServicePromiseForDoc(ampdoc, 'a');
-      return expect(p).to.eventually.be.rejectedWith({code: 1});
+      await expect(() => p).to.asyncThrow({code: 1});
     });
 
-    it('should reject service promise - reject after get', () => {
+    it('should reject service promise - reject after get', async () => {
       const p = getServicePromiseForDoc(ampdoc, 'a');
       rejectServicePromiseForDoc(ampdoc, 'a', {code: 1});
-      return expect(p).to.eventually.be.rejectedWith({code: 1});
+      await expect(() => p).to.asyncThrow({code: 1});
     });
 
-    it('should reject service promise - reject multiple times', () => {
+    it('should reject service promise - reject multiple times', async () => {
       const p = getServicePromiseForDoc(ampdoc, 'a');
       rejectServicePromiseForDoc(ampdoc, 'a', {code: 1});
       rejectServicePromiseForDoc(ampdoc, 'a', {code: 2});
-      return expect(p).to.eventually.be.rejectedWith({code: 1});
+      await expect(() => p).to.asyncThrow({code: 1});
     });
 
-    it('should reject service promise - reject before register', () => {
+    it('should reject service promise - reject before register', async () => {
       const p = getServicePromiseForDoc(ampdoc, 'a');
       rejectServicePromiseForDoc(ampdoc, 'a', {code: 1});
       registerServiceBuilderForDoc(ampdoc, 'a', factory);
-      return expect(p).to.eventually.be.rejectedWith({code: 1});
+      await expect(() => p).to.asyncThrow({code: 1});
     });
 
-    it('should not reject service promise if already registered', () => {
+    it('should not reject service promise if already registered', async () => {
       const p = getServicePromiseForDoc(ampdoc, 'a');
       registerServiceBuilderForDoc(ampdoc, 'a', factory);
       rejectServicePromiseForDoc(ampdoc, 'a', {code: 1});
-      return expect(p).to.eventually.be.ok;
+      expect(await p).to.be.ok;
     });
 
     it('should resolve service for a child window', () => {

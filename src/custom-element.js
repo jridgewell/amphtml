@@ -84,7 +84,12 @@ export function createCustomElementClass(win) {
   ));
   // It's necessary to create a subclass, because the same "base" class cannot
   // be registered to multiple custom elements.
-  class CustomAmpElement extends BaseCustomElement {}
+  class CustomAmpElement extends BaseCustomElement {
+    /** */
+    constructor() {
+      super();
+    }
+  }
   return /** @type {typeof AmpElement} */ (CustomAmpElement);
 }
 

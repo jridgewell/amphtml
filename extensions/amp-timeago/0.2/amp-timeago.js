@@ -25,6 +25,11 @@ import {userAssert} from '../../../src/log';
 const TAG = 'amp-timeago';
 
 class AmpTimeago extends PreactBaseElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   init() {
     return dict({'cutoffText': this.element.textContent});

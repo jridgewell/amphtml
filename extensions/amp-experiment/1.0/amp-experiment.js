@@ -31,6 +31,11 @@ import {parseJson} from '../../../src/json';
 const TAG = 'amp-experiment';
 
 export class AmpExperiment extends AMP.BaseElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   isLayoutSupported(layout) {
     return layout == Layout.NODISPLAY || layout == Layout.CONTAINER;

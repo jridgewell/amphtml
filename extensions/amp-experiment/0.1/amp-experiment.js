@@ -24,6 +24,11 @@ const TAG = 'amp-experiment';
 const ATTR_PREFIX = 'amp-x-';
 
 export class AmpExperiment extends AMP.BaseElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   isLayoutSupported(layout) {
     return layout == Layout.NODISPLAY || layout == Layout.CONTAINER;

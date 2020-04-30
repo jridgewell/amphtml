@@ -29,6 +29,11 @@ import {userAssert} from '../../../src/log';
 const TAG = 'amp-date-display';
 
 class AmpDateDisplay extends PreactBaseElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   init() {
     const templates = Services.templatesFor(this.win);

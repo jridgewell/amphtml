@@ -19,6 +19,11 @@ import {Layout, isLayoutSizeDefined} from '../src/layout';
 import {registerElement} from '../src/service/custom-element-registry';
 
 class AmpLayout extends BaseElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   isLayoutSupported(layout) {
     return layout == Layout.CONTAINER || isLayoutSizeDefined(layout);

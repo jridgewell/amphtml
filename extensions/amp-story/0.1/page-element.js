@@ -390,6 +390,11 @@ class ImageElement extends PageElement {
  * Video interface.
  */
 class VideoInterfaceElement extends PageElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /**
    * @private
    * @return {*} TODO(#23582): Specify return type

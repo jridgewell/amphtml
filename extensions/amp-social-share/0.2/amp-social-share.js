@@ -75,6 +75,11 @@ const systemShareSupported = (viewer, platform) => {
 };
 
 class AmpSocialShare extends PreactBaseElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   init() {
     const viewer = Services.viewerForDoc(this.element);

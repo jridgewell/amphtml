@@ -45,6 +45,11 @@ export function getAmpAdTemplateHelper(win) {
  * Validator for Template ads.
  */
 export class TemplateValidator extends Validator {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   validate(context, unvalidatedBytes, headers) {
     const body = utf8Decode(/** @type {!ArrayBuffer} */ (unvalidatedBytes));

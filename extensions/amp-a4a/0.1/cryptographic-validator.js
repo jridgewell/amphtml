@@ -27,6 +27,11 @@ export const SIGNATURE_VERIFIER_PROPERTY_NAME =
 const TAG = 'amp-ad-cryptographic-validator';
 
 export class CryptographicValidator extends Validator {
+  /** */
+  constructor() {
+    super();
+  }
+
   /**
    * @param {!Window} win
    * @return {!SignatureVerifier}

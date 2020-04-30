@@ -35,6 +35,11 @@ const TAG = 'amp-auto-ads';
 const AD_TAG = 'amp-ad';
 
 export class AmpAutoAds extends AMP.BaseElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   buildCallback() {
     const type = this.element.getAttribute('type');

@@ -34,6 +34,11 @@ const OBLIVKI_BASE_URL_ = 'https://oblivki.biz/amp/';
 const OBLIVKI_BASE_A4A_URL_ = 'https://oblivki.biz/amp/a4a/';
 
 export class AmpAdNetworkOblivkiImpl extends AmpA4A {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   getAdUrl(unusedConsentTuple, opt_rtcResponsesPromise) {
     return this.element

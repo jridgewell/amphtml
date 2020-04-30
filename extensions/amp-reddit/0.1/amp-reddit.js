@@ -21,6 +21,11 @@ import {listenFor} from '../../../src/iframe-helper';
 import {userAssert} from '../../../src/log';
 
 class AmpReddit extends AMP.BaseElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /**
    * @param {boolean=} onLayout
    * @override

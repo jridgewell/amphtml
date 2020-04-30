@@ -25,6 +25,11 @@ import {utf8Decode} from '../../../src/utils/bytes';
  * Render a non-AMP creative into a NameFrame.
  */
 export class NameFrameRenderer extends Renderer {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   render(context, element, crossDomainData) {
     crossDomainData = /** @type {!./amp-ad-type-defs.CrossDomainDataDef} */ (crossDomainData);

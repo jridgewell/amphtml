@@ -49,6 +49,11 @@ const TAG = 'amp-story-cta-layer';
  * while the user is looking.
  */
 export class AmpStoryCtaLayer extends AmpStoryBaseLayer {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   buildCallback() {
     super.buildCallback();

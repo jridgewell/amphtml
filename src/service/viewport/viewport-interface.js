@@ -42,6 +42,11 @@ export let ViewportResizedEventDef;
  * @interface
  */
 export class ViewportInterface extends Disposable {
+  /** */
+  constructor() {
+    super();
+  }
+
   /**
    * Called before a first AMP element is added to resources. Called in the
    * mutate context.

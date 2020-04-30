@@ -197,6 +197,11 @@ export class FormValidator {
 
 /** @private visible for testing */
 export class DefaultValidator extends FormValidator {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   report() {
     this.reportFormValidity(this.form);
@@ -446,6 +451,11 @@ export class AbstractCustomValidator extends FormValidator {
 
 /** @private visible for testing */
 export class ShowFirstOnSubmitValidator extends AbstractCustomValidator {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   report() {
     this.hideAllValidations();
@@ -469,6 +479,11 @@ export class ShowFirstOnSubmitValidator extends AbstractCustomValidator {
 
 /** @private visible for testing */
 export class ShowAllOnSubmitValidator extends AbstractCustomValidator {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   report() {
     this.hideAllValidations();
@@ -496,6 +511,11 @@ export class ShowAllOnSubmitValidator extends AbstractCustomValidator {
 
 /** @private visible for testing */
 export class AsYouGoValidator extends AbstractCustomValidator {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   shouldValidateOnInteraction(unusedInput) {
     return true;
@@ -510,6 +530,11 @@ export class AsYouGoValidator extends AbstractCustomValidator {
 
 /** @private visible for testing */
 export class InteractAndSubmitValidator extends ShowAllOnSubmitValidator {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   shouldValidateOnInteraction(unusedInput) {
     return true;

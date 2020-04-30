@@ -19,6 +19,11 @@ import {AmpSlideScroll} from './slidescroll';
 import {CSS} from '../../../build/amp-carousel-0.1.css';
 
 class CarouselSelector extends AMP.BaseElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   upgradeCallback() {
     if (this.element.getAttribute('type') == 'slides') {

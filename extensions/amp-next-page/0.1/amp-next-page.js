@@ -45,6 +45,11 @@ const SERVICE_ID = 'next-page';
 const ADSENSE_BASE_URL = 'https://googleads.g.doubleclick.net/pagead/ads';
 
 export class AmpNextPage extends AMP.BaseElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   isLayoutSupported(layout) {
     return layout == Layout.CONTAINER;

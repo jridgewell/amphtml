@@ -34,6 +34,11 @@ const BASE_URL_ = 'https://smart-ads.biz/_amp';
 const BASE_A4A_URL_ = 'https://smart-ads.biz/_a4a';
 
 export class AmpAdNetworkSmartAdsImpl extends AmpA4A {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   getAdUrl(unusedConsentTuple, opt_rtcResponsesPromise) {
     return this.element.getAttribute('src').replace(BASE_URL_, BASE_A4A_URL_);

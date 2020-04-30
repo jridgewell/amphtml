@@ -21,6 +21,11 @@ import {LayoutPriority} from '../../../src/layout';
  * be called from other amp-bind expressions within the document.
  */
 export class AmpBindMacro extends AMP.BaseElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   getLayoutPriority() {
     // Loads after other content.

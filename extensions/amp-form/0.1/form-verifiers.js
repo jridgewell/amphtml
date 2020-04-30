@@ -144,7 +144,12 @@ export class FormVerifier {
  * A no-op verifier.
  * @visibleForTesting
  */
-export class DefaultVerifier extends FormVerifier {}
+export class DefaultVerifier extends FormVerifier {
+  /** */
+  constructor() {
+    super();
+  }
+}
 
 /**
  * A verifier that verifies values via an XHR

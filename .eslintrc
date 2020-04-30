@@ -86,6 +86,7 @@
     "jsdoc/require-param-type": 2,
     "jsdoc/require-returns": 2,
     "jsdoc/require-returns-type": 2,
+    "local/require-subclass-constructor": 2,
     "local/await-expect": 2,
     "local/closure-type-primitives": 2,
     "local/dict-string-keys": 2,
@@ -233,6 +234,7 @@
       ],
       "rules": {
         "require-jsdoc": 0,
+        "local/require-subclass-constructor": 0,
         "local/no-bigint": 0,
         "local/no-dynamic-import": 0,
         "local/no-function-async": 0,

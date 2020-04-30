@@ -36,6 +36,11 @@ function networkImplementationTag(type) {
 }
 
 export class AmpAd extends AMP.BaseElement {
+  /** */
+  constructor() {
+    super();
+  }
+
   /** @override */
   isLayoutSupported(unusedLayout) {
     // TODO(jridgewell, #5980, #8218): ensure that unupgraded calls are not

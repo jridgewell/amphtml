@@ -35,6 +35,7 @@ const {CLOSURE_SRC_GLOBS} = require('./sources');
 const {isTravisBuild} = require('../common/travis');
 const {postClosureBabel} = require('./post-closure-babel');
 const {preClosureBabel, handlePreClosureError} = require('./pre-closure-babel');
+const {sanatize} = require('./sanatize');
 const {singlePassCompile} = require('./single-pass');
 const {VERSION: internalRuntimeVersion} = require('./internal-version');
 const {writeSourcemaps} = require('./helpers');
@@ -392,6 +393,7 @@ function compile(
           )
         )
         .pipe(postClosureBabel())
+        .pipe(sanatize())
         .pipe(writeSourcemaps())
         .pipe(gulp.dest('.'))
         .on('end', resolve);

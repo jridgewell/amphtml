@@ -59,14 +59,28 @@ FormDataWrapperInterface.prototype.getFormData = function () {};
 FormData.prototype.entries = function () {};
 
 /**
- * A type for Objects that can be JSON serialized or that come from
- * JSON serialization. Requires the objects fields to be accessed with
- * bracket notation object['name'] to make sure the fields do not get
- * obfuscated.
- * @constructor
- * @dict
+ * JSON scalar. It's either string, number or boolean.
+ * @typedef {string|number|boolean|null}
  */
-function JsonObject() {}
+let JsonScalar;
+
+/**
+ * JSON object. It's a map with string keys and JSON values.
+ * @dict {!Object<string, JsonValue>}
+ */
+class JsonObject {}
+
+/**
+ * JSON array. It's an array with JSON values.
+ * @typedef {!Array<JsonValue>}
+ */
+let JsonArray;
+
+/**
+ * JSON value. It's either a scalar, an object or an array.
+ * @typedef {JsonScalar|!JsonObject|!JsonArray}
+ */
+let JsonValue;
 
 /**
  * @typedef {{
@@ -110,11 +124,6 @@ ExtensionPayload.prototype.v;
 
 /** @type {!Array<string>|string|undefined} */
 ExtensionPayload.prototype.i;
-
-/**
- * @typedef {?JsonObject|undefined|string|number|!Array<JsonValue>}
- */
-var JsonValue;
 
 /**
  * @constructor

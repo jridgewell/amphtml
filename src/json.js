@@ -22,33 +22,6 @@
 import {childElementsByTag, isJsonScriptTag} from './dom';
 import {isObject} from './types';
 
-// NOTE Type are changed to {*} because of
-// https://github.com/google/closure-compiler/issues/1999
-
-/**
- * JSON scalar. It's either string, number or boolean.
- * @typedef {*} should be string|number|boolean|null
- */
-let JSONScalarDef;
-
-/**
- * JSON object. It's a map with string keys and JSON values.
- * @typedef {*} should be !Object<string, ?JSONValueDef>
- */
-let JSONObjectDef;
-
-/**
- * JSON array. It's an array with JSON values.
- * @typedef {*} should be !Array<?JSONValueDef>
- */
-let JSONArrayDef;
-
-/**
- * JSON value. It's either a scalar, an object or an array.
- * @typedef {*} should be !JSONScalarDef|!JSONObjectDef|!JSONArrayDef
- */
-let JSONValueDef;
-
 /**
  * Recreates objects with prototype-less copies.
  * @param {!JsonObject} obj
@@ -159,8 +132,8 @@ export function getChildJsonConfig(element) {
 /**
  * Deeply checks strict equality of items in nested arrays and objects.
  *
- * @param {JSONValueDef} a
- * @param {JSONValueDef} b
+ * @param {*} a
+ * @param {*} b
  * @param {number} depth The maximum depth. Must be finite.
  * @return {boolean}
  * @throws {Error} If depth argument is not finite.
@@ -172,7 +145,7 @@ export function deepEquals(a, b, depth = 5) {
   if (a === b) {
     return true;
   }
-  /** @type {!Array<{a: JSONValueDef, b: JSONValueDef, depth: number}>} */
+  /** @type {!Array<{a: *, b: *, depth: number}>} */
   const queue = [{a, b, depth}];
   while (queue.length > 0) {
     const {a, b, depth} = queue.shift();

@@ -114,6 +114,11 @@ class AmpStickyAd extends AMP.BaseElement {
   }
 
   /** @override */
+  renderOutsideViewport() {
+    return true;
+  }
+
+  /** @override */
   unlayoutCallback() {
     this.viewport_.updatePaddingBottom(0);
     return true;

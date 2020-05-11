@@ -117,8 +117,11 @@ export class AmpAnalytics extends AMP.BaseElement {
   }
 
   /** @override */
-  isAlwaysFixed() {
-    return !isInFie(this.element);
+  renderOutsideViewport() {
+    if (isInFie(this.element)) {
+      return super.renderOutsideViewport();
+    }
+    return true;
   }
 
   /** @override */

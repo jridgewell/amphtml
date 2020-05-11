@@ -134,6 +134,11 @@ export class AmpUserNotification extends AMP.BaseElement {
   }
 
   /** @override */
+  renderOutsideViewport() {
+    return true;
+  }
+
+  /** @override */
   buildCallback() {
     const ampdoc = this.getAmpDoc();
     this.urlReplacements_ = Services.urlReplacementsForDoc(this.element);

@@ -13,15 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const JSS = {
-  button: {
-    fontSize: 12
-  }
-};
+import { useStyles } from './styles.jss.js';
 
-/** @enum {string} */
-const _classes = {
-  button: "button-989c18a",
-  CSS: ".button-989c18a{font-size:12px}\n"
-};
-export const useStyles = _classes;
+function Component(props) {
+  const classes = useStyles;
+  classes.className;
+}
+
+Component.CSS = useStyles.CSS;

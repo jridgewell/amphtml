@@ -1,5 +1,9 @@
-/** @enum {string}*/
-var _classes = {floatLeft:"float-left-a6c6677",fill:"fill-a6c6677"};
+/** @enum {string} */
+const _classes = {
+  floatLeft: "float-left-a6c6677",
+  fill: "fill-a6c6677",
+  CSS: ".float-left-a6c6677{float:left;border:1px solid #000}.fill-a6c6677{-ms-flex:1 1 auto;flex:1 1 auto;display:block;position:relative}\n"
+};
 
 /**
  * Copyright 2020 The AMP HTML Authors. All Rights Reserved.
@@ -16,5 +20,4 @@ var _classes = {floatLeft:"float-left-a6c6677",fill:"fill-a6c6677"};
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export const useStyles = () => _classes;
-export const CSS = ".float-left-a6c6677{float:left;border:1px solid #000}.fill-a6c6677{-ms-flex:1 1 auto;flex:1 1 auto;display:block;position:relative}\n";
+export const useStyles = _classes;

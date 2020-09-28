@@ -22,6 +22,7 @@ const path = require('path');
 const tempy = require('tempy');
 
 const logFile = path.resolve(process.cwd(), 'dist', 'debug-compilation.log');
+const logDescriptor = fs.openSync(logFile, 'w+');
 
 const pad = (value, length) =>
   (value.length > length ? value.slice(value.length - length) : value).padEnd(
@@ -54,7 +55,7 @@ function debug(lifecycle, fullpath, content, sourcemap) {
       );
     }
     fs.appendFileSync(
-      logFile,
+      logDescriptor,
       `${pad(lifecycle, 20)}: ${pad(
         path.basename(fullpath),
         30

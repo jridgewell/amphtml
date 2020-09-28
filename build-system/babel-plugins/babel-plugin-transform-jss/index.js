@@ -31,9 +31,7 @@
  * Out:
  * ```
  * const jss = { button: { fontSize: 12 }}
- * const _classes = {button: 'button-1'}
- * export const useStyles = () => _classes;
- * export const CSS = 'button-1 { font-size: 12px }'
+ * export const useStyles = {button: 'button-1', CSS: 'button-1 { font-size: 12px }'};
  * ```
  */
 
@@ -43,11 +41,7 @@ const {default: preset} = require('jss-preset-default');
 const {relative, join} = require('path');
 const {spawnSync} = require('child_process');
 
-module.exports = function ({template}) {
-  function isJssFile(filename) {
-    return filename.endsWith('.jss.js');
-  }
-
+module.exports = function ({types: t, template}) {
   const seen = new Map();
   function compileJss(JSS, filename) {
     const relativeFilepath = relative(join(__dirname, '../../..'), filename);
@@ -74,62 +68,52 @@ module.exports = function ({template}) {
     return jss.createStyleSheet(JSS);
   }
 
+  function replaceCreateUseStyles(path, filename) {
+    const {confident, value: JSS} = path.get('arguments.0').evaluate();
+    if (!confident) {
+      throw path.buildCodeFrameError(
+        `First argument to createUseStyles must be statically evaluatable.`
+      );
+    }
+    const sheet = compileJss(JSS, filename);
+    if ('CSS' in sheet.classes) {
+      throw path.buildCodeFrameError(
+        'Cannot have class named CSS in your JSS object.'
+      );
+    }
+
+    // Create the classes var.
+    const id = path.scope.generateUidIdentifier('classes');
+    const init = t.valueToNode({
+      ...sheet.classes,
+      CSS: transformCssSync(sheet.toString()),
+    });
+
+    const statement = path.findParent((p) => p.isStatement());
+    const [inserted] = statement.insertBefore(template.statement.ast`
+      const ${id} = ${init};
+    `);
+    inserted.addComment('leading', '* @enum {string} ');
+    path.replaceWith(id);
+  }
+
   return {
     visitor: {
       CallExpression(path, state) {
         const {filename} = state.file.opts;
-        if (!isJssFile(filename)) {
-          return;
-        }
-
         const callee = path.get('callee');
-        if (!callee.isIdentifier({name: 'createUseStyles'})) {
+
+        if (callee.isIdentifier({name: 'createUseStyles'})) {
+          return replaceCreateUseStyles(path, filename);
+        }
+        if (callee.isIdentifier({name: 'useStyles'})) {
+          path.replaceWith(callee.node);
           return;
         }
-
-        const {confident, value: JSS} = path.get('arguments.0').evaluate();
-        if (!confident) {
-          throw path.buildCodeFrameError(
-            `First argument to createUseStyles must be statically evaluatable.`
-          );
-        }
-        const sheet = compileJss(JSS, filename);
-        if ('CSS' in sheet.classes) {
-          throw path.buildCodeFrameError(
-            'Cannot have class named CSS in your JSS object.'
-          );
-        }
-
-        // Create the classes var.
-        const id = path.scope.generateUidIdentifier('classes');
-        const init = template.expression.ast`${stringifyUnquotedProps(
-          sheet.classes
-        )}`;
-        path.scope.push({id, init});
-        path.scope.bindings[id.name].path.parentPath.addComment(
-          'leading',
-          '* @enum {string}'
-        );
-
-        // Replace useStyles with a getter for the new `classes` var.
-        path.replaceWith(template.expression.ast`(() => ${id})`);
-
-        // Export a variable named CSS with the compiled CSS.
-        const cssExport = template.ast`export const CSS = "${transformCssSync(
-          sheet.toString()
-        )}"`;
-        path
-          .findParent((p) => p.type === 'ExportNamedDeclaration')
-          .insertAfter(cssExport);
       },
 
       // Remove the import for react-jss
-      ImportDeclaration(path, state) {
-        const {filename} = state.file.opts;
-        if (!isJssFile(filename)) {
-          return;
-        }
-
+      ImportDeclaration(path) {
         if (path.node.source.value === 'react-jss') {
           path.remove();
         }

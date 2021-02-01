@@ -586,7 +586,12 @@ export class AmpStory extends AMP.BaseElement {
    * @private
    */
   rewriteStyles_(styleEl) {
-    if (!isExperimentOn(this.win, 'amp-story-responsive-units')) {
+    if (
+      !(
+        /* isExperimentOn(this.win, 'amp-story-responsive-units') // launched: true */
+        true
+      )
+    ) {
       return;
     }
 

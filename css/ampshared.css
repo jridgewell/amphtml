@@ -354,6 +354,10 @@ amp-img:not(.i-amphtml-element)[i-amphtml-ssr] > img.i-amphtml-fill-content
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
+}
+
+.i-amphtml-layout-size-defined > [placeholder]:not(.i-amphtml-blurry-placeholder),
+.i-amphtml-layout-size-defined > [fallback] {
   z-index: 1;
 }
 
